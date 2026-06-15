@@ -1,0 +1,19 @@
+# data + generated artifacts (vectors, responses, checkpoints)
+/data/*
+!/data/.gitkeep
+*.npz
+*.safetensors
+adapters/
+runs/
+wandb/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# secrets
+.env

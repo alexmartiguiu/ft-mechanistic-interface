@@ -1,0 +1,32 @@
+[project]
+name = "ft-mechanistic-interface"
+version = "0.0.1"
+description = "Fine-tuning harness with concept-vector drift monitoring, dataset audit, and mitigation."
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "transformers>=4.44",
+    "peft>=0.12",
+    "datasets>=2.20",
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+# vector generation uses a frontier LLM as the artifact generator + judge
+generate = ["anthropic>=0.40"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+ftmi = "ftmi.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ftmi"]
+
+[tool.ruff]
+line-length = 100
