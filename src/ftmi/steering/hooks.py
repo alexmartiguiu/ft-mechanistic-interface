@@ -41,8 +41,8 @@ class ProjectionReader:
 
     def _hook(self, _module, _inp, out):
         h = out[0] if isinstance(out, tuple) else out  # (batch, seq, hidden)
-        v = _as_tensor(self._v_hat, h)
-        self.values.append((h @ v).detach())           # (batch, seq)
+        v = _as_tensor(self._v_hat, h) # unit-normalized concept direction
+        self.values.append((h @ v).detach()) # ⟨h, v̂⟩ per token → (batch, seq)
         return out
 
     def reset(self) -> None:

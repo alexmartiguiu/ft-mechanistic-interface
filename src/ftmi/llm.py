@@ -12,7 +12,10 @@ from typing import Callable
 
 Generator = Callable[[str], str]
 
-DEFAULT_MODEL = {"anthropic": "claude-sonnet-4-6", "gemini": "gemini-2.5-flash"}
+# Per-backend default model. Overridable by the FTMI_GEN_MODEL env var or an explicit
+# `model=` argument (precedence: argument > env > this default). Gemini is the default
+# backend; both the artifact generator and the judge use the same model.
+DEFAULT_MODEL = {"anthropic": "claude-sonnet-4-6", "gemini": "gemini-3.5-flash"}
 
 
 def claude_generator(model: str | None = None, max_tokens: int = 4096) -> Generator:
@@ -45,10 +48,9 @@ def gemini_generator(model: str | None = None) -> Generator:
     return _generate
 
 
-def get_generator(backend: str = "anthropic", model: str | None = None) -> Generator:
-    """Switch backend by name: 'anthropic' (default) or 'gemini'."""
-    if backend == "anthropic":
-        return claude_generator(model)
-    if backend == "gemini":
-        return gemini_generator(model)
-    raise ValueError(f"unknown backend {backend!r} (expected 'anthropic' or 'gemini')")
+def get_generator(backend: str = "gemini", model: str | None = None) -> Generator:
+    """Build a `(prompt)->str` generator. Model precedence: `model` arg > FTMI_GEN_MODEL env > DEFAULT_MODEL."""
+    if backend not in DEFAULT_MODEL:
+        raise ValueError(f"unknown backend {backend!r} (expected {list(DEFAULT_MODEL)})")
+    model = model or os.getenv("FTMI_GEN_MODEL") or DEFAULT_MODEL[backend]
+    return claude_generator(model) if backend == "anthropic" else gemini_generator(model)
