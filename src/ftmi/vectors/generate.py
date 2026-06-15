@@ -8,13 +8,24 @@ rubric. The only human input is the concept name + description.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 
 import yaml
 
 from ftmi.config import Concept
 
-# Verbatim-faithful port of the Chen+ 2507.21509 App. A.1 meta-prompt.
+
+def _parse_json(text: str):
+    """Tolerant JSON load: strips ```json code fences / surrounding prose if present.
+
+    Frontier LLMs often fence their JSON even when told not to; we never want the
+    whole pipeline to die on a markdown wrapper.
+    """
+    fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
+    return json.loads((fence.group(1) if fence else text).strip())
+
+# Verbatim-faithful port of the Chen 2507.21509 A.1 meta-prompt.
 META_PROMPT = """\
 You are tasked with designing a dataset to evaluate model behavior related to \
 persona traits. Your goal is to create instructions, questions, and an evaluation \
@@ -77,7 +88,7 @@ def generate_artifacts(concept: Concept, generator) -> ConceptArtifacts:
     the backend (Anthropic / local) is swappable and testable.
     """
     prompt = META_PROMPT.format(name=concept.name, description=concept.description)
-    payload = json.loads(generator(prompt))
+    payload = _parse_json(generator(prompt))
     return ConceptArtifacts.from_response(concept.name, payload)
 
 
@@ -109,7 +120,7 @@ def propose_concepts(domain: str, sample: str, generator, n: int = 8) -> list[Co
     Returns a list a human should review/trim before fitting vectors.
     """
     prompt = PROPOSE_PROMPT.format(domain=domain, sample=sample, n=n)
-    return [Concept(**c) for c in json.loads(generator(prompt))]
+    return [Concept(**c) for c in _parse_json(generator(prompt))]
 
 
 def concepts_to_yaml(domain: str, concepts: list[Concept]) -> str:

@@ -7,8 +7,23 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
+from pathlib import Path
 
 from ftmi.config import ApplicationConfig, ConceptSet
+
+
+def _load_env(path=".env") -> None:
+    """Populate os.environ from a .env file (the API-backed steps read keys from env)."""
+    p = Path(path)
+    if not p.exists():
+        return
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
 
 
 def _cmd_concepts(args) -> None:
@@ -18,10 +33,34 @@ def _cmd_concepts(args) -> None:
 
 
 def _cmd_vectors(args) -> None:
+    from ftmi.llm import get_generator
+    from ftmi.model import LocalModel
+    from ftmi.vectors.pipeline import mint_vector
+
+    _load_env()
     concepts = ConceptSet.load(args.concepts)
+    out_dir = Path(args.out_dir or f"data/{concepts.domain}/vectors")
+    out_dir.mkdir(parents=True, exist_ok=True)
     print(f"[vectors] {concepts.domain}: {len(concepts.concepts)} concepts, model={args.model}")
-    # generate_artifacts -> fit_vector -> validate (dose-response) -> save per concept
-    raise SystemExit("not yet implemented — see ftmi.vectors")
+
+    generator = get_generator(args.backend, args.gen_model)
+    model = LocalModel.load(args.model)
+    for c in concepts.concepts:
+        print(f"  - minting '{c.name}' …", flush=True)
+        res = mint_vector(c, model, generator, rollouts=args.rollouts,
+                          do_validate=not args.no_validate)
+        pv, report = res["vector"], res["report"]
+        pv.save(str(out_dir / f"{c.name}.npz"))
+        summary = {"name": c.name, "layer": int(pv.layer), "n_pos": pv.n_pos, "n_neg": pv.n_neg,
+                   "selected": report["selected"] if report else None,
+                   "control_selected": res["control"]["selected"] if res["control"] else None}
+        (out_dir / f"{c.name}.json").write_text(json.dumps(summary, indent=2))
+        sel = summary["selected"]
+        print(f"    kept pos={pv.n_pos} neg={pv.n_neg}; "
+              f"validated layer={sel['layer'] if sel else pv.layer} "
+              f"(trait {sel['mean_trait']:.0f}, +{sel['trait_gain']:.0f} vs base)" if sel
+              else f"    kept pos={pv.n_pos} neg={pv.n_neg}; no validated layer (gate did not pass)")
+    print(f"[vectors] saved -> {out_dir}")
 
 
 def _cmd_train(args) -> None:
@@ -47,6 +86,10 @@ def main(argv=None) -> None:
     pv.add_argument("--concepts", required=True)
     pv.add_argument("--model", required=True)
     pv.add_argument("--backend", default="anthropic", choices=["anthropic", "gemini"])
+    pv.add_argument("--gen-model", default=None, help="generator/judge model id (default per backend)")
+    pv.add_argument("--rollouts", type=int, default=5, help="sampled responses per system-prompt × question")
+    pv.add_argument("--out-dir", default=None, help="where to save vectors (default data/<domain>/vectors)")
+    pv.add_argument("--no-validate", action="store_true", help="skip the dose-response gate (fit only)")
     pv.set_defaults(func=_cmd_vectors)
 
     pt = sub.add_parser("train", help="fine-tune with drift monitoring")

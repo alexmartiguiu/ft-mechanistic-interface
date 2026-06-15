@@ -12,6 +12,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ftmi.vectors.judge import judge_response
+
 
 @dataclass(frozen=True)
 class PersonaVector:
@@ -43,14 +45,54 @@ def fit_from_pooled(name: str, pos: np.ndarray, neg: np.ndarray, layer: int) -> 
                          layer, len(pos), len(neg))
 
 
-def fit_vector(name, artifacts, model, judge, *, rollouts=5, select_layer=None) -> PersonaVector:
-    """End-to-end fit: generate -> judge-filter -> pool -> diff-of-means.
+def _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_min) -> bool:
+    """Chen keep-rule: coherent, and pos scores high / neg scores low on the trait."""
+    if trait is None or coherence is None or coherence < coherence_min:
+        return False
+    return trait > pos_threshold if polarity == "pos" else trait < neg_threshold
 
-    Stub: wire generation + response-token pooling against `model`, and the
-    keep-rule against `judge` (pos>50, neg<50, coherent). `select_layer` defaults to
-    the dose-response sweep (steering/validate). Returns a validated PersonaVector.
+
+def fit_vector(name, artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
+               temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
+               coherence_min=50, select_layer=None) -> PersonaVector:
+    """End-to-end Chen fit: generate -> judge-filter -> pool response tokens -> diff-of-means.
+
+    On the BASE `model` (a LocalModel), for each contrastive system-prompt pair and each
+    extraction question, sample `rollouts` responses under the positive and negative
+    instruction; keep coherent responses scoring pos>`pos_threshold` / neg<`neg_threshold`
+    (`judge` via vectors/judge.py); pool the residual stream over RESPONSE tokens at every
+    decoder layer; return the per-layer unit-normalised difference-of-means.
+
+    `select_layer` defaults to a provisional mid-network layer; the *validated* steering
+    layer comes from vectors/validate.py (the §4 dose-response gate) — never trust the
+    default for steering.
     """
-    raise NotImplementedError(
-        "fit_vector: implement generate -> judge-filter -> pool-response-tokens, "
-        "then call fit_from_pooled() and select the layer by dose-response."
-    )
+    pooled: dict[str, list[np.ndarray]] = {"pos": [], "neg": []}
+    sid = 0
+    for pair in artifacts.system_prompts:
+        for polarity in ("pos", "neg"):
+            system = pair[polarity]
+            for question in artifacts.extraction_questions:
+                for _ in range(rollouts):
+                    resp_ids, text = model.generate(
+                        system, question, max_new_tokens=max_new_tokens,
+                        temperature=temperature, seed=seed + sid)  # this just calls the model
+                    sid += 1
+                    if not resp_ids:
+                        continue
+                    trait, coherence = judge_response(judge, artifacts.judge_prompt, question, text)
+                    if not _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_min):
+                        continue
+                    pooled[polarity].append(model.pooled_response(system, question, resp_ids))
+    if not pooled["pos"] or not pooled["neg"]:
+        raise ValueError(
+            f"0 kept on a side (pos={len(pooled['pos'])}, neg={len(pooled['neg'])}) — "
+            "cannot fit. Loosen pos/neg thresholds, raise rollouts, or check that the "
+            "artifacts actually elicit judge-detectable trait expression.")
+    pos = np.stack(pooled["pos"])
+    neg = np.stack(pooled["neg"])
+    # Provisional layer = mid-network (docs/vector-steering.md §1). Peak pre-norm is NOT
+    # used: residual norm grows monotonically with depth, so it degenerately picks the
+    # last layer (a poor steering site). validate.py selects the real layer.
+    layer = pos.shape[1] // 2 if select_layer is None else int(select_layer)
+    return fit_from_pooled(name, pos, neg, layer)

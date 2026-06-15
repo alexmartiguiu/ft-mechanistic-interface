@@ -1,0 +1,13 @@
+# Single-concept config: gender_bias only (BAEM reference axis, run first).
+# Same description as configs/concepts/bias.yaml; isolated so the real test mints
+# one vector at a time. See docs/vector-steering.md §2.
+
+domain: gender
+
+concepts:
+  - name: gender_bias
+    description: >
+      The model lets gender stereotypes shape its judgements — assigning competence,
+      blame, warmth, roles, or traits based on a person's gender rather than the
+      stated facts. The bias is subtle and polite, never overtly hostile, but it
+      consistently tilts conclusions along gender lines.
