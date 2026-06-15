@@ -28,11 +28,6 @@ pooled over **response tokens** at layer `ℓ`, then unit-normalised per layer. 
 steering layer is chosen empirically by steering effectiveness, not fixed a priori;
 mid-network (≈L12–L21 for 2–14B models) is where it lands in every cited method.
 
-We use difference-of-means, not PCA (RepE [Zou+ 2310.01405]) or a learned/optimised
-vector (BiPO [Cao+ 2406.00045], SAE-TS [Chalnev+ 2411.02193]): it is the simplest
-estimator, it is what the persona-vector and AxBench pipelines we build on use, and
-it admits cheap controls (see §5).
-
 ---
 
 ## 2. How we derive the contrastive data (LLM-generated, Chen-style)
@@ -54,15 +49,9 @@ coherent), and fit `v_c` on the kept set. Judge-filtering matters: safety-tuned
 models refuse instead of exhibiting the trait, and refusals would otherwise poison
 the mean [Chen+ 2507.21509 §2.2].
 
-This is the **2025–2026 SOTA pattern** for trait/concept steering — LLM-generated
-contrastive data from a natural-language description (Chen; AxBench/Wu 2501.17148;
-CAST [Lee+ 2409.05907]) — and the only one that supports our "drop a use-case → mint
-a vector" interface without a hand-labelled dataset.
+This is the **2025–2026 SOTA pattern** for trait/concept steering — LLM-generated contrastive data from a natural-language description
 
-> **Why not held-out benchmark data?** The older diff-of-means methods (CAA, ITI,
-> refusal direction) fit on fixed curated MCQ/benchmark sets. That requires a
-> labelled axis to exist up front; our threat model is axes the client never
-> enumerated. LLM-generated elicitation lets us instrument an arbitrary concept.
+> **Why not held-out benchmark data?** LLM-generated elicitation lets us instrument an arbitrary concept.
 > An optional refinement (BAEM-style) seeds the extraction set with held-out
 > *user turns from the client dataset* to keep `v_c` in-distribution — useful but
 > not required, and we keep extraction independent of the fine-tuning labels by
@@ -87,11 +76,20 @@ stable from dozens to a few hundred:
 direction, cheap to generate. Scale up only if a vector fails its validation gate
 (§5). Chen's ~1,000 raw is generous; matching it is not required.
 
+The target to aim for: match BAEM — ~300–400 kept positive samples out of ~1000 generations. Chen does not report passed samples after judge-filtering.
+
+### How we will choose the layer: 
+
+free-form LLM-judge dose-response sweep:   
+- On the base model, install +coef·v̂ at a candidate layer; generate ~40 responses to held-out questions across a coef grid; judge each for trait expression (0–100) and coherence (0–100).
+- Pick the layer where judged trait rises monotonically with coef while coherence stays intact. L14/L16 gave a clean rise (judged bias ~2→66 at coef +32, coherent); norm-peak layers did not.
+(technically: build src/ftmi/steering/validate.py doing the same — sweep candidate mid-network layers (≈L12–L21 for the 28-layer 7B) × a coef grid, generate via LocalModel.generate + steer via hooks.add_steering, judge trait+coherence with the same Gemini judge, and select the (layer, coef) with monotonic trait rise + coherence ≥ threshold + flat random-control.)
+
 ---
 
 ## 3. How we use the vectors
 
-All three uses are the **same primitive** — the scalar projection `⟨h, v̂_c⟩` of an
+All three uses are the **same primitive** — the scalar projection `⟨h, v̂_c⟩` (`h · v̂_c, dot product`) of an
 activation onto the unit direction — applied at a different point in the lifecycle.
 
 ### 3a. Monitoring during fine-tuning and at inference (P1)
