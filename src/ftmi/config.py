@@ -49,7 +49,13 @@ class LoraConfig:
 
 
 @dataclass(frozen=True)
-class ExperimentConfig:
+class ApplicationConfig:
+    """The first-class composition unit: one safety-critical application.
+
+    Wires a dataset + its concept set + a model/LoRA recipe, plus what to do with the
+    vectors (monitor / audit / mitigate). Running all applications = looping the same
+    pipeline over these configs.
+    """
     name: str
     lora: LoraConfig
     concepts: ConceptSet
@@ -59,7 +65,7 @@ class ExperimentConfig:
     mitigate: dict = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: str | Path) -> "ExperimentConfig":
+    def load(cls, path: str | Path) -> "ApplicationConfig":
         d = _read(path)
         return cls(
             name=d["name"],

@@ -1,6 +1,7 @@
-# data + generated artifacts (vectors, responses, checkpoints)
-/data/*
-!/data/.gitkeep
+# data + generated artifacts (vectors, responses, checkpoints) — keep dir skeleton
+/data/**
+!/data/**/
+!/data/**/.gitkeep
 *.npz
 *.safetensors
 adapters/

@@ -1,0 +1,27 @@
+# Application config: the first-class unit. Wires dataset + concepts + recipe and
+# says what to do with the vectors. One file per safety-critical application.
+# `ftmi train --app configs/applications/therapist.yaml`
+
+name: therapist
+
+lora: configs/lora/qwen7b_default.yaml
+concepts: configs/concepts/therapist.yaml   # authored, or emitted by `ftmi concepts`
+
+data:
+  path: data/therapist/sft.jsonl            # user/assistant pairs, chat-template format
+  text_field: messages
+  valid_fraction: 0.05
+
+# All artifacts for this application land under data/<name>/ (vectors, checkpoints).
+
+monitor:
+  enabled: true                    # P1: project checkpoint activations onto each v_c
+  layer: auto                      # 'auto' = layer chosen at vector-fit time
+
+audit:
+  enabled: true                    # P0: projection-difference dataset audit before training
+  flag_percentile: 95             # flag samples above this projection-difference pct
+
+mitigate:
+  mode: none                       # none | steer (preventative +coef*v) | suppress
+  coef: 0.0

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ftmi.config import ExperimentConfig
+from ftmi.config import ApplicationConfig
 from ftmi.vectors.extract import PersonaVector
 
 
@@ -32,7 +32,7 @@ class DriftMonitor:
         raise NotImplementedError("DriftMonitor.on_step: read projections, append to trajectory")
 
 
-def train_lora(cfg: ExperimentConfig, vectors: list[PersonaVector]):
+def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector]):
     """Fine-tune per `cfg`, with monitoring / preventative steering attached by config.
 
     Steps:
