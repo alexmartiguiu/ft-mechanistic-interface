@@ -6,7 +6,7 @@ from ftmi.vectors.generate import (
     propose_concepts,
 )
 from ftmi.vectors.judge import judge_response
-from ftmi.vectors.monitor import projection_difference, score_generations
+from ftmi.vectors.monitor import pooled_generations, projection_difference, score_generations
 from ftmi.vectors.validate import validate_vector
 
 __all__ = [
@@ -21,4 +21,5 @@ __all__ = [
     "validate_vector",
     "projection_difference",
     "score_generations",
+    "pooled_generations",
 ]

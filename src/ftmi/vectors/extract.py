@@ -31,6 +31,12 @@ class PersonaVector:
         np.savez(path, name=self.name, v=self.v, norm_pre=self.norm_pre,
                  layer=self.layer, n_pos=self.n_pos, n_neg=self.n_neg)
 
+    @classmethod
+    def load(cls, path: str) -> "PersonaVector":
+        d = np.load(path)
+        return cls(str(d["name"]), d["v"], d["norm_pre"], int(d["layer"]),
+                   int(d["n_pos"]), int(d["n_neg"]))
+
 
 def fit_from_pooled(name: str, pos: np.ndarray, neg: np.ndarray, layer: int) -> PersonaVector:
     """Difference-of-means from already-pooled per-response activations.

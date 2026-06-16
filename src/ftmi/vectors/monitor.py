@@ -10,6 +10,22 @@ from __future__ import annotations
 import numpy as np
 
 
+def pooled_generations(model, prompts, *, max_new_tokens=128, temperature=1.0, seed=0) -> np.ndarray:
+    """Generate one response per (system, user) prompt; return pooled RESPONSE-token
+    activations, shape (n_prompts, n_layers, hidden).
+
+    The substrate for the inference-time detector: project these onto any v_hat at a
+    layer -- `acts[:, layer, :] @ v_hat` gives per-generation <h, v_hat> -- then feed
+    clean vs drifted to `score_generations`. Pooling reuses `model.pooled_response`, so
+    it averages RESPONSE tokens only, matching the fit (see design-decisions.md).
+    Empty generations are dropped (an empty response has nothing to pool).
+    """
+    outs = model.generate_batch([s for s, _ in prompts], [u for _, u in prompts],
+                                max_new_tokens=max_new_tokens, temperature=temperature, seed=seed)
+    return np.stack([model.pooled_response(s, u, rid)
+                     for (s, u), (rid, _txt) in zip(prompts, outs) if rid])
+
+
 def projection_difference(
     dataset_proj: np.ndarray, base_proj: np.ndarray
 ) -> float:
