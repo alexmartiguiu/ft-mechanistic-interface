@@ -19,6 +19,8 @@ optim:
   max_seq_len: 2048
 
 checkpoint:
-  save_every_steps: 200     # standard cadence
+  save_every_steps: null    # null → auto: spaced to yield ~n_checkpoints over the run
+  n_checkpoints: 10         # target number of evenly spaced checkpoints when auto
   monitor_every_steps: 25   # dense projection sampling for the drift monitor
+  log_every_steps: 10       # loss logging cadence
   keep_last: null           # keep all (small adapters)

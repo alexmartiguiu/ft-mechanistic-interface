@@ -3,6 +3,7 @@
     ftmi concepts --data <jsonl> --domain <name>     propose concepts from a dataset
     ftmi vectors  --concepts <yaml> --model <id>      mint + validate concept vectors
     ftmi train    --app <application.yaml>             fine-tune with monitoring/audit
+    ftmi eval     --app <application.yaml>             per-checkpoint eval battery
 """
 from __future__ import annotations
 
@@ -48,27 +49,54 @@ def _cmd_vectors(args) -> None:
     for c in concepts.concepts:
         print(f"  - minting '{c.name}' …", flush=True)
         res = mint_vector(c, model, generator, rollouts=args.rollouts,
-                          do_validate=not args.no_validate)
-        pv, report = res["vector"], res["report"]
+                          do_validate=not args.no_validate, do_probe=not args.no_probe)
+        pv, report, probe = res["vector"], res["report"], res["probe"]
         pv.save(str(out_dir / f"{c.name}.npz"))
+        if probe is not None:
+            probe.save(str(out_dir / f"{c.name}.probe.npz"))
         summary = {"name": c.name, "layer": int(pv.layer), "n_pos": pv.n_pos, "n_neg": pv.n_neg,
                    "selected": report["selected"] if report else None,
-                   "control_selected": res["control"]["selected"] if res["control"] else None}
+                   "control_selected": res["control"]["selected"] if res["control"] else None,
+                   "probe": {"layer": probe.layer, "auroc": probe.auroc} if probe else None}
         (out_dir / f"{c.name}.json").write_text(json.dumps(summary, indent=2))
         sel = summary["selected"]
         print(f"    kept pos={pv.n_pos} neg={pv.n_neg}; "
               f"validated layer={sel['layer'] if sel else pv.layer} "
               f"(trait {sel['mean_trait']:.0f}, +{sel['trait_gain']:.0f} vs base)" if sel
               else f"    kept pos={pv.n_pos} neg={pv.n_neg}; no validated layer (gate did not pass)")
+        if probe is not None:
+            print(f"    probe: layer={probe.layer} held-out AUROC={probe.auroc:.3f}")
     print(f"[vectors] saved -> {out_dir}")
 
 
 def _cmd_train(args) -> None:
+    from ftmi.train.lora import train_lora
+    from ftmi.vectors.extract import PersonaVector
+
+    _load_env()
     cfg = ApplicationConfig.load(args.app)
     print(f"[train] {cfg.name}: model={cfg.lora.model_id}, "
           f"{len(cfg.concepts.concepts)} concepts, monitor={cfg.monitor.get('enabled')}")
-    # load vectors -> train_lora(cfg, vectors)
-    raise SystemExit("not yet implemented — see ftmi.train")
+
+    vec_dir = Path(args.vectors or f"data/{cfg.concepts.domain}/vectors")
+    vectors = []
+    for c in cfg.concepts.concepts:
+        npz = vec_dir / f"{c.name}.npz"
+        if not npz.exists():
+            raise SystemExit(f"missing vector {npz} — run `ftmi vectors` first (or pass --vectors).")
+        vectors.append(PersonaVector.load(str(npz)))
+    print(f"[train] loaded {len(vectors)} vectors from {vec_dir} "
+          f"(layers {[int(v.layer) for v in vectors]})")
+    train_lora(cfg, vectors)
+
+
+def _cmd_eval(args) -> None:
+    from ftmi.eval.harness import run_eval
+
+    _load_env()
+    cfg = ApplicationConfig.load(args.app)
+    run_eval(cfg, resume=not args.no_resume,
+             only_tags=(args.tags.split(",") if args.tags else None))
 
 
 def main(argv=None) -> None:
@@ -90,11 +118,19 @@ def main(argv=None) -> None:
     pv.add_argument("--rollouts", type=int, default=5, help="sampled responses per system-prompt × question")
     pv.add_argument("--out-dir", default=None, help="where to save vectors (default data/<domain>/vectors)")
     pv.add_argument("--no-validate", action="store_true", help="skip the dose-response gate (fit only)")
+    pv.add_argument("--no-probe", action="store_true", help="skip fitting the detection probe")
     pv.set_defaults(func=_cmd_vectors)
 
     pt = sub.add_parser("train", help="fine-tune with drift monitoring")
     pt.add_argument("--app", required=True)
+    pt.add_argument("--vectors", default=None, help="vector dir (default data/<domain>/vectors)")
     pt.set_defaults(func=_cmd_train)
+
+    pe = sub.add_parser("eval", help="run the per-checkpoint eval battery")
+    pe.add_argument("--app", required=True)
+    pe.add_argument("--tags", default=None, help="comma-separated subset of checkpoint tags (e.g. base,final)")
+    pe.add_argument("--no-resume", action="store_true", help="re-run evals even if summaries exist")
+    pe.set_defaults(func=_cmd_eval)
 
     args = p.parse_args(argv)
     args.func(args)

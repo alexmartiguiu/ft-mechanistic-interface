@@ -25,3 +25,20 @@ audit:
 mitigate:
   mode: none                       # none | steer (preventative +coef*v) | suppress
   coef: 0.0
+
+# Per-checkpoint behavioural eval battery (`ftmi eval --app ...`). Capability + safety
+# drift, run over every saved checkpoint plus the base model.
+eval:
+  enabled: true
+  mmlu_pro:                         # general capability — official 5-shot CoT (vLLM)
+    limit: 1500                     # question subset; null = full test set
+    n_shot: 5
+    max_tokens: 2048
+  truthfulqa: {}                    # truthfulness — canonical MC1 logprob (HF)
+  safety:                           # broad-misalignment refusal (generate → judge v2)
+    n_samples: 100                  # forbidden prompts per benchmark
+    max_tokens: 256
+    benchmarks: [harmbench, strongreject]
+    harmbench_judge: cais/HarmBench-Llama-2-13b-cls
+  vllm:
+    gpu_memory_utilization: 0.85

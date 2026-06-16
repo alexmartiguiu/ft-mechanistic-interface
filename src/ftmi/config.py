@@ -63,6 +63,7 @@ class ApplicationConfig:
     monitor: dict = field(default_factory=dict)
     audit: dict = field(default_factory=dict)
     mitigate: dict = field(default_factory=dict)
+    eval: dict = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: str | Path) -> "ApplicationConfig":
@@ -75,4 +76,5 @@ class ApplicationConfig:
             monitor=d.get("monitor", {}),
             audit=d.get("audit", {}),
             mitigate=d.get("mitigate", {}),
+            eval=d.get("eval", {}),
         )

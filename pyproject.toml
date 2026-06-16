@@ -16,6 +16,11 @@ dependencies = [
 [project.optional-dependencies]
 # vector generation uses a frontier LLM as the artifact generator + judge
 generate = ["anthropic>=0.40", "google-genai>=0.3"]
+# checkpoint eval harness: vLLM for MMLU-Pro CoT + safety-response generation,
+# strong-reject for the StrongREJECT compliance classifier. HarmBench judge +
+# TruthfulQA logprob run on the core `transformers` dep.
+# strong-reject = dsbowen's package; provides strong_reject.evaluate.strongreject_finetuned
+eval = ["vllm>=0.6", "strong-reject @ git+https://github.com/dsbowen/strong_reject.git"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.scripts]
@@ -24,6 +29,9 @@ ftmi = "ftmi.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true   # eval extra pulls strong-reject from git
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ftmi"]
