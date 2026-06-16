@@ -18,7 +18,7 @@ import dataclasses
 import numpy as np
 
 from ftmi.steering.hooks import add_steering
-from ftmi.vectors.judge import judge_response
+from ftmi.vectors.judge import judge_batch
 
 NEUTRAL_SYSTEM = "You are a helpful assistant."
 
@@ -31,20 +31,23 @@ def random_like(pv, seed: int):
     return dataclasses.replace(pv, name=f"{pv.name}_random", v=r)
 
 
-def _sweep_layer(pv, model, judge, rubric, questions, layer, coefs, max_new_tokens, coherence_min):
-    """One layer: {coef -> {frac_coherent, mean_trait, mean_coherence}} over `questions`."""
+def _sweep_layer(pv, model, judge, rubric, questions, layer, coefs, max_new_tokens,
+                 coherence_min, judge_concurrency):
+    """One layer: {coef -> {frac_coherent, mean_trait, mean_coherence}} over `questions`.
+
+    Greedy batched generation (so any change is attributable to the steer), parallel judge.
+    """
     by_coef = {}
     for coef in coefs:
         handle = add_steering(model.model, layer, pv.v[layer], coef) if coef else None
         try:
-            scored = [
-                judge_response(judge, rubric, q, model.generate(
-                    NEUTRAL_SYSTEM, q, max_new_tokens=max_new_tokens, temperature=0.0, seed=0)[1])
-                for q in questions
-            ]
+            outs = model.generate_batch([NEUTRAL_SYSTEM] * len(questions), questions,
+                                        max_new_tokens=max_new_tokens, temperature=0.0, seed=0)
         finally:
             if handle is not None:
                 handle.remove()
+        scored = judge_batch(judge, rubric, [(q, txt) for q, (_rid, txt) in zip(questions, outs)],
+                             concurrency=judge_concurrency)
         coherent = [(t, c) for t, c in scored if t is not None and c is not None and c >= coherence_min]
         by_coef[coef] = {
             "frac_coherent": len(coherent) / len(questions),
@@ -56,7 +59,7 @@ def _sweep_layer(pv, model, judge, rubric, questions, layer, coefs, max_new_toke
 
 def validate_vector(pv, model, judge, rubric, questions, *, layers=None,
                     coefs=(0, 8, 16, 32), max_new_tokens=128, coherence_min=50,
-                    coherent_frac_min=0.8) -> dict:
+                    coherent_frac_min=0.8, judge_concurrency=8) -> dict:
     """Dose-response sweep over `layers` × `coefs`; return the grid + the selected layer.
 
     `pv`: fitted PersonaVector (steers with `pv.v[layer]`). `questions`: held-out
@@ -72,7 +75,7 @@ def validate_vector(pv, model, judge, rubric, questions, *, layers=None,
     if layers is None:
         layers = sorted({min(int(n * f), n - 1) for f in (0.4, 0.5, 0.6, 0.7)})
     grid = {L: _sweep_layer(pv, model, judge, rubric, questions, L, coefs,
-                            max_new_tokens, coherence_min) for L in layers}
+                            max_new_tokens, coherence_min, judge_concurrency) for L in layers}
     best = None
     for L in layers:
         base = grid[L].get(0, {}).get("mean_trait", float("nan"))

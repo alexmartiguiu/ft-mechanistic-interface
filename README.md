@@ -81,7 +81,8 @@ ft-mechanistic-interface/
 ├── pyproject.toml                  # one `ftmi` CLI entry point
 ├── docs/
 │   ├── vector-steering.md          # method + citations (read first)
-│   └── design-decisions.md         # open calls, terse
+│   ├── design-decisions.md         # open calls, terse
+│   └── ideas.md                    # parking lot
 ├── configs/                        # a run is a config, not a code edit
 │   ├── applications/               # ONE file per safety-critical app (the unit of work)
 │   │   └── therapist.yaml          #   wires dataset + concepts + lora + monitor/audit/mitigate
@@ -162,6 +163,13 @@ uv run ftmi vectors  --concepts configs/concepts/therapist.yaml --model <base>
 # 2. fine-tune with training-time drift monitoring + dataset audit
 uv run ftmi train    --app configs/applications/therapist.yaml
 ```
+
+## Adding an experiment
+
+Config only, no `src/` edits: drop chat-JSONL at `data/<app>/`, write
+`configs/concepts/<app>.yaml` (or auto-draft with `ftmi concepts`), pick a
+`configs/lora/` recipe, and wire them in `configs/applications/<app>.yaml` — then run the
+three Quickstart commands.
 
 Status: scaffold. The vector pipeline (generate → fit → validate) runs end-to-end; the
 training loop and CLI wiring are being filled in.

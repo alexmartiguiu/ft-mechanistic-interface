@@ -10,6 +10,7 @@ scoring contract can never diverge between fitting a vector and validating it.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 _TEMPLATE = """{rubric}
 
@@ -32,3 +33,19 @@ def judge_response(judge, rubric: str, question: str, response: str) -> tuple[fl
     coh = re.search(r'"?coherence"?\s*[:=]\s*(-?\d+)', raw, re.IGNORECASE)
     return (float(trait.group(1)) if trait else None,
             float(coh.group(1)) if coh else None)
+
+
+def judge_batch(judge, rubric: str, qa_pairs, *, concurrency: int = 8) -> list[tuple]:
+    """Parallel judge over (question, response) pairs -> list of (trait, coherence).
+
+    Errors (rate limits, timeouts) degrade to (None, None) for that item instead of
+    crashing the run — important for long unattended sweeps; the item just drops out.
+    """
+    def _one(qa):
+        try:
+            return judge_response(judge, rubric, qa[0], qa[1])
+        except Exception:
+            return (None, None)
+
+    with ThreadPoolExecutor(max_workers=concurrency) as ex:
+        return list(ex.map(_one, qa_pairs))

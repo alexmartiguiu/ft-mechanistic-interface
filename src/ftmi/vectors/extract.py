@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ftmi.vectors.judge import judge_response
+from ftmi.vectors.judge import judge_batch
 
 
 @dataclass(frozen=True)
@@ -54,36 +54,45 @@ def _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_mi
 
 def fit_vector(name, artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
                temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
-               coherence_min=50, select_layer=None) -> PersonaVector:
+               coherence_min=50, batch_size=32, judge_concurrency=8,
+               select_layer=None) -> PersonaVector:
     """End-to-end Chen fit: generate -> judge-filter -> pool response tokens -> diff-of-means.
 
-    On the BASE `model` (a LocalModel), for each contrastive system-prompt pair and each
-    extraction question, sample `rollouts` responses under the positive and negative
-    instruction; keep coherent responses scoring pos>`pos_threshold` / neg<`neg_threshold`
-    (`judge` via vectors/judge.py); pool the residual stream over RESPONSE tokens at every
-    decoder layer; return the per-layer unit-normalised difference-of-means.
+    Three phases on the BASE `model` (a LocalModel): (1) batched generation of `rollouts`
+    responses per (contrastive system prompt, extraction question); (2) parallel judging
+    for trait + coherence (`judge` via vectors/judge.py); (3) keep coherent responses
+    scoring pos>`pos_threshold` / neg<`neg_threshold`, pool the residual stream over
+    RESPONSE tokens at every decoder layer, and return the per-layer unit-normalised
+    difference-of-means.
 
     `select_layer` defaults to a provisional mid-network layer; the *validated* steering
     layer comes from vectors/validate.py (the §4 dose-response gate) — never trust the
     default for steering.
     """
-    pooled: dict[str, list[np.ndarray]] = {"pos": [], "neg": []}
-    sid = 0
+    qs = artifacts.extraction_questions
+    # 1. GENERATE — batch over questions, for each (system prompt × polarity × rollout).
+    records = []  # (polarity, system, question, resp_ids, text)
+    vi = 0
     for pair in artifacts.system_prompts:
         for polarity in ("pos", "neg"):
             system = pair[polarity]
-            for question in artifacts.extraction_questions:
-                for _ in range(rollouts):
-                    resp_ids, text = model.generate(
-                        system, question, max_new_tokens=max_new_tokens,
-                        temperature=temperature, seed=seed + sid)  # this just calls the model
-                    sid += 1
-                    if not resp_ids:
-                        continue
-                    trait, coherence = judge_response(judge, artifacts.judge_prompt, question, text)
-                    if not _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_min):
-                        continue
-                    pooled[polarity].append(model.pooled_response(system, question, resp_ids))
+            for r in range(rollouts):
+                for i in range(0, len(qs), batch_size):
+                    chunk = qs[i:i + batch_size]
+                    outs = model.generate_batch(
+                        [system] * len(chunk), chunk, max_new_tokens=max_new_tokens,
+                        temperature=temperature, seed=seed + 10000 * vi + 100 * r + i)
+                    records.extend((polarity, system, q, rid, txt)
+                                   for q, (rid, txt) in zip(chunk, outs) if rid)
+            vi += 1
+    # 2. JUDGE — in parallel.
+    scores = judge_batch(judge, artifacts.judge_prompt,
+                         [(rec[2], rec[4]) for rec in records], concurrency=judge_concurrency)
+    # 3. FILTER + POOL.
+    pooled: dict[str, list[np.ndarray]] = {"pos": [], "neg": []}
+    for (polarity, system, question, resp_ids, _text), (trait, coherence) in zip(records, scores):
+        if _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_min):
+            pooled[polarity].append(model.pooled_response(system, question, resp_ids))
     if not pooled["pos"] or not pooled["neg"]:
         raise ValueError(
             f"0 kept on a side (pos={len(pooled['pos'])}, neg={len(pooled['neg'])}) — "

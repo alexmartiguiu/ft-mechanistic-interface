@@ -81,6 +81,34 @@ class LocalModel:
         return resp_ids, self.tokenizer.decode(resp_ids, skip_special_tokens=True)
 
     @torch.no_grad()
+    def generate_batch(self, systems: list[str], users: list[str], *, max_new_tokens: int = 128,
+                       temperature: float = 1.0, seed: int = 0) -> list[tuple[list[int], str]]:
+        """Left-padded batched generation; returns [(response ids, text), ...] per prompt.
+
+        Left padding makes every prompt's generation start at the same index, so slicing
+        `[:, max_len:]` recovers each response cleanly (same approach as BAEM _sample_batch).
+        """
+        prompts = [self._prompt_ids(s, u) for s, u in zip(systems, users)]
+        pad = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
+        eos = self.tokenizer.eos_token_id
+        max_len = max(len(p) for p in prompts)
+        input_ids = torch.tensor([[pad] * (max_len - len(p)) + p for p in prompts], device=self.device)
+        attn = torch.tensor([[0] * (max_len - len(p)) + [1] * len(p) for p in prompts], device=self.device)
+        kwargs = dict(max_new_tokens=max_new_tokens, pad_token_id=pad)
+        if temperature > 0:
+            kwargs.update(do_sample=True, temperature=temperature, top_p=0.95)
+        else:
+            kwargs.update(do_sample=False)
+        torch.manual_seed(seed)
+        out = self.model.generate(input_ids=input_ids, attention_mask=attn, **kwargs)
+        results = []
+        for row in out[:, max_len:].tolist():
+            if eos is not None and eos in row:
+                row = row[:row.index(eos)]
+            results.append((row, self.tokenizer.decode(row, skip_special_tokens=True)))
+        return results
+
+    @torch.no_grad()
     def pooled_response(self, system: str, user: str, resp_ids: list[int]) -> np.ndarray:
         """Mean residual stream over the RESPONSE tokens at every decoder layer.
 
