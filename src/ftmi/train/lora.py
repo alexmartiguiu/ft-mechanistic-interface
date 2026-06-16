@@ -138,32 +138,52 @@ def _make_monitor_callback(monitor: DriftMonitor):
     return _DriftCallback()
 
 
-def _run_audit(model, tokenizer, rows, vectors, max_seq_len, percentile) -> dict:
+def _run_audit(model, tokenizer, rows, vectors, max_seq_len, percentile, batch_size=32) -> dict:
     """Lightweight pre-finetune dataset audit: per-sample projection onto each vector,
     flag the top `percentile`. Coarse (whole-sequence mean projection); the response-token
     masked, base-differenced variant (Chen §6 `projection_difference`) is the 3a extension.
+
+    Batched: rows are tokenized with padding and run `batch_size` at a time, with the
+    projection mean taken over real (attention-mask) tokens only — pad tokens never enter
+    the average, so this matches the per-row ProjectionReader path but ~`batch_size`x faster.
+    A single forward serves every vector (hidden states for all layers come from one pass).
     """
     import numpy as np
     import torch
 
-    from ftmi.steering.hooks import ProjectionReader
-
     out: dict = {}
     device = next(model.parameters()).device
-    for v in vectors:
-        reader = ProjectionReader(model, int(v.layer), v.unit())
-        projs: list[float] = []
+    units = {v.name: torch.as_tensor(v.unit(), dtype=torch.float32, device=device)
+             for v in vectors}
+    projs: dict[str, list[float]] = {v.name: [] for v in vectors}
+
+    texts = [tokenizer.apply_chat_template(r["messages"], tokenize=False,
+                                           add_generation_prompt=False) for r in rows]
+    was_training = model.training
+    model.eval()
+    # Right-pad: real tokens lead, so the default arange position_ids stay correct for them
+    # and (attention-masked) pad tokens neither corrupt real-token states nor enter the mean.
+    prev_side = tokenizer.padding_side
+    tokenizer.padding_side = "right"
+    try:
         with torch.no_grad():
-            for r in rows:
-                text = tokenizer.apply_chat_template(r["messages"], tokenize=False,
-                                                     add_generation_prompt=False)
-                enc = tokenizer(text, return_tensors="pt", truncation=True,
-                                max_length=max_seq_len).to(device)
-                reader.reset()
-                model(**enc)
-                projs.append(reader.mean())
-        reader.remove()
-        arr = np.asarray(projs, dtype=np.float64)
+            for s in range(0, len(texts), batch_size):
+                enc = tokenizer(texts[s:s + batch_size], return_tensors="pt", padding=True,
+                                truncation=True, max_length=max_seq_len).to(device)
+                hs = model(**enc, output_hidden_states=True, use_cache=False).hidden_states
+                m = enc["attention_mask"].float()              # (B, S) real-token mask
+                denom = m.sum(1).clamp(min=1.0)                # (B,)
+                for v in vectors:
+                    h = hs[int(v.layer) + 1].float()          # +1: skip the embedding layer
+                    proj = h @ units[v.name]                   # (B, S) = <h, v̂> per token
+                    projs[v.name].extend(((proj * m).sum(1) / denom).cpu().tolist())
+    finally:
+        tokenizer.padding_side = prev_side
+        if was_training:
+            model.train()
+
+    for v in vectors:
+        arr = np.asarray(projs[v.name], dtype=np.float64)
         thresh = float(np.percentile(arr, percentile)) if arr.size else float("nan")
         flagged = [int(i) for i in np.where(arr > thresh)[0]]
         out[v.name] = {"mean_projection": float(arr.mean()) if arr.size else None,
@@ -188,7 +208,7 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
     from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
-        DataCollatorForLanguageModeling,
+        DataCollatorForSeq2Seq,
         Trainer,
         TrainingArguments,
     )
@@ -208,18 +228,32 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
 
     rows = load_chat_dataset(cfg.data["path"], cfg.data.get("text_field", "messages"))
     train_rows, valid_rows = train_valid_split(rows, float(cfg.data.get("valid_fraction", 0.0) or 0.0))
-    max_seq_len = int(optim.get("max_seq_len", 2048))
+    # Per-application override (data.max_seq_len) wins over the recipe default. 2048 is the
+    # EM field standard (Betley et al. open_models; Chen persona_vectors; Model-Organisms-for-EM).
+    max_seq_len = int(cfg.data.get("max_seq_len") or optim.get("max_seq_len", 2048))
 
-    def _render(rs):
-        return [{"text": tokenizer.apply_chat_template(r["messages"], tokenize=False,
-                                                       add_generation_prompt=False)} for r in rs]
+    def _encode(messages: list) -> dict:
+        """Completion-only encoding: prompt tokens masked to -100 so loss falls on the
+        assistant turn only — matches Betley et al.'s `train_on_responses_only`."""
+        full = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+        prompt = tokenizer.apply_chat_template(messages[:-1], tokenize=False, add_generation_prompt=True)
+        ids = tokenizer(full)["input_ids"]
+        p_len = min(len(tokenizer(prompt)["input_ids"]), len(ids))
+        return {"input_ids": ids, "attention_mask": [1] * len(ids),
+                "labels": [-100] * p_len + ids[p_len:]}
 
-    def _tok(batch):
-        return tokenizer(batch["text"], truncation=True, max_length=max_seq_len, padding=False)
+    def _build(rs):
+        """Encode rows, DROPPING any longer than `max_seq_len`: right-truncation would eat
+        the completion that carries the loss, so we filter rather than clip. -> (rows, dropped)."""
+        kept = [e for e in (_encode(r["messages"]) for r in rs) if len(e["input_ids"]) <= max_seq_len]
+        return kept, len(rs) - len(kept)
 
-    train_ds = Dataset.from_list(_render(train_rows)).map(_tok, batched=True, remove_columns=["text"])
-    valid_ds = (Dataset.from_list(_render(valid_rows)).map(_tok, batched=True, remove_columns=["text"])
-                if valid_rows else None)
+    train_enc, n_drop = _build(train_rows)
+    valid_enc, n_drop_v = _build(valid_rows) if valid_rows else ([], 0)
+    train_ds = Dataset.from_list(train_enc)
+    valid_ds = Dataset.from_list(valid_enc) if valid_enc else None
+    print(f"[train] completion-only loss; max_seq_len={max_seq_len}; "
+          f"dropped {n_drop} train / {n_drop_v} valid rows over length", flush=True)
 
     # 2. MODEL + LoRA.
     dtype = getattr(torch, lora.dtype, torch.bfloat16)
@@ -267,7 +301,7 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
           f"save every {save_every} → ~{total_steps // save_every} checkpoints → {out_dir}",
           flush=True)
 
-    base_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    base_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, label_pad_token_id=-100, padding=True)
     if "gemma" in lora.model_id.lower():
         def collator(features):  # Gemma-3 needs token_type_ids during text training.
             batch = base_collator(features)

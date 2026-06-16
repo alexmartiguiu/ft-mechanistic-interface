@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 
 
-def pooled_generations(model, prompts, *, max_new_tokens=128, temperature=1.0, seed=0) -> np.ndarray:
+def pooled_generations(model, prompts, *, max_new_tokens=1000, temperature=1.0, seed=0) -> np.ndarray:
     """Generate one response per (system, user) prompt; return pooled RESPONSE-token
     activations, shape (n_prompts, n_layers, hidden).
 

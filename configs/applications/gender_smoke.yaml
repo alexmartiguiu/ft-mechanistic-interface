@@ -33,7 +33,7 @@ eval:
   truthfulqa: {}
   safety:
     n_samples: 16
-    max_tokens: 200
+    max_tokens: 512                         # match HarmBench official N=512
     benchmarks: [strongreject, harmbench]
   vllm:
     gpu_memory_utilization: 0.6

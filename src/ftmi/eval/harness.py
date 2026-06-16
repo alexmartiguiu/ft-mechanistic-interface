@@ -68,7 +68,7 @@ def run_eval(cfg: ApplicationConfig, *, resume: bool = True,
                 from ftmi.eval.safety import generate_safety
                 generate_safety(engine, adapter, app, tag, benchmarks=pending,
                                 n_samples=int(safety.get("n_samples", 100)),
-                                max_tokens=int(safety.get("max_tokens", 256)))
+                                max_tokens=int(safety.get("max_tokens", 512)))
         engine.shutdown()
         _free_cuda()
 

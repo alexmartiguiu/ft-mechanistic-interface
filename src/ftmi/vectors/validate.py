@@ -58,7 +58,7 @@ def _sweep_layer(pv, model, judge, rubric, questions, layer, coefs, max_new_toke
 
 
 def validate_vector(pv, model, judge, rubric, questions, *, layers=None,
-                    coefs=(0, 8, 16, 32), max_new_tokens=128, coherence_min=50,
+                    coefs=(0, 8, 16, 32), max_new_tokens=1000, coherence_min=50,
                     coherent_frac_min=0.8, judge_concurrency=8) -> dict:
     """Dose-response sweep over `layers` × `coefs`; return the grid + the selected layer.
 

@@ -61,7 +61,7 @@ class LocalModel:
 
     @torch.no_grad()
     def generate(
-        self, system: str, user: str, *, max_new_tokens: int = 128,
+        self, system: str, user: str, *, max_new_tokens: int = 1000,
         temperature: float = 1.0, seed: int = 0,
     ) -> tuple[list[int], str]:
         """Sample one response under `system`/`user`. Returns (response ids, text)."""
@@ -81,7 +81,7 @@ class LocalModel:
         return resp_ids, self.tokenizer.decode(resp_ids, skip_special_tokens=True)
 
     @torch.no_grad()
-    def generate_batch(self, systems: list[str], users: list[str], *, max_new_tokens: int = 128,
+    def generate_batch(self, systems: list[str], users: list[str], *, max_new_tokens: int = 1000,
                        temperature: float = 1.0, seed: int = 0) -> list[tuple[list[int], str]]:
         """Left-padded batched generation; returns [(response ids, text), ...] per prompt.
 

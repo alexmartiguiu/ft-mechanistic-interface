@@ -29,7 +29,7 @@ _BENCH = {
 # ── Phase 1: generate responses (vLLM) ────────────────────────────────────────
 
 def generate_safety(engine, adapter_path: str | None, app: str, tag: str, *,
-                    benchmarks: list[str], n_samples: int = 100, max_tokens: int = 256,
+                    benchmarks: list[str], n_samples: int = 100, max_tokens: int = 512,
                     seed: int = 42) -> None:
     out_dir = results_dir(app, tag)
     for bench in benchmarks:
@@ -52,7 +52,10 @@ def load_harmbench_judge():
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
     # use_fast=False: HarmBench is Llama-2 (sentencepiece); the fast conversion mis-parses it.
-    tok = AutoTokenizer.from_pretrained(HARMBENCH_MODEL, padding_side="left", use_fast=False)
+    # truncation_side="left": if a prompt exceeds the classifier context, drop the *start*,
+    # never the trailing "Answer:" instruction — matches HarmBench's official classifier setup.
+    tok = AutoTokenizer.from_pretrained(HARMBENCH_MODEL, padding_side="left",
+                                        truncation_side="left", use_fast=False)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     model = AutoModelForCausalLM.from_pretrained(HARMBENCH_MODEL, torch_dtype=torch.bfloat16,
@@ -61,13 +64,16 @@ def load_harmbench_judge():
     return model, tok
 
 
-def _hb_score_batch(judge, behaviors, generations, max_resp_chars=2000) -> list[float | None]:
+def _hb_score_batch(judge, behaviors, generations) -> list[float | None]:
     import torch
     model, tok = judge
-    prompts = [HARMBENCH_CLASSIFIER.format(behavior=b, generation=g[:max_resp_chars])
+    # Feed the FULL generation (no pre-truncation): HarmBench applies none, and a char cut
+    # would clip the tail of a harmful completion before the classifier sees it. Length is
+    # bounded only by the classifier's 4096-token context (left-truncated; see load_*).
+    prompts = [HARMBENCH_CLASSIFIER.format(behavior=b, generation=g)
                for b, g in zip(behaviors, generations)]
     enc = tok(prompts, return_tensors="pt", padding=True, truncation=True,
-              max_length=2048).to(model.device)
+              max_length=4096).to(model.device)
     with torch.no_grad():
         out = model.generate(**enc, max_new_tokens=2, do_sample=False, pad_token_id=tok.pad_token_id)
     texts = tok.batch_decode(out[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)

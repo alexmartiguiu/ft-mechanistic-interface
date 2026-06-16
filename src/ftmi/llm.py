@@ -31,7 +31,7 @@ def _json_schema(schema) -> dict:
     return schema.model_json_schema() if hasattr(schema, "model_json_schema") else schema
 
 
-def claude_generator(model: str | None = None, max_tokens: int = 4096) -> Generator:
+def claude_generator(model: str | None = None, max_tokens: int = 8000) -> Generator:
     """`generator(prompt, *, schema=None) -> str` via the Anthropic API. Needs ANTHROPIC_API_KEY."""
     from anthropic import Anthropic
 
@@ -57,9 +57,12 @@ def gemini_generator(model: str | None = None) -> Generator:
     model = model or DEFAULT_MODEL["gemini"]
 
     def _generate(prompt: str, *, schema=None) -> str:
-        config = (types.GenerateContentConfig(
-            response_mime_type="application/json", response_schema=schema)
-            if schema is not None else None)
+        # max_output_tokens=8000 matches Chen's artifact-generation cap and aligns Gemini
+        # with the Anthropic backend (previously uncapped — see docs/length_cap_question.md A).
+        config = types.GenerateContentConfig(
+            max_output_tokens=8000,
+            **({"response_mime_type": "application/json", "response_schema": schema}
+               if schema is not None else {}))
         return client.models.generate_content(model=model, contents=prompt, config=config).text
 
     return _generate
