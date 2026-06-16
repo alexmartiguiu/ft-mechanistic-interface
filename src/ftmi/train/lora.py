@@ -24,35 +24,89 @@ from ftmi.vectors.extract import PersonaVector
 
 @dataclass
 class DriftMonitor:
-    """Training-callback state + the seam the 3a monitoring code fills.
+    """Training-callback state + the §3a P1 read.
 
-    The load-bearing P1 signal — projection shifts toward a concept before the
-    behavioural metric does, and stays flat on neutral-data controls
-    (docs/vector-steering.md §3a). The projection read itself is intentionally left as
-    `on_step` for the 3a implementation; the default only records which steps fired so
-    the attach point is verifiable.
+    Every `every_steps`, run a fixed probe batch through the current model and record,
+    per concept, the mean RESPONSE-token signal at the concept's layer two ways:
+      - `projection`: ⟨h, v̂⟩ onto the diff-of-means steering direction (the cheap read).
+      - `probe_prob`: σ(probe·h) from the logistic probe (the higher-resolution read).
+    The load-bearing P1 signal — both shift toward a concept before the behavioural
+    metric does, and stay flat on neutral-data controls (docs/vector-steering.md §3a).
+
+    Pools over RESPONSE tokens only (slices `[prompt_len:]`, like model.pooled_response),
+    NOT the whole sequence — see design-decisions.md on the prompt-token dilution gotcha.
     """
     vectors: list[PersonaVector]
     every_steps: int
     probe_batch: list = field(default_factory=list)
+    tokenizer: object = None
+    probes: list = None
+    max_seq_len: int = 2048
     trajectory: dict = field(default_factory=dict)
     fired_steps: list = field(default_factory=list)
 
+    def _examples(self):
+        """Render probe_batch messages -> [(input_ids (1,L), response_start)], cached."""
+        import torch
+
+        if getattr(self, "_cache", None) is not None:
+            return self._cache
+        exs = []
+        for msgs in self.probe_batch:
+            try:
+                prompt = self.tokenizer.apply_chat_template(
+                    msgs[:-1], tokenize=False, add_generation_prompt=True)
+                full = self.tokenizer.apply_chat_template(
+                    msgs, tokenize=False, add_generation_prompt=False)
+                ids = self.tokenizer.encode(full, truncation=True, max_length=self.max_seq_len)
+                p_len = min(len(self.tokenizer.encode(prompt)), len(ids) - 1)
+                exs.append((torch.tensor([ids]), max(0, p_len)))
+            except Exception:
+                continue
+        self._cache = exs
+        return exs
+
     def on_step(self, step: int, model) -> None:
-        """SEAM (3a): called every `every_steps`. Fill with ProjectionReader reads.
+        """Called every `every_steps`: record per-concept projection + probe trajectory."""
+        try:
+            import numpy as np
+            import torch
 
-        Reference implementation the 3a code should drop in here, per vector `v`:
+            if model is None or self.tokenizer is None:
+                self.fired_steps.append(step)
+                return
+            examples = self._examples()
+            probes = self.probes or [None] * len(self.vectors)
+            needed = sorted({int(v.layer) for v in self.vectors}
+                            | {int(p.layer) for p in probes if p is not None})
+            if not examples or not needed:
+                self.fired_steps.append(step)
+                return
 
-            from ftmi.steering.hooks import ProjectionReader
-            pr = ProjectionReader(model, v.layer, v.unit())
-            # ... run self.probe_batch through `model` (no grad) ...
-            self.trajectory.setdefault(v.name, []).append((step, pr.mean()))
-            pr.remove()
+            device = next(model.parameters()).device
+            was_training = model.training
+            model.eval()
+            acts = {L: [] for L in needed}
+            with torch.no_grad():
+                for ids, p_len in examples:
+                    out = model(input_ids=ids.to(device), output_hidden_states=True, use_cache=False)
+                    for L in needed:
+                        h = out.hidden_states[L + 1][0, p_len:, :]   # +1: drop embedding layer
+                        if h.shape[0] == 0:
+                            h = out.hidden_states[L + 1][0, -1:, :]
+                        acts[L].append(h.float().mean(0).cpu().numpy())
+            if was_training:
+                model.train()
 
-        The default below is a no-op that just records the step, so the callback
-        cadence can be tested without the projection logic.
-        """
-        self.fired_steps.append(step)
+            for v, p in zip(self.vectors, probes):
+                A = np.stack(acts[int(v.layer)])
+                entry = {"step": step, "projection": float((A @ v.unit()).mean())}
+                if p is not None:
+                    entry["probe_prob"] = float(np.mean(p.score(np.stack(acts[int(p.layer)]))))
+                self.trajectory.setdefault(v.name, []).append(entry)
+            self.fired_steps.append(step)
+        except Exception as e:  # a monitor hiccup must never kill an unattended run
+            print(f"[monitor] on_step({step}) failed: {e!r}", flush=True)
 
 
 def _resolve_save_steps(n_train, batch_size, grad_accum, epochs, max_steps, n_checkpoints,
@@ -120,11 +174,13 @@ def _run_audit(model, tokenizer, rows, vectors, max_seq_len, percentile) -> dict
     return out
 
 
-def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector]) -> Path:
+def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: list | None = None) -> Path:
     """Fine-tune per `cfg`, with monitoring / audit / preventative steering attached by config.
 
-    Returns the checkpoint output dir (`data/<cfg.name>/checkpoints/`). HF writes
-    `checkpoint-<step>/` subdirs, each a loadable PEFT adapter for the eval harness.
+    `probes` (optional, aligned with `vectors`; entries may be None) adds the logistic
+    probe read to the drift trajectory alongside the projection. Returns the checkpoint
+    output dir (`data/<cfg.name>/checkpoints/`). HF writes `checkpoint-<step>/` subdirs,
+    each a loadable PEFT adapter for the eval harness.
     """
     import torch
     from datasets import Dataset
@@ -250,6 +306,9 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector]) -> Path:
             vectors=vectors,
             every_steps=int(ckpt.get("monitor_every_steps", save_every) or save_every),
             probe_batch=[r["messages"] for r in (valid_rows or train_rows)[:16]],
+            tokenizer=tokenizer,
+            probes=probes,
+            max_seq_len=max_seq_len,
         )
         callbacks.append(_make_monitor_callback(monitor))
 

@@ -15,10 +15,17 @@ import torch
 def _layer_module(model, layer: int):
     """Decoder block whose output is the residual stream at `layer`.
 
-    Works for the HF Qwen/Llama layout (`model.model.layers[layer]`); override for
-    other architectures.
+    Robust to both a plain HF CausalLM (`model.model.layers`) and a PEFT-wrapped model
+    (an extra `.model` level): unwrap PEFT, then descend to whichever object holds
+    `.layers` (Qwen/Llama layout). Override for other architectures.
     """
-    return model.model.layers[layer]
+    m = model.get_base_model() if hasattr(model, "get_base_model") else model
+    for holder in (getattr(m, "model", None),
+                   getattr(getattr(m, "model", None), "model", None),
+                   m):
+        if holder is not None and hasattr(holder, "layers"):
+            return holder.layers[layer]
+    raise AttributeError(f"can't locate decoder layers on {type(model).__name__}")
 
 
 def _as_tensor(v_hat, ref: torch.Tensor) -> torch.Tensor:

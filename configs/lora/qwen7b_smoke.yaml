@@ -1,0 +1,27 @@
+# Fast smoke recipe for the full-pipeline integration test (NOT a real run).
+# Tiny: ~24 update steps, 3 checkpoints, dense monitoring — exercises every stage quickly.
+
+model_id: Qwen/Qwen2.5-7B-Instruct
+dtype: bfloat16
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: [q_proj, v_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 1
+  batch_size: 1
+  grad_accum: 4
+  warmup_ratio: 0.0
+  max_seq_len: 1024
+  max_steps: 24
+
+checkpoint:
+  save_every_steps: 8       # -> checkpoints at 8, 16, 24 (3 checkpoints)
+  n_checkpoints: 3
+  monitor_every_steps: 8    # projection + probe read at each checkpoint
+  log_every_steps: 4
+  keep_last: null

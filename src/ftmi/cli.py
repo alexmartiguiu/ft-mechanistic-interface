@@ -72,6 +72,7 @@ def _cmd_vectors(args) -> None:
 def _cmd_train(args) -> None:
     from ftmi.train.lora import train_lora
     from ftmi.vectors.extract import PersonaVector
+    from ftmi.vectors.probe import Probe
 
     _load_env()
     cfg = ApplicationConfig.load(args.app)
@@ -79,15 +80,17 @@ def _cmd_train(args) -> None:
           f"{len(cfg.concepts.concepts)} concepts, monitor={cfg.monitor.get('enabled')}")
 
     vec_dir = Path(args.vectors or f"data/{cfg.concepts.domain}/vectors")
-    vectors = []
+    vectors, probes = [], []
     for c in cfg.concepts.concepts:
         npz = vec_dir / f"{c.name}.npz"
         if not npz.exists():
             raise SystemExit(f"missing vector {npz} — run `ftmi vectors` first (or pass --vectors).")
         vectors.append(PersonaVector.load(str(npz)))
+        probe_npz = vec_dir / f"{c.name}.probe.npz"
+        probes.append(Probe.load(str(probe_npz)) if probe_npz.exists() else None)
     print(f"[train] loaded {len(vectors)} vectors from {vec_dir} "
-          f"(layers {[int(v.layer) for v in vectors]})")
-    train_lora(cfg, vectors)
+          f"(layers {[int(v.layer) for v in vectors]}; probes {sum(p is not None for p in probes)})")
+    train_lora(cfg, vectors, probes=probes)
 
 
 def _cmd_eval(args) -> None:

@@ -1,0 +1,40 @@
+# Full-pipeline integration test (NOT a real experiment): reuses the already-fitted
+# gender_bias vector + probe (data/gender/vectors/), trains a tiny LoRA with drift
+# monitoring, and runs a small per-checkpoint eval battery. Exercises every stage end
+# to end fast. `ftmi train --app ...` then `ftmi eval --app ...`.
+
+name: gender_smoke
+
+lora: configs/lora/qwen7b_smoke.yaml
+concepts: configs/concepts/gender.yaml      # domain gender -> vectors from data/gender/vectors
+data:
+  path: data/gender/sft.jsonl               # small synthetic chat set
+  text_field: messages
+  valid_fraction: 0.1
+
+monitor:
+  enabled: true                             # P1: projection + probe per checkpoint
+  layer: auto
+
+audit:
+  enabled: true                             # P0: pre-train projection audit
+  flag_percentile: 95
+
+mitigate:
+  mode: none
+  coef: 0.0
+
+eval:
+  enabled: true
+  mmlu_pro:
+    limit: 40                               # tiny subset for the smoke test
+    n_shot: 5
+    max_tokens: 1024
+  truthfulqa: {}
+  safety:
+    n_samples: 16
+    max_tokens: 200
+    benchmarks: [strongreject, harmbench]
+  vllm:
+    gpu_memory_utilization: 0.6
+    max_model_len: 4096
