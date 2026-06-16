@@ -1,4 +1,9 @@
-from ftmi.vectors.extract import PersonaVector, fit_from_pooled, fit_vector
+from ftmi.vectors.extract import (
+    PersonaVector,
+    fit_from_pooled,
+    fit_vector,
+    gather_pooled,
+)
 from ftmi.vectors.generate import (
     ConceptArtifacts,
     concepts_to_yaml,
@@ -7,6 +12,7 @@ from ftmi.vectors.generate import (
 )
 from ftmi.vectors.judge import judge_response
 from ftmi.vectors.monitor import pooled_generations, projection_difference, score_generations
+from ftmi.vectors.probe import Probe, fit_probe_from_pooled
 from ftmi.vectors.validate import validate_vector
 
 __all__ = [
@@ -17,6 +23,9 @@ __all__ = [
     "PersonaVector",
     "fit_from_pooled",
     "fit_vector",
+    "gather_pooled",
+    "Probe",
+    "fit_probe_from_pooled",
     "judge_response",
     "validate_vector",
     "projection_difference",

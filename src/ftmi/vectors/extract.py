@@ -58,22 +58,22 @@ def _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_mi
     return trait > pos_threshold if polarity == "pos" else trait < neg_threshold
 
 
-def fit_vector(name, artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
-               temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
-               coherence_min=50, batch_size=32, judge_concurrency=8,
-               select_layer=None) -> PersonaVector:
-    """End-to-end Chen fit: generate -> judge-filter -> pool response tokens -> diff-of-means.
+def gather_pooled(artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
+                  temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
+                  coherence_min=50, batch_size=32, judge_concurrency=8
+                  ) -> tuple[np.ndarray, np.ndarray]:
+    """Generate -> judge-filter -> pool RESPONSE tokens; return (pos, neg) activations.
 
-    Three phases on the BASE `model` (a LocalModel): (1) batched generation of `rollouts`
-    responses per (contrastive system prompt, extraction question); (2) parallel judging
-    for trait + coherence (`judge` via vectors/judge.py); (3) keep coherent responses
-    scoring pos>`pos_threshold` / neg<`neg_threshold`, pool the residual stream over
-    RESPONSE tokens at every decoder layer, and return the per-layer unit-normalised
-    difference-of-means.
+    The shared front half of every concept artefact, on the BASE `model` (a LocalModel):
+    (1) batched generation of `rollouts` responses per (contrastive system prompt,
+    extraction question); (2) parallel judging for trait + coherence (`judge` via
+    vectors/judge.py); (3) keep coherent responses scoring pos>`pos_threshold` /
+    neg<`neg_threshold`, pool the residual stream over RESPONSE tokens at every layer.
 
-    `select_layer` defaults to a provisional mid-network layer; the *validated* steering
-    layer comes from vectors/validate.py (the §4 dose-response gate) — never trust the
-    default for steering.
+    Returns `pos`, `neg` each (n_responses, n_layers, hidden). This labelled contrastive
+    set feeds BOTH operations on the residual stream: diff-of-means (`fit_from_pooled`,
+    the steering *write*) and the logistic probe (`probe.fit_probe_from_pooled`, the
+    detection *read*) — same data, different fit.
     """
     qs = artifacts.extraction_questions
     # 1. GENERATE — batch over questions, for each (system prompt × polarity × rollout).
@@ -104,10 +104,30 @@ def fit_vector(name, artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
             f"0 kept on a side (pos={len(pooled['pos'])}, neg={len(pooled['neg'])}) — "
             "cannot fit. Loosen pos/neg thresholds, raise rollouts, or check that the "
             "artifacts actually elicit judge-detectable trait expression.")
-    pos = np.stack(pooled["pos"])
-    neg = np.stack(pooled["neg"])
-    # Provisional layer = mid-network (docs/vector-steering.md §1). Peak pre-norm is NOT
-    # used: residual norm grows monotonically with depth, so it degenerately picks the
-    # last layer (a poor steering site). validate.py selects the real layer.
-    layer = pos.shape[1] // 2 if select_layer is None else int(select_layer)
+    return np.stack(pooled["pos"]), np.stack(pooled["neg"])
+
+
+def provisional_layer(n_layers: int) -> int:
+    """Mid-network default (docs/vector-steering.md §1). Peak pre-norm is NOT used:
+    residual norm grows monotonically with depth, so it degenerately picks the last
+    layer (a poor steering site). validate.py selects the real layer empirically."""
+    return n_layers // 2
+
+
+def fit_vector(name, artifacts, model, judge, *, rollouts=5, max_new_tokens=128,
+               temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
+               coherence_min=50, batch_size=32, judge_concurrency=8,
+               select_layer=None) -> PersonaVector:
+    """End-to-end Chen fit: gather pooled contrastive activations -> diff-of-means.
+
+    `select_layer` defaults to the provisional mid-network layer; the *validated*
+    steering layer comes from vectors/validate.py (the §4 dose-response gate) — never
+    trust the default for steering.
+    """
+    pos, neg = gather_pooled(
+        artifacts, model, judge, rollouts=rollouts, max_new_tokens=max_new_tokens,
+        temperature=temperature, seed=seed, pos_threshold=pos_threshold,
+        neg_threshold=neg_threshold, coherence_min=coherence_min,
+        batch_size=batch_size, judge_concurrency=judge_concurrency)
+    layer = provisional_layer(pos.shape[1]) if select_layer is None else int(select_layer)
     return fit_from_pooled(name, pos, neg, layer)
