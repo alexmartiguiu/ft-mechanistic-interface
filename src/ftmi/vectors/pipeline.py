@@ -16,7 +16,10 @@ from ftmi.vectors.validate import random_like, validate_vector
 def mint_vector(concept, model, generator, *, rollouts=5, do_validate=True, do_probe=True,
                 eval_questions=None, layers=None, coefs=(0, 8, 16, 32),
                 control_seed=42) -> dict:
-    """Returns {artifacts, vector, probe, report, control}. On a passing dose-response
+    """
+    * End-to-end orchestrator that produces ("mints") one concept's persona/steering vector *
+
+    Returns {artifacts, vector, probe, report, control}. On a passing dose-response
     gate the returned vector's `.layer` is set to the validated layer; otherwise it keeps
     the provisional mid-network default. `control` is the same gate on a random direction.
 

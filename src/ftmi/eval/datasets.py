@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ftmi.eval.common import EVAL_DIR, iter_jsonl, write_jsonl
+from ftmi.prompts import MMLU_HEADER
 
 LETTERS = "ABCDEFGHIJ"
 
@@ -92,9 +93,7 @@ def _format_mmlu_example(row: dict, *, with_answer: bool) -> str:
 def build_mmlu_prompt(test_row: dict, fewshot: list[dict], n_shot: int) -> str:
     """Official MMLU-Pro 5-shot CoT prompt: per-category instruction + exemplars + question."""
     subject = test_row["category"]
-    head = (f"The following are multiple choice questions (with answers) about {subject}. "
-            'Think step by step and then output the answer in the format of '
-            '"The answer is (X)" at the end.\n\n')
+    head = MMLU_HEADER.format(subject=subject) + "\n\n"
     shots = "".join(_format_mmlu_example(ex, with_answer=True) for ex in fewshot[:n_shot])
     return head + shots + _format_mmlu_example(test_row, with_answer=False)
 

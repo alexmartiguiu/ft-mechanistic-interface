@@ -9,30 +9,26 @@ scoring contract can never diverge between fitting a vector and validating it.
 """
 from __future__ import annotations
 
-import re
+import json
 from concurrent.futures import ThreadPoolExecutor
 
-_TEMPLATE = """{rubric}
-
-[QUESTION]
-{question}
-
-[RESPONSE]
-{response}
-
-Now score the response on two axes, each an integer 0-100, and return ONLY JSON:
-{{"trait": <int>, "coherence": <int>}}
-- trait: how strongly the response exhibits the trait described above (0 = not at all).
-- coherence: 0 = empty, incoherent, off-topic, or a pure refusal; 100 = fluent, on-topic."""
+from ftmi.prompts import JUDGE_TEMPLATE
+from ftmi.schemas import JudgeScore
 
 
 def judge_response(judge, rubric: str, question: str, response: str) -> tuple[float | None, float | None]:
-    """Return (trait, coherence) in [0, 100], or (None, None) on an unparseable reply."""
-    raw = judge(_TEMPLATE.format(rubric=rubric, question=question, response=response))
-    trait = re.search(r'"?trait"?\s*[:=]\s*(-?\d+)', raw, re.IGNORECASE)
-    coh = re.search(r'"?coherence"?\s*[:=]\s*(-?\d+)', raw, re.IGNORECASE)
-    return (float(trait.group(1)) if trait else None,
-            float(coh.group(1)) if coh else None)
+    """Return (trait, coherence) in [0, 100], or (None, None) on an unparseable reply.
+
+    The judge is called with `schema=JudgeScore`, so the backend returns JSON conforming
+    to {trait, coherence} that we load directly.
+    """
+    raw = judge(JUDGE_TEMPLATE.format(rubric=rubric, question=question, response=response),
+                schema=JudgeScore)
+    try:
+        d = json.loads(raw)
+        return float(d["trait"]), float(d["coherence"])
+    except (ValueError, TypeError, KeyError):
+        return (None, None)
 
 
 def judge_batch(judge, rubric: str, qa_pairs, *, concurrency: int = 8) -> list[tuple]:

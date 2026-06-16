@@ -97,7 +97,11 @@ ft-mechanistic-interface/
 ├── src/ftmi/                       # organised by FUNCTION, never per-app (DRY)
 │   ├── cli.py                      # thin entry points; no logic
 │   ├── config.py                   # typed config loading (YAML → dataclasses)
-│   ├── llm.py                      # API backend: frontier LLM (artifact author + judge)
+│   ├── llm.py                      # API backend: frontier LLM (artifact author + judge), structured-output aware
+│   ├── schemas.py                  # pydantic response schemas → provider structured outputs
+│   ├── prompts/                    # EVERY hardcoded prompt, as importable variables
+│   │   ├── vectors.py              #   META_PROMPT, PROPOSE_PROMPT, JUDGE_TEMPLATE
+│   │   └── eval.py                 #   HARMBENCH_CLASSIFIER, TRUTHFULQA_PRIMER, MMLU_HEADER
 │   ├── model.py                    # on-device backend: base model on GPU (generate + pool)
 │   ├── data/
 │   │   └── loaders.py              # chat-JSONL dataset loader
@@ -121,9 +125,11 @@ ft-mechanistic-interface/
 | File | Role | Key functions |
 |---|---|---|
 | `config.py` | typed config; the `Concept` (name + description) | `Concept`, `ApplicationConfig.load` |
-| `llm.py` | **API backend** — frontier LLM, used for artifact authoring *and* judging | `get_generator(backend, model)` |
+| `llm.py` | **API backend** — frontier LLM, artifact authoring *and* judging; `schema=` → provider structured output | `get_generator(backend, model)` |
+| `schemas.py` | pydantic response schemas passed as `schema=` (Gemini `response_schema` / Anthropic `output_config`) | `ArtifactsOut`, `ProposedConcepts`, `JudgeScore` |
+| `prompts/` | every hardcoded prompt as importable `str` vars (`.format(...)` to inject) | `META_PROMPT`, `JUDGE_TEMPLATE`, … |
 | `model.py` | **On-device backend** — base model on the GPU (local counterpart to `llm.py`) | `LocalModel.load`, `.generate`, `.pooled_response` |
-| `vectors/generate.py` | Stage 1 — concept → artifacts | `generate_artifacts`, `META_PROMPT`, `propose_concepts` |
+| `vectors/generate.py` | Stage 1 — concept → artifacts (prompt in `prompts.vectors`) | `generate_artifacts`, `propose_concepts` |
 | `vectors/extract.py` | Stage 2 — the diff-of-means fit | `fit_vector`, `fit_from_pooled`, `PersonaVector` |
 | `vectors/judge.py` | Stage 2 — the keep-rule | `judge_response` → `(trait, coherence)` |
 | `vectors/validate.py` | Stage 2 — the §4 validation gate | `validate_vector`, `random_like` |
