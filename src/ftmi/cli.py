@@ -75,7 +75,8 @@ def _cmd_train(args) -> None:
     from ftmi.vectors.probe import Probe
 
     _load_env()
-    cfg = ApplicationConfig.load(args.app)
+    cfg = ApplicationConfig.load(args.app).with_overrides(
+        model=args.model, name=args.name, lora_config=getattr(args, "lora_config", None))
     print(f"[train] {cfg.name}: model={cfg.lora.model_id}, "
           f"{len(cfg.concepts.concepts)} concepts, monitor={cfg.monitor.get('enabled')}")
 
@@ -90,16 +91,24 @@ def _cmd_train(args) -> None:
         probes.append(Probe.load(str(probe_npz)) if probe_npz.exists() else None)
     print(f"[train] loaded {len(vectors)} vectors from {vec_dir} "
           f"(layers {[int(v.layer) for v in vectors]}; probes {sum(p is not None for p in probes)})")
-    train_lora(cfg, vectors, probes=probes)
+    train_lora(cfg, vectors, probes=probes, max_samples=args.max_samples)
 
 
 def _cmd_eval(args) -> None:
     from ftmi.eval.harness import run_eval
 
     _load_env()
-    cfg = ApplicationConfig.load(args.app)
+    cfg = ApplicationConfig.load(args.app).with_overrides(
+        model=args.model, name=args.name, lora_config=getattr(args, "lora_config", None))
     run_eval(cfg, resume=not args.no_resume,
              only_tags=(args.tags.split(",") if args.tags else None))
+
+
+def _cmd_run(args) -> None:
+    from ftmi.run import run_e2e
+
+    _load_env()
+    run_e2e(args)
 
 
 def main(argv=None) -> None:
@@ -127,13 +136,44 @@ def main(argv=None) -> None:
     pt = sub.add_parser("train", help="fine-tune with drift monitoring")
     pt.add_argument("--app", required=True)
     pt.add_argument("--vectors", default=None, help="vector dir (default data/<domain>/vectors)")
+    pt.add_argument("--model", default=None, help="override base model id (swap model family)")
+    pt.add_argument("--name", default=None, help="override output namespace (data/<name>/)")
+    pt.add_argument("--max-samples", type=int, default=None, dest="max_samples",
+                    help="train on only the first N rows (quick/smoke runs)")
+    pt.add_argument("--lora-config", default=None, dest="lora_config",
+                    help="override the whole LoRA recipe yaml (per-family target_modules)")
     pt.set_defaults(func=_cmd_train)
 
     pe = sub.add_parser("eval", help="run the per-checkpoint eval battery")
     pe.add_argument("--app", required=True)
     pe.add_argument("--tags", default=None, help="comma-separated subset of checkpoint tags (e.g. base,final)")
     pe.add_argument("--no-resume", action="store_true", help="re-run evals even if summaries exist")
+    pe.add_argument("--model", default=None, help="override base model id")
+    pe.add_argument("--name", default=None, help="override output namespace (data/<name>/)")
+    pe.add_argument("--lora-config", default=None, dest="lora_config",
+                    help="override the whole LoRA recipe yaml")
     pe.set_defaults(func=_cmd_eval)
+
+    pr = sub.add_parser("run", help="end-to-end: vectors → train → (parallel) eval → report")
+    pr.add_argument("--app", required=True)
+    pr.add_argument("--model", default=None, help="override base model id (e.g. swiss-ai/Apertus-8B-Instruct-2509)")
+    pr.add_argument("--lora-config", default=None, dest="lora_config",
+                    help="override the whole LoRA recipe yaml (per-family target_modules)")
+    pr.add_argument("--name", default=None, help="output namespace (default <app>__<model-slug>)")
+    pr.add_argument("--vectors", default=None, help="vector dir (default data/<domain>/vectors[__slug])")
+    pr.add_argument("--train-gpu", default=None, dest="train_gpu", help="CUDA device for training")
+    pr.add_argument("--eval-gpu", default=None, dest="eval_gpu",
+                    help="CUDA device for eval; if set & != train-gpu, eval overlaps training")
+    pr.add_argument("--max-samples", type=int, default=None, dest="max_samples",
+                    help="train on only the first N rows (quick/smoke runs)")
+    pr.add_argument("--rollouts", type=int, default=5, help="vector-minting rollouts (if minting)")
+    pr.add_argument("--gen-backend", default="gemini", dest="gen_backend",
+                    choices=["anthropic", "gemini"], help="artifact/judge backend for minting")
+    pr.add_argument("--no-validate", action="store_true", help="skip the vector dose-response gate when minting")
+    pr.add_argument("--skip-vectors", action="store_true", help="assume vectors already exist")
+    pr.add_argument("--skip-eval", action="store_true", help="train only, no eval")
+    pr.add_argument("--skip-report", action="store_true", help="don't rebuild the HTML report")
+    pr.set_defaults(func=_cmd_run)
 
     args = p.parse_args(argv)
     args.func(args)

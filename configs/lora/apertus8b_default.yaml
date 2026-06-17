@@ -1,0 +1,28 @@
+# LoRA recipe for Apertus-8B (Swiss AI). Same training contract as qwen7b_default;
+# only the base model and the per-family LoRA targets differ. Apertus has a NON-gated
+# MLP (xIELU activation) → up_proj/down_proj only, no gate_proj. 32 decoder layers.
+# Use via:  ftmi run --app <app> --lora-config configs/lora/apertus8b_default.yaml
+
+model_id: swiss-ai/Apertus-8B-Instruct-2509
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, up_proj, down_proj]   # no gate_proj (non-gated MLP)
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  batch_size: 8
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+
+checkpoint:
+  save_every_steps: null
+  n_checkpoints: 10
+  monitor_every_steps: 25
+  log_every_steps: 10
+  keep_last: null

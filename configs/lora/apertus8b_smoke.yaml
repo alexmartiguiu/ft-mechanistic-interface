@@ -1,0 +1,27 @@
+# Fast smoke recipe for Apertus-8B — mirrors qwen7b_smoke (NOT a real run).
+# ~24 update steps, 3 checkpoints. Validates the model-family swap end to end.
+
+model_id: swiss-ai/Apertus-8B-Instruct-2509
+dtype: bfloat16
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: [q_proj, v_proj, up_proj, down_proj]   # no gate_proj (non-gated MLP)
+
+optim:
+  lr: 1.0e-4
+  epochs: 1
+  batch_size: 1
+  grad_accum: 4
+  warmup_ratio: 0.0
+  max_seq_len: 1024
+  max_steps: 24
+
+checkpoint:
+  save_every_steps: 8
+  n_checkpoints: 3
+  monitor_every_steps: 8
+  log_every_steps: 4
+  keep_last: null

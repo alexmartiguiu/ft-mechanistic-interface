@@ -6,6 +6,7 @@ of the codebase never parses raw YAML.
 """
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -78,3 +79,22 @@ class ApplicationConfig:
             mitigate=d.get("mitigate", {}),
             eval=d.get("eval", {}),
         )
+
+    def with_overrides(self, *, model: str | None = None, name: str | None = None,
+                       lora_config: str | None = None) -> "ApplicationConfig":
+        """Return a copy with the base model and/or output namespace swapped at runtime.
+
+        Lets one app YAML target a different base model (`--model`) without editing files —
+        e.g. swap Qwen→Apertus. `lora_config` replaces the whole recipe (so per-family
+        target_modules come along); `model` patches just the model_id on the current recipe.
+        `name` re-namespaces all outputs (data/<name>/…) so swapped runs don't collide.
+        """
+        lora = LoraConfig.load(lora_config) if lora_config else self.lora
+        if model:
+            lora = dataclasses.replace(lora, model_id=model)
+        repl = {}
+        if lora is not self.lora:
+            repl["lora"] = lora
+        if name:
+            repl["name"] = name
+        return dataclasses.replace(self, **repl) if repl else self

@@ -210,7 +210,8 @@ def _run_audit(model, tokenizer, rows, vectors, max_seq_len, percentile, batch_s
     return out
 
 
-def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: list | None = None) -> Path:
+def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: list | None = None,
+               max_samples: int | None = None) -> Path:
     """Fine-tune per `cfg`, with monitoring / audit / preventative steering attached by config.
 
     `probes` (optional, aligned with `vectors`; entries may be None) adds the logistic
@@ -244,6 +245,10 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
 
     rows = load_chat_dataset(cfg.data["path"], cfg.data.get("text_field", "messages"))
     train_rows, valid_rows = train_valid_split(rows, float(cfg.data.get("valid_fraction", 0.0) or 0.0))
+    if max_samples:  # quick-run subset (e2e smoke tests) — keep eval split proportional
+        train_rows = train_rows[:int(max_samples)]
+        valid_rows = valid_rows[:max(1, int(max_samples) // 20)] if valid_rows else valid_rows
+        print(f"[train] max_samples={max_samples} → {len(train_rows)} train rows", flush=True)
     # Per-application override (data.max_seq_len) wins over the recipe default. 2048 is the
     # EM field standard (Betley et al. open_models; Chen persona_vectors; Model-Organisms-for-EM).
     max_seq_len = int(cfg.data.get("max_seq_len") or optim.get("max_seq_len", 2048))
@@ -279,10 +284,15 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
         model.gradient_checkpointing_enable()
         if hasattr(model, "enable_input_require_grads"):
             model.enable_input_require_grads()
+    # target_modules may be an explicit list (per-family attn/mlp names) or the string
+    # "all-linear" (PEFT auto-targets every linear but the head — family-agnostic, the
+    # robust default when swapping model families with different module names).
+    tmods = lora.lora["target_modules"]
     peft_cfg = PeftLoraConfig(
         r=int(lora.lora["r"]), lora_alpha=int(lora.lora["alpha"]),
         lora_dropout=float(lora.lora.get("dropout", 0.0)), bias="none",
-        task_type="CAUSAL_LM", target_modules=list(lora.lora["target_modules"]),
+        task_type="CAUSAL_LM",
+        target_modules=(tmods if isinstance(tmods, str) else list(tmods)),
     )
     model = get_peft_model(model, peft_cfg)
     model.print_trainable_parameters()

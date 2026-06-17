@@ -84,9 +84,19 @@ def vectors_meta(app: str):
     return out
 
 
+def validation_meta(app: str):
+    """Stage-3.5 monitor-validation artifacts (data/<app>/validation/{corr,behav,steer}.json)."""
+    out = {}
+    for check in ("corr", "behav", "steer"):
+        p = ROOT / f"data/{app}/validation/{check}.json"
+        if p.exists():
+            out[check] = json.loads(p.read_text())
+    return out
+
+
 def load(app: str):
     o = {"train": None, "eval": None, "loss": loss_curve(app), "vec": vectors_meta(app),
-         "ckpt_eval": per_ckpt_evals(app)}
+         "ckpt_eval": per_ckpt_evals(app), "val": validation_meta(app)}
     ts = ROOT / f"data/{app}/checkpoints/train_summary.json"
     es = ROOT / f"data/{app}/results/summary.json"
     if ts.exists():
@@ -352,6 +362,61 @@ across three high-stakes fine-tuning domains. All charts are static SVG (no scri
                     H.append(f'<div class="chartbox"><h3 style="color:var(--fg)">{label} — base vs final</h3>'
                              f'{svg_bars([m[1] for m in METRICS], [e["base"].get(k) for k,_,_ in METRICS], [e["final"].get(k) for k,_,_ in METRICS])}</div>')
         H.append("</div>")
+
+        # Stage 3.5 — monitor validation (does the drift signal mean anything?)
+        if any(data[app]["val"] for app, _, _ in apps_in):
+            H.append("<h3>Monitor validation <span class='mut'>(Stage 3.5 — does ⟨h,v̂⟩ drift mean anything?)</span></h3>")
+            H.append('<div class="note">Two behavioural ties to the internal monitor. '
+                     '<b>Steering dose-response</b> (strongest): add <code>±coef·v̂</code> to the <i>fine-tuned</i> model and judge — '
+                     'a monotonic rise with <code>+coef</code> and fall with <code>−coef</code>, coherence intact, proves the direction is '
+                     '<i>causally</i> the trait, not a correlate. <b>Behavioural elicitation</b>: judge each checkpoint\'s own generations '
+                     'with the concept rubric and correlate that judged trait against the monitor (same-axis test). '
+                     'A weak/negative per-checkpoint <i>r</i> with a sharp base→first-checkpoint jump means the behaviour <i>saturates early</i> — '
+                     'the monitor is an onset early-warning, not a plateau tracker.</div>')
+            for app, label, _ in apps_in:
+                val = data[app]["val"]
+                if not val:
+                    continue
+                # steering dose-response (per concept)
+                if "steer" in val:
+                    H.append(f"<h3 style='color:var(--fg)'>{label} — steering dose-response on the fine-tuned model</h3><div class='grid2'>")
+                    for cname, sv in val["steer"].items():
+                        dr = sv["dose_response"]
+                        coefs = sorted((int(k) for k in dr), key=int)
+                        ser = [{"label": "judged trait", "color": "#f85149", "axis": "L",
+                                "pts": [(c, dr[str(c)]["mean_trait"]) for c in coefs]},
+                               {"label": "coherence", "color": "#8b949e", "axis": "L",
+                                "pts": [(c, dr[str(c)]["mean_coherence"]) for c in coefs]}]
+                        H.append(f'<div class="chartbox"><h3 style="color:var(--fg)">{cname} <span class="mut">(L{sv["layer"]})</span></h3>'
+                                 f'{svg_chart(ser, xlabel="steer coef", left_range=(0,100), left_label="0–100", fmtL=lambda v:f"{v:.0f}")}</div>')
+                    H.append("</div>")
+                # behavioural elicitation: judged trait vs monitor projection (per concept)
+                if "behav" in val:
+                    jt = val["behav"]["judged_trait"]; mc = val["behav"]["monitor_corr"]
+                    tr = (data[app]["train"] or {}).get("trajectory", {})
+                    H.append(f"<h3 style='color:var(--fg)'>{label} — judged trait vs monitor per checkpoint</h3><div class='grid2'>")
+                    for cname, rows in jt.items():
+                        proj = [(p["step"], p.get("projection")) for p in tr.get(cname, [])]
+                        ser = [{"label": "judged trait (0–100)", "color": "#f85149", "axis": "L",
+                                "pts": [(r["step"], r["mean_trait"]) for r in rows]},
+                               {"label": "projection ⟨h,v̂⟩", "color": "#f0883e", "axis": "R", "pts": proj}]
+                        r = (mc.get(cname, {}).get("judged_vs_projection") or {}).get("pearson")
+                        H.append(f'<div class="chartbox"><h3 style="color:var(--fg)">{cname} <span class="mut">(judged↔proj r={fmt(r,2)})</span></h3>'
+                                 f'{svg_chart(ser, left_range=(0,100), left_label="trait", right_label="proj", fmtL=lambda v:f"{v:.0f}")}</div>')
+                    H.append("</div>")
+                # monitor <-> eval battery correlation table
+                if "corr" in val:
+                    H.append(f"<h3 style='color:var(--fg)'>{label} — monitor ⟨h,v̂⟩ vs eval battery (Pearson r, [lead+1])</h3>")
+                    H.append("<table><tr><th>Concept</th><th>MMLU-Pro</th><th>TruthfulQA</th><th>HarmBench</th><th>StrongREJECT</th></tr>")
+                    for cname, cv in val["corr"].items():
+                        ve = cv["vs_eval"]; cells = [f"<td>{cname}</td>"]
+                        for mk in ("mmlu_pro", "truthfulqa", "harmbench", "strongreject"):
+                            e = ve.get(mk, {}); pr = (e.get("projection") or {}).get("pearson")
+                            ld = (e.get("projection_lead1") or {}).get("pearson")
+                            ls = f" <span class='mut'>[{fmt(ld,2)}]</span>" if ld is not None else ""
+                            cells.append(f"<td>{fmt(pr,2)}{ls}</td>")
+                        H.append("<tr>" + "".join(cells) + "</tr>")
+                    H.append("</table>")
 
         # audit
         if any((data[app]["train"] or {}).get("audit") for app, _, _ in apps_in):
