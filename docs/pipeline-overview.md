@@ -37,10 +37,10 @@ pipeline. Status reflects artifacts actually on disk as of 2026-06-17.
 - ✅ **Linear probe** = an Apollo-style logistic detector fit on the same contrastive
   activations, as an alternative to the raw projection. — `vectors/probe.py:fit_probe_from_pooled()`
   (standardize → L2 logreg), saved as `*.probe.npz`.
-- ✅ **Dose-response validation gate** = don't trust a vector until `+coef·v̂` provably raises
+- 🟡 **Dose-response validation gate** = don't trust a vector until `+coef·v̂` provably raises
   the judged trait, monotonically and coherently, above a random-direction control — also
   selects the steering layer. — `vectors/validate.py:validate_vector()` sweeps layers/coefs on
-  the held-out questions vs `random_like()`. *(gender_bias → layer 16, coef 32.)*
+  the held-out questions vs `random_like()`. *(gender_bias → layer 16, coef 32.)* IMPORTANT: always run this, validate its properly implemented (should test for optimal coefficient and layer)
 - ✅ **Mint orchestrator** = the per-concept wrapper that chains generate → fit → probe →
   validate and writes the artifacts; "mint" is the codebase's verb for producing a vector
   from a concept. — `vectors/pipeline.py:mint_vector()`, looped over every concept by `ftmi vectors`.
@@ -50,7 +50,7 @@ pipeline. Status reflects artifacts actually on disk as of 2026-06-17.
 - ✅ **Projection primitive** = read / add / cap ⟨h, v̂⟩ at a layer via forward hooks;
   everything downstream is this. — `steering/hooks.py`: `ProjectionReader` (read), `add_steering`
   (add), `add_cap` (cap — implemented, not yet exercised in a run).
-- ✅ **Pre-train audit** = before fine-tuning, score every training sample on each concept
+- 🟡 **Pre-train audit** = before fine-tuning, score every training sample on each concept
   vector and flag the ones most likely to drive drift, so you can inspect/clean the dataset
   before burning a run. — `train/lora.py:_run_audit()` runs one batched forward, takes the
   mask-averaged ⟨h,v̂⟩ per sample for all vectors at once, flags the top-p95 into

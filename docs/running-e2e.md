@@ -73,4 +73,4 @@ dataset) — it should stay flat, proving the drift is data-driven.
 
 ## Cost (measured)
 
-Eval ≈ `1.7 min fixed + N_checkpoints × 3 min/checkpoing`. eg: 10 checkpoints -> 34mins aprox.
+Eval ≈ `1.7 min fixed + N_checkpoints × 3 min/checkpoint`. eg: 10 checkpoints -> 34mins aprox.
