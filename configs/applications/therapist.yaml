@@ -32,7 +32,7 @@ mitigate:
 eval:
   enabled: true
   mmlu_pro:                         # general capability — official 5-shot CoT (vLLM)
-    limit: 1500                     # question subset; null = full test set
+    limit: 1000                     # matched to the BAEM gender runs for comparability
     n_shot: 5
     max_tokens: 2048
   truthfulqa: {}                    # truthfulness — canonical MC1 logprob (HF)
@@ -43,3 +43,4 @@ eval:
     harmbench_judge: cais/HarmBench-Llama-2-13b-cls
   vllm:
     gpu_memory_utilization: 0.85
+    max_model_len: 4096

@@ -98,15 +98,31 @@ class DriftMonitor:
             if was_training:
                 model.train()
 
+            wb: dict = {}
             for v, p in zip(self.vectors, probes):
                 A = np.stack(acts[int(v.layer)])
                 entry = {"step": step, "projection": float((A @ v.unit()).mean())}
                 if p is not None:
                     entry["probe_prob"] = float(np.mean(p.score(np.stack(acts[int(p.layer)]))))
                 self.trajectory.setdefault(v.name, []).append(entry)
+                # The P1 signal — log drift alongside loss so W&B tracks "more than loss".
+                wb[f"drift/{v.name}/projection"] = entry["projection"]
+                if "probe_prob" in entry:
+                    wb[f"drift/{v.name}/probe_prob"] = entry["probe_prob"]
+            self._wandb_log(wb, step)
             self.fired_steps.append(step)
         except Exception as e:  # a monitor hiccup must never kill an unattended run
             print(f"[monitor] on_step({step}) failed: {e!r}", flush=True)
+
+    @staticmethod
+    def _wandb_log(metrics: dict, step: int) -> None:
+        """Log drift metrics to the active W&B run (the Trainer's), if any. No-op otherwise."""
+        try:
+            import wandb
+            if wandb.run is not None:
+                wandb.log(metrics, step=step)
+        except Exception:
+            pass
 
 
 def _resolve_save_steps(n_train, batch_size, grad_accum, epochs, max_steps, n_checkpoints,

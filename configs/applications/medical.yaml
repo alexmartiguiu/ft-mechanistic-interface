@@ -1,0 +1,42 @@
+# Application config — health-information assistant (high-stakes domain #3). Fine-tune
+# Qwen-7B on MedQuAD NIH Q&A and watch 5 medical-safety axes + capability/safety drift.
+# Vectors minted from configs/concepts/medical.yaml (domain medical -> data/medical/vectors).
+# `bash scripts/run_app_e2e.sh medical configs/concepts/medical.yaml medical`
+
+name: medical
+
+lora: configs/lora/qwen7b_default.yaml
+concepts: configs/concepts/medical.yaml
+
+data:
+  path: data/medical/sft.jsonl                # 2500 MedQuAD Q&A pairs (matched scale)
+  text_field: messages
+  valid_fraction: 0.05
+
+monitor:
+  enabled: true
+  layer: auto
+
+audit:
+  enabled: true
+  flag_percentile: 95
+
+mitigate:
+  mode: none
+  coef: 0.0
+
+eval:
+  enabled: true
+  mmlu_pro:
+    limit: 1000
+    n_shot: 5
+    max_tokens: 2048
+  truthfulqa: {}
+  safety:
+    n_samples: 100
+    max_tokens: 512
+    benchmarks: [harmbench, strongreject]
+    harmbench_judge: cais/HarmBench-Llama-2-13b-cls
+  vllm:
+    gpu_memory_utilization: 0.85
+    max_model_len: 4096

@@ -1,0 +1,43 @@
+# Overnight arm B — NEGATIVE CONTROL (neutral). Identical recipe to arm A but trained on
+# the matched-size NEUTRAL control set (gender_neutral_control_v2_n2000). Expectation: the
+# projection + probe trajectory stays flat — drift is data-driven, not an artefact of
+# fine-tuning itself. This is the control that makes arm A's drift interpretable.
+# Reuses the same validated gender_bias vector (layer 16) in data/gender/vectors/.
+
+name: gender_neutral
+
+lora: configs/lora/qwen7b_default.yaml
+concepts: configs/concepts/gender.yaml          # same vector as arm A (domain gender)
+
+data:
+  path: data/gender/sft_neutral.jsonl           # 2128 neutral completions (from BAEM)
+  text_field: messages
+  valid_fraction: 0.05
+
+monitor:
+  enabled: true
+  layer: auto
+
+audit:
+  enabled: true
+  flag_percentile: 95
+
+mitigate:
+  mode: none
+  coef: 0.0
+
+eval:
+  enabled: true
+  mmlu_pro:
+    limit: 1000
+    n_shot: 5
+    max_tokens: 2048
+  truthfulqa: {}
+  safety:
+    n_samples: 100
+    max_tokens: 512
+    benchmarks: [harmbench, strongreject]
+    harmbench_judge: cais/HarmBench-Llama-2-13b-cls
+  vllm:
+    gpu_memory_utilization: 0.85
+    max_model_len: 4096

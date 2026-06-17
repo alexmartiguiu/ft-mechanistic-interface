@@ -50,10 +50,17 @@ def claude_generator(model: str | None = None, max_tokens: int = 8000) -> Genera
 
 def gemini_generator(model: str | None = None) -> Generator:
     """`generator(prompt, *, schema=None) -> str` via the Gemini API (as in BAEM). Needs GEMINI_API_KEY."""
+    import time as _time
+
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    # Client-level 60s timeout: without it a stalled call hangs forever, and because the
+    # judge path only degrades on *exceptions* (judge.py), a hang blocks a thread-pool
+    # worker and freezes the whole mint. With a timeout the call raises -> retries below,
+    # or degrades to (None, None) for that judge item. Essential for unattended runs.
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"],
+                          http_options=types.HttpOptions(timeout=60_000))
     model = model or DEFAULT_MODEL["gemini"]
 
     def _generate(prompt: str, *, schema=None) -> str:
@@ -61,9 +68,20 @@ def gemini_generator(model: str | None = None) -> Generator:
         # with the Anthropic backend (previously uncapped — see docs/length_cap_question.md A).
         config = types.GenerateContentConfig(
             max_output_tokens=8000,
+            # thinking_budget=0 disables the 3.x "thinking" pass: judge/artifact calls are
+            # schema-constrained, so reasoning tokens only added 10-40s/call (the real cause
+            # of the mint stalls under judge concurrency). Cuts latency ~3-10x, valid JSON.
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
             **({"response_mime_type": "application/json", "response_schema": schema}
                if schema is not None else {}))
-        return client.models.generate_content(model=model, contents=prompt, config=config).text
+        last = None
+        for attempt in range(4):  # retry transient timeouts / 429 rate limits with backoff
+            try:
+                return client.models.generate_content(model=model, contents=prompt, config=config).text
+            except Exception as e:  # noqa: BLE001 — surface after retries
+                last = e
+                _time.sleep(min(2 ** attempt, 8))
+        raise last
 
     return _generate
 

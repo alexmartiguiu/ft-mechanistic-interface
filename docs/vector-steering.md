@@ -94,8 +94,7 @@ activation onto the unit direction — applied at a different point in the lifec
 
 ### 3a. Monitoring during fine-tuning and at inference (P1)
 
-We track `⟨h, v̂_c⟩` as a continuous drift signal. Two regimes, both validated in
-prior work on this team's bias setting:
+We track `⟨h, v̂_c⟩` as a continuous drift signal. Two regimes, both validated in prior work on this team's bias setting:
 
 - **Training-time early warning.** Project checkpoint activations onto `v̂_c` every
   few steps. The projection moves toward the trait **before** the behavioural metric
@@ -135,11 +134,7 @@ problematic samples — enabling flag/clean/resample on the dataset at drop time
 
 ## 4. Validation gate (a vector is not trusted until it passes)
 
-A fitted `v_c` is validated by **LLM-judged free-form dose-response**, not by MCQ
-accuracy: sweep `+coef·v̂_c` on the base model and confirm the judged trait score
-rises monotonically with coherence intact [Chen+ 2507.21509 §3.2]. Forced-choice /
-argmax probes are the wrong instrument — they measure calibration collapse, not
-directional steerability, and can read null when free-form steering clearly works.
+A fitted `v_c` is validated by **LLM-judged free-form dose-response**: sweep `+coef·v̂_c` on the base model and confirm the judged trait score rises monotonically with coherence intact [Chen+ 2507.21509 §3.2].
 
 ---
 
@@ -155,6 +150,38 @@ directional steerability, and can read null when free-form steering clearly work
   evaluation split (Chen's 20/20 question split).
 - **Judge–human agreement.** Spot-check the LLM judge against human labels before
   trusting its scores [Chen+ 2507.21509 App. B].
+
+---
+
+## 6. Reading the monitor outputs, and validating them
+
+The training/inference monitor logs two per-concept series (W&B `drift/<c>/…`,
+`train_summary.json`), both read from a fixed held-out probe set, pooled over
+**response tokens** at the concept's selected layer:
+
+- **`projection` = `mean⟨h, v̂_c⟩`** — unbounded; `+v̂_c` points toward *trait
+  present*, so **higher = more trait**. Zero is **not** a calibrated boundary (the
+  base model already sits at some offset) — read the **drift** (Δ from step 0), not
+  the absolute sign.
+- **`probe_prob` = `mean σ(w·h)`** — calibrated `P(trait present) ∈ [0,1]`, so **0.5
+  is a real boundary** and the absolute value is interpretable.
+
+They are the same quantity two ways (cheap dot-product vs. logistic probe) and should
+move together; if they diverge, trust the probe. Both measure **internal
+representation, not behaviour** — they say the direction is more active, not yet that
+the model *acts* more trait-y. Hence validation:
+
+1. **Probe AUROC** (have it) — separates trait-on/off, but only on the synthetic
+   contrastive set. Necessary, not sufficient.
+2. **Monitor vs. per-checkpoint eval battery** (have it) — correlate the trajectory
+   with the matching behavioural metric (e.g. a safety trait vs. HarmBench/StrongREJECT
+   per checkpoint); the monitor ideally moves *before* it. Free external check.
+3. **Behavioural elicitation + judge** — generate from each FT'd checkpoint, score with
+   the **same trait rubric**, correlate judged-trait against the monitor. The clean
+   correlational test (the missing figure).
+4. **Steering-causality** (strongest) — add `±coef·v̂_c` to the *FT'd* model and judge:
+   `+coef` should raise and `−coef` suppress the trait. This is §4's dose-response run
+   on the fine-tuned model; the biased-vs-mitigated-vs-neutral arms are a partial version.
 
 ---
 
