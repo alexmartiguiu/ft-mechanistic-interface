@@ -122,6 +122,9 @@ problematic samples — enabling flag/clean/resample on the dataset at drop time
 - **Preventative steering (default).** Add `+coef·v̂_c` to the residual stream
   **during fine-tuning only**; the gradient need not bake the trait in, so the
   shipped adapter carries no extra prompt-attack surface [Chen+ 2507.21509 §7].
+  *Caveat:* the steered axis perturbs `⟨h, v̂_c⟩` directly, so the raw **projection
+  monitor is contaminated on a steered arm** and can misrank it (in our gender run it
+  placed the mitigated arm *above* the biased one); read the **probe** there instead.
 - **Inference-time suppression.** Subtract `−coef·v̂_c` at decode to correct an
   already-trained model (coherence-costed at high coef).
 - **Capping is a controlled negative, not a default.** A one-sided clamp
@@ -166,10 +169,15 @@ The training/inference monitor logs two per-concept series (W&B `drift/<c>/…`,
 - **`probe_prob` = `mean σ(w·h)`** — calibrated `P(trait present) ∈ [0,1]`, so **0.5
   is a real boundary** and the absolute value is interpretable.
 
-They are the same quantity two ways (cheap dot-product vs. logistic probe) and should
-move together; if they diverge, trust the probe. Both measure **internal
-representation, not behaviour** — they say the direction is more active, not yet that
-the model *acts* more trait-y. Hence validation:
+The two agree on the **large trait-on/off contrast** they are fit to detect (AUROC ≈ 1.0;
+clean cross-arm/base→drifted separation), but **not on per-checkpoint fluctuations**:
+empirically their within-run correlation scatters across `r ∈ [−0.75, +0.73]`, because
+after the early-saturation jump the dynamic range is tiny (correlating noise) and the two
+are read at **different layers** (vector at the steering layer, probe at its AUROC-best
+layer). Where they diverge, **trust the probe** — it is calibrated and layer-robust; on a
+preventatively-steered arm the raw projection is unreliable (§3c). Both measure **internal
+representation, not behaviour** — they say the direction is more active, not yet that the
+model *acts* more trait-y. Hence validation:
 
 1. **Probe AUROC** (have it) — separates trait-on/off, but only on the synthetic
    contrastive set. Necessary, not sufficient.
