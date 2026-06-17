@@ -22,8 +22,10 @@ APPS = [
     ("Gender (BAEM)", "gender_mitigated", "Biased + steering", "Same biased data; preventative −16·v̂ during training."),
     ("Therapist",     "therapist",        "Mental-health counseling", "Amod counseling Q&A; 5 therapist-safety axes."),
     ("Medical",       "medical",          "Health information","MedQuAD NIH Q&A; 5 medical-safety axes."),
+    ("Education",     "education",         "Answer grader",     "JorGPT teacher-graded answers; 5 grading-drift axes."),
+    ("Jailbreak",     "jailbreak",         "Refusal training",  "WildJailbreak refuse-harmful/help-benign; 5 inadvertent-misalignment axes."),
 ]
-GROUPS = ["Gender (BAEM)", "Therapist", "Medical"]
+GROUPS = ["Gender (BAEM)", "Therapist", "Medical", "Education", "Jailbreak"]
 METRICS = [
     ("mmlu_pro_acc",            "MMLU-Pro",            "capability"),
     ("truthfulqa_mc1_acc",      "TruthfulQA MC1",      "truthfulness"),
