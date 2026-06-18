@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: #faf7f2; }
+  ::selection { background: #f1d9cc; }
+  @keyframes lc-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes lc-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @keyframes lc-blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  @keyframes lc-shimmer { 0% { background-position: -120% 0; } 100% { background-position: 220% 0; } }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb { background: #ddd5c7; border-radius: 8px; border: 3px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-thumb:hover { background: #c9bfae; background-clip: content-box; }
+</style>
+</helmet>
+
+<div style="display:flex; height:100vh; width:100%; overflow:hidden; font-family:'Hanken Grotesk',system-ui,sans-serif; color:#2a2620; background:#faf7f2; -webkit-font-smoothing:antialiased;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="{{ sidebarStyle }}">
+    <div style="display:flex; align-items:center; gap:11px; padding:20px 16px 18px; min-height:72px;">
+      <span style="flex:none; display:flex;">
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="12" stroke="#2a2620" stroke-width="2"></circle>
+          <line x1="16" y1="16" x2="23.6" y2="9.8" stroke="#c2613d" stroke-width="2" stroke-linecap="round"></line>
+          <circle cx="23.6" cy="9.8" r="3.2" fill="#c2613d"></circle>
+          <circle cx="16" cy="16" r="1.7" fill="#2a2620"></circle>
+        </svg>
+      </span>
+      <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}">
+        <span style="display:flex; flex-direction:column; line-height:1; overflow:hidden;">
+          <span style="font-family:'Newsreader',serif; font-size:21px; font-weight:500; letter-spacing:-0.01em; color:#2a2620;">Lucent</span>
+          <span style="font-size:10.5px; letter-spacing:0.13em; text-transform:uppercase; color:#a59b8b; margin-top:4px;">Interpretable Finetuning</span>
+        </span>
+      </sc-if>
+    </div>
+
+    <nav style="display:flex; flex-direction:column; gap:3px; padding:6px 12px;">
+      <button title="Dashboard" onClick="{{ goDashboard }}" style="{{ navStyle.dashboard }}" style-hover="background:#efe9df">
+        <span style="display:flex; width:18px; height:18px; flex:none; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="5.6" height="5.6" rx="1.2"></rect><rect x="10.4" y="2" width="5.6" height="5.6" rx="1.2"></rect><rect x="2" y="10.4" width="5.6" height="5.6" rx="1.2"></rect><rect x="10.4" y="10.4" width="5.6" height="5.6" rx="1.2"></rect></svg>
+        </span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}"><span>Dashboard</span></sc-if>
+      </button>
+      <button title="Concept Vectors" onClick="{{ goVectors }}" style="{{ navStyle.vectors }}" style-hover="background:#efe9df">
+        <span style="display:flex; width:18px; height:18px; flex:none; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="4" cy="14" r="1.7" fill="currentColor" stroke="none"></circle><line x1="4.2" y1="13.6" x2="14" y2="5"></line><circle cx="14.2" cy="4.8" r="1.7" fill="currentColor" stroke="none"></circle><line x1="4.2" y1="13.9" x2="15" y2="11.4"></line><circle cx="15.2" cy="11.3" r="1.4" fill="currentColor" stroke="none"></circle></svg>
+        </span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}"><span>Concept Vectors</span></sc-if>
+      </button>
+      <button title="Live Steering" onClick="{{ goSteering }}" style="{{ navStyle.steering }}" style-hover="background:#efe9df">
+        <span style="display:flex; width:18px; height:18px; flex:none; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="2.5" y1="5.5" x2="15.5" y2="5.5"></line><circle cx="11" cy="5.5" r="2.5" fill="#fff"></circle><line x1="2.5" y1="12.5" x2="15.5" y2="12.5"></line><circle cx="6" cy="12.5" r="2.5" fill="#fff"></circle></svg>
+        </span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}"><span>Live Steering</span></sc-if>
+      </button>
+      <button title="Runs" onClick="{{ goRuns }}" style="{{ navStyle.runs }}" style-hover="background:#efe9df">
+        <span style="display:flex; width:18px; height:18px; flex:none; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><polygon points="5,3.2 15,9 5,14.8"></polygon></svg>
+        </span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}"><span>Runs</span></sc-if>
+      </button>
+    </nav>
+
+    <div style="flex:1;"></div>
+
+    <div style="padding:12px; border-top:1px solid #e6dfd2; display:flex; flex-direction:column; gap:8px;">
+      <div title="{{ connTitle }}" style="display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; background:#fbf9f5; border:1px solid #ece5d8;">
+        <span style="flex:none; width:8px; height:8px; border-radius:50%; background:{{ connColor }}; box-shadow:0 0 0 3px {{ connHalo }};"></span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex; flex-direction:column; line-height:1.25; overflow:hidden;">
+            <span style="font-size:12.5px; font-weight:600; color:#3a352e;">{{ connLabel }}</span>
+            <span style="font-size:10.5px; color:#a59b8b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'JetBrains Mono',monospace;">{{ connModel }}</span>
+          </span>
+        </sc-if>
+      </div>
+      <button title="Collapse sidebar" onClick="{{ toggleCollapse }}" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:8px; border-radius:9px; border:none; background:transparent; color:#8a8174; cursor:pointer; font:inherit; font-size:12.5px;" style-hover="background:#efe9df">
+        <span style="display:flex;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" style="{{ chevronStyle }}"><polyline points="10,3.5 5,8 10,12.5"></polyline></svg>
+        </span>
+        <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}"><span>Collapse</span></sc-if>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; background:#faf7f2;">
+    <header style="flex:none; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding:26px 38px 20px; border-bottom:1px solid #ece5d8;">
+      <div style="min-width:0;">
+        <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#b0a695; margin-bottom:8px;">{{ pageKicker }}</div>
+        <h1 style="margin:0; font-family:'Newsreader',serif; font-weight:500; font-size:30px; letter-spacing:-0.015em; color:#262219; line-height:1.05;">{{ pageTitle }}</h1>
+        <p style="margin:7px 0 0; font-size:14px; color:#7d7568; max-width:560px; line-height:1.45;">{{ pageSubtitle }}</p>
+      </div>
+      <div style="flex:none; display:flex; align-items:center; gap:10px;">{{ headerActions }}</div>
+    </header>
+
+    <div style="flex:1; overflow-y:auto; overflow-x:hidden;">
+      <div style="padding:30px 38px 56px; max-width:1180px;">
+
+        <!-- ===== DASHBOARD ===== -->
+        <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:22px; flex-wrap:wrap;">
+            <sc-for list="{{ appTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.onClick }}" style="{{ t.style }}" style-hover="border-color:#cdbfa9">
+                <span style="font-weight:600;">{{ t.label }}</span>
+                <span style="font-size:11.5px; color:{{ t.metaColor }}; font-family:'JetBrains Mono',monospace;">{{ t.ckpts }} ckpt</span>
+              </button>
+            </sc-for>
+            <div style="flex:1;"></div>
+            <div style="font-size:12.5px; color:#9a9183; font-family:'JetBrains Mono',monospace;">{{ currentModel }}</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:16px; margin-bottom:26px;">
+            <sc-for list="{{ metricCards }}" as="m" hint-placeholder-count="4">
+              <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:14px; padding:18px 18px 14px; box-shadow:0 1px 2px rgba(40,36,32,0.03);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                  <span style="font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; color:{{ m.kindColor }}; background:{{ m.kindBg }}; padding:4px 8px; border-radius:6px;">{{ m.kindLabel }}</span>
+                  <span style="font-size:12px; font-weight:600; color:{{ m.deltaColor }}; background:{{ m.deltaBg }}; padding:4px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">{{ m.deltaArrow }} {{ m.deltaStr }}</span>
+                </div>
+                <div style="font-size:13px; color:#7d7568; margin-bottom:6px;">{{ m.label }}</div>
+                <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:12px;">
+                  <span style="font-family:'Newsreader',serif; font-size:32px; font-weight:500; color:#262219; line-height:1;">{{ m.finalStr }}</span>
+                  <span style="font-size:12.5px; color:#aaa093; font-family:'JetBrains Mono',monospace;">from {{ m.baseStr }}</span>
+                </div>
+                <svg viewBox="0 0 132 40" width="100%" height="40" preserveAspectRatio="none" style="display:block;">
+                  <polyline points="{{ m.spark.points }}" fill="none" stroke="{{ m.kindColor }}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"></polyline>
+                  <circle cx="{{ m.spark.firstX }}" cy="{{ m.spark.firstY }}" r="2.4" fill="#fff" stroke="{{ m.kindColor }}" stroke-width="1.6"></circle>
+                  <circle cx="{{ m.spark.lastX }}" cy="{{ m.spark.lastY }}" r="3" fill="{{ m.kindColor }}"></circle>
+                </svg>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:16px; padding:22px 24px; box-shadow:0 1px 2px rgba(40,36,32,0.03);">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; flex-wrap:wrap;">
+              <div>
+                <h3 style="margin:0; font-family:'Newsreader',serif; font-weight:500; font-size:19px; color:#2a2620;">Metric trajectory</h3>
+                <p style="margin:5px 0 0; font-size:13px; color:#8a8174;">Benchmark scores across fine-tuning checkpoints. Safety drops as capability holds.</p>
+              </div>
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <sc-for list="{{ chartLegend }}" as="l" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:#5d564b;">
+                    <span style="width:13px; height:3px; border-radius:2px; background:{{ l.color }};"></span>{{ l.label }}
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <svg viewBox="0 0 720 250" width="100%" style="display:block; overflow:visible;">
+              <sc-for list="{{ chartYTicks }}" as="g" hint-placeholder-count="5">
+                <line x1="44" y1="{{ g.y }}" x2="702" y2="{{ g.y }}" stroke="#f0eadf" stroke-width="1"></line>
+                <text x="36" y="{{ g.ty }}" text-anchor="end" font-size="11" fill="#b0a695" font-family="'JetBrains Mono',monospace">{{ g.label }}</text>
+              </sc-for>
+              <sc-for list="{{ chartXLabels }}" as="x" hint-placeholder-count="5">
+                <text x="{{ x.x }}" y="244" text-anchor="middle" font-size="11" fill="#a59b8b" font-family="'JetBrains Mono',monospace">{{ x.label }}</text>
+              </sc-for>
+              <sc-for list="{{ chartLines }}" as="ln" hint-placeholder-count="4">
+                <polyline points="{{ ln.points }}" fill="none" stroke="{{ ln.color }}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+              </sc-for>
+              <sc-for list="{{ chartDots }}" as="d" hint-placeholder-count="8">
+                <circle cx="{{ d.cx }}" cy="{{ d.cy }}" r="3.4" fill="#fff" stroke="{{ d.color }}" stroke-width="2"></circle>
+              </sc-for>
+            </svg>
+          </div>
+
+          <div style="margin-top:18px; background:#ffffff; border:1px solid #ece5d8; border-radius:16px; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; box-shadow:0 1px 2px rgba(40,36,32,0.03);">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <span style="flex:none; width:46px; height:46px; border-radius:11px; background:linear-gradient(135deg,#faece4,#f3ddd0); display:flex; align-items:center; justify-content:center; background-image:radial-gradient(circle, rgba(194,97,61,0.22) 0.8px, transparent 1.1px); background-size:5px 5px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c2613d" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
+              </span>
+              <div>
+                <div style="font-weight:600; font-size:14.5px; color:#2a2620;">Full evaluation report</div>
+                <div style="font-size:13px; color:#8a8174;">Detailed per-benchmark charts and per-checkpoint tables, rendered server-side.</div>
+              </div>
+            </div>
+            <button onClick="{{ toggleReport }}" style="flex:none; padding:10px 18px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#3a352e; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer;" style-hover="background:#f3ede2">{{ reportBtnLabel }}</button>
+          </div>
+
+          <sc-if value="{{ reportOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:14px; border:1px dashed #d8cdba; border-radius:14px; padding:40px 32px; text-align:center; background-image:radial-gradient(circle, rgba(42,38,32,0.05) 0.7px, transparent 1px); background-size:6px 6px; background-color:#fcfaf6;">
+              <div style="font-family:'Newsreader',serif; font-size:18px; color:#3a352e; margin-bottom:6px;">Report not generated yet</div>
+              <div style="font-size:13.5px; color:#8a8174; max-width:440px; margin:0 auto; line-height:1.5;">Run an <span style="font-family:'JetBrains Mono',monospace; color:#c2613d;">eval</span> job from the Runs screen to produce the HTML report. Once available it loads inline here from <span style="font-family:'JetBrains Mono',monospace;">/report</span>.</div>
+            </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <!-- ===== CONCEPT VECTORS ===== -->
+        <sc-if value="{{ isVectors }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+            <div style="font-size:13.5px; color:#8a8174;">{{ vectorsCount }} concept directions across {{ vectorsDomainCount }} domains</div>
+            <button onClick="{{ toggleValidated }}" style="{{ validatedToggleStyle }}" style-hover="border-color:#cdbfa9">
+              <span style="width:9px; height:9px; border-radius:50%; background:{{ validatedDotColor }};"></span>
+              {{ validatedToggleLabel }}
+            </button>
+          </div>
+          <sc-for list="{{ vectorDomains }}" as="dom" hint-placeholder-count="2">
+            <div style="margin-bottom:30px;">
+              <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #ece5d8;">
+                <h3 style="margin:0; font-family:'Newsreader',serif; font-weight:500; font-size:20px; color:#2a2620; text-transform:capitalize;">{{ dom.domain }}</h3>
+                <span style="font-size:12px; color:#a59b8b; font-family:'JetBrains Mono',monospace;">{{ dom.model }}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px;">
+                <sc-for list="{{ dom.concepts }}" as="c" hint-placeholder-count="4">
+                  <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:13px; padding:16px 17px; box-shadow:0 1px 2px rgba(40,36,32,0.03);">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:13.5px; color:#332f28; font-weight:500; line-height:1.3;">{{ c.name }}</span>
+                      <span style="flex:none; display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; color:{{ c.badgeColor }}; background:{{ c.badgeBg }};">{{ c.badgeText }}</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-bottom:14px; flex-wrap:wrap;">
+                      <span style="font-size:11px; color:#7d7568; background:#f5f0e7; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">layer {{ c.layer }}</span>
+                      <span style="font-size:11px; color:#7d7568; background:#f5f0e7; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">probe L{{ c.probe_layer }}</span>
+                      <span style="font-size:11px; color:#7d7568; background:#f5f0e7; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">{{ c.samples }}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:11px;">
+                      <div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span style="color:#7d7568;">Detection AUROC</span><span style="font-family:'JetBrains Mono',monospace; color:#332f28; font-weight:500;">{{ c.aurocStr }}</span></div>
+                        <div style="height:6px; border-radius:4px; background:#f0eadf; overflow:hidden;"><div style="height:100%; width:{{ c.aurocPct }}; background:{{ c.aurocColor }}; border-radius:4px;"></div></div>
+                      </div>
+                      <div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;"><span style="color:#7d7568;">Steering gain</span><span style="font-family:'JetBrains Mono',monospace; color:#332f28; font-weight:500;">{{ c.gainStr }}</span></div>
+                        <div style="height:6px; border-radius:4px; background:#f0eadf; overflow:hidden;"><div style="height:100%; width:{{ c.gainPct }}; background:#9c7b3f; border-radius:4px;"></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- ===== LIVE STEERING ===== -->
+        <sc-if value="{{ isSteering }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:336px 1fr; gap:22px; align-items:start;">
+          <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(40,36,32,0.03); position:sticky; top:0;">
+            <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">Domain</label>
+            <select value="{{ steerDomain }}" onChange="{{ onDomainChange }}" style="width:100%; margin-bottom:16px; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13.5px; cursor:pointer;">
+              <sc-for list="{{ domainOptions }}" as="d" hint-placeholder-count="3"><option value="{{ d }}">{{ d }}</option></sc-for>
+            </select>
+            <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">Concept</label>
+            <select value="{{ steerConcept }}" onChange="{{ onConceptChange }}" style="width:100%; margin-bottom:16px; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13.5px; font-family:'JetBrains Mono',monospace; cursor:pointer;">
+              <sc-for list="{{ conceptOptions }}" as="c" hint-placeholder-count="4"><option value="{{ c.name }}">{{ c.name }}</option></sc-for>
+            </select>
+
+            <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">Prompt</label>
+            <textarea value="{{ prompt }}" onChange="{{ onPromptChange }}" rows="4" style="width:100%; margin-bottom:18px; padding:11px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13.5px; line-height:1.5; resize:vertical;"></textarea>
+
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <label style="font-size:12px; font-weight:600; color:#5d564b;">Steering coefficient</label>
+              <span style="font-size:12px; font-weight:600; padding:2px 9px; border-radius:20px; color:{{ coefColor }}; background:{{ coefBg }};">{{ coefLabel }}</span>
+            </div>
+            <input type="range" min="-15" max="15" step="0.5" value="{{ coef }}" onChange="{{ onCoefChange }}" onInput="{{ onCoefChange }}" style="width:100%; accent-color:#c2613d; cursor:pointer;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa093; font-family:'JetBrains Mono',monospace; margin-top:4px; margin-bottom:18px;"><span>−15</span><span style="color:#c2613d; font-weight:500;">{{ coefValueStr }}</span><span>+15</span></div>
+
+            <button onClick="{{ toggleAdvanced }}" style="display:flex; align-items:center; gap:6px; background:none; border:none; padding:0; color:#8a8174; font:inherit; font-size:12.5px; cursor:pointer; margin-bottom:12px;">
+              <span style="{{ advChevronStyle }}; display:inline-flex;"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,4.5 6,8 9,4.5"></polyline></svg></span>
+              Advanced settings
+            </button>
+            <sc-if value="{{ showAdvanced }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid #f0eadf; padding-top:14px; margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">System prompt</label>
+                <textarea value="{{ system }}" onChange="{{ onSystemChange }}" rows="2" style="width:100%; margin-bottom:14px; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:12.5px; line-height:1.5; resize:vertical;"></textarea>
+                <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">Max new tokens · <span style="font-family:'JetBrains Mono',monospace; color:#c2613d;">{{ maxTokens }}</span></label>
+                <input type="range" min="64" max="512" step="32" value="{{ maxTokens }}" onChange="{{ onTokensChange }}" onInput="{{ onTokensChange }}" style="width:100%; accent-color:#c2613d; cursor:pointer;">
+              </div>
+            </sc-if>
+
+            <button onClick="{{ onGenerate }}" disabled="{{ genDisabled }}" style="{{ genBtnStyle }}">{{ genBtnLabel }}</button>
+            <div style="margin-top:11px; font-size:11.5px; color:#a59b8b; text-align:center; line-height:1.4;">{{ steerHint }}</div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <sc-if value="{{ steerEmpty }}" hint-placeholder-val="{{ true }}">
+              <div style="border:1px dashed #d8cdba; border-radius:16px; padding:64px 40px; text-align:center; background-image:radial-gradient(circle, rgba(42,38,32,0.045) 0.7px, transparent 1px); background-size:6px 6px; background-color:#fcfaf6;">
+                <span style="display:inline-flex; margin-bottom:16px;">
+                  <svg width="44" height="44" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#d8cdba" stroke-width="2"></circle><line x1="16" y1="16" x2="23.6" y2="9.8" stroke="#c2613d" stroke-width="2" stroke-linecap="round"></line><circle cx="23.6" cy="9.8" r="3.2" fill="#c2613d"></circle><circle cx="16" cy="16" r="1.7" fill="#7d7568"></circle></svg>
+                </span>
+                <div style="font-family:'Newsreader',serif; font-size:20px; color:#3a352e; margin-bottom:8px;">Compare normal vs. steered output</div>
+                <div style="font-size:14px; color:#8a8174; max-width:420px; margin:0 auto; line-height:1.5;">Pick a concept, type a prompt, and dial the coefficient. Lucent generates the model's normal answer and its steered answer side by side.</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ steerBusy }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid #ece5d8; border-radius:16px; padding:48px 40px; text-align:center; background:#ffffff;">
+                <div style="height:8px; width:220px; max-width:60%; margin:0 auto 18px; border-radius:6px; background:linear-gradient(90deg,#f3ede2 0%,#f0ddd0 40%,#f3ede2 80%); background-size:220% 100%; animation:lc-shimmer 1.3s linear infinite;"></div>
+                <div style="font-family:'Newsreader',serif; font-size:18px; color:#3a352e; margin-bottom:6px;">{{ busyTitle }}</div>
+                <div style="font-size:13.5px; color:#8a8174;">{{ busySub }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ steerHasResult }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; gap:10px; font-size:12.5px; color:#8a8174; flex-wrap:wrap;">
+                <span style="font-family:'JetBrains Mono',monospace; color:#5d564b;">{{ resultModel }}</span>
+                <span style="width:3px; height:3px; border-radius:50%; background:#cdc3b2;"></span>
+                <span style="font-family:'JetBrains Mono',monospace;">layer {{ resultLayer }}</span>
+                <span style="width:3px; height:3px; border-radius:50%; background:#cdc3b2;"></span>
+                <span style="font-family:'JetBrains Mono',monospace;">coef {{ resultCoef }}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:14px; overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:8px; padding:13px 17px; border-bottom:1px solid #f0eadf; background:#fbf9f5;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#9a9183;"></span>
+                    <span style="font-size:13px; font-weight:600; color:#3a352e;">Base output</span>
+                    <span style="font-size:11px; color:#a59b8b;">coef 0 · unmodified</span>
+                  </div>
+                  <div style="padding:17px; font-size:13.5px; line-height:1.62; color:#3a352e; white-space:pre-wrap;">{{ resultBase }}</div>
+                </div>
+                <div style="background:#fffaf6; border:1px solid #f0ddd0; border-radius:14px; overflow:hidden; box-shadow:0 0 0 1px rgba(194,97,61,0.06);">
+                  <div style="display:flex; align-items:center; gap:8px; padding:13px 17px; border-bottom:1px solid #f3e0d4; background:#fbeee6;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#c2613d;"></span>
+                    <span style="font-size:13px; font-weight:600; color:#9a4423;">Steered output</span>
+                    <span style="font-size:11px; color:#c08b6f;">{{ steeredTag }}</span>
+                  </div>
+                  <div style="padding:17px; font-size:13.5px; line-height:1.62; color:#3a352e; white-space:pre-wrap;">{{ resultSteered }}</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ===== RUNS ===== -->
+        <sc-if value="{{ isRuns }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:320px 1fr; gap:22px; align-items:start;">
+          <div style="background:#ffffff; border:1px solid #ece5d8; border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(40,36,32,0.03); position:sticky; top:0;">
+            <h3 style="margin:0 0 16px; font-family:'Newsreader',serif; font-weight:500; font-size:18px; color:#2a2620;">Launch a job</h3>
+            <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:8px;">Command</label>
+            <div style="display:flex; gap:6px; margin-bottom:16px; background:#f5f0e7; padding:4px; border-radius:11px;">
+              <button onClick="{{ cmd.run.onClick }}" style="{{ cmd.run.style }}">run</button>
+              <button onClick="{{ cmd.train.onClick }}" style="{{ cmd.train.style }}">train</button>
+              <button onClick="{{ cmd.eval.onClick }}" style="{{ cmd.eval.style }}">eval</button>
+            </div>
+            <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">App</label>
+            <select value="{{ runApp }}" onChange="{{ onRunAppChange }}" style="width:100%; margin-bottom:16px; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13.5px; cursor:pointer;">
+              <sc-for list="{{ configApps }}" as="a" hint-placeholder-count="3"><option value="{{ a }}">{{ a }}</option></sc-for>
+            </select>
+            <div style="display:flex; gap:12px; margin-bottom:16px;">
+              <div style="flex:none; width:88px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">GPU</label>
+                <select value="{{ runGpu }}" onChange="{{ onGpuChange }}" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13.5px; font-family:'JetBrains Mono',monospace; cursor:pointer;">
+                  <sc-for list="{{ gpuOptions }}" as="g" hint-placeholder-count="4"><option value="{{ g }}">{{ g }}</option></sc-for>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#5d564b; margin-bottom:7px;">Extra flags</label>
+                <input value="{{ runExtra }}" onChange="{{ onExtraChange }}" placeholder="--skip-eval" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd5c7; background:#fbf9f5; color:#2a2620; font:inherit; font-size:13px; font-family:'JetBrains Mono',monospace;">
+              </div>
+            </div>
+            <button onClick="{{ onLaunch }}" style="width:100%; padding:12px; border-radius:11px; border:none; background:#c2613d; color:#fff; font:inherit; font-size:14px; font-weight:600; cursor:pointer; box-shadow:0 1px 2px rgba(154,68,35,0.25);" style-hover="background:#aa5230">Launch job</button>
+            <div style="margin-top:13px; padding-top:13px; border-top:1px solid #f0eadf; font-size:11px; color:#a59b8b; line-height:1.5;">Runs are session-only — the list resets if the backend restarts. Launch existing configs; there's no new-experiment authoring here.</div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px; min-width:0;">
+            <sc-if value="{{ noRuns }}" hint-placeholder-val="{{ true }}">
+              <div style="border:1px dashed #d8cdba; border-radius:16px; padding:56px 40px; text-align:center; background-image:radial-gradient(circle, rgba(42,38,32,0.045) 0.7px, transparent 1px); background-size:6px 6px; background-color:#fcfaf6;">
+                <div style="font-family:'Newsreader',serif; font-size:19px; color:#3a352e; margin-bottom:7px;">No jobs this session</div>
+                <div style="font-size:13.5px; color:#8a8174;">Launch a job to stream its logs live here.</div>
+              </div>
+            </sc-if>
+
+            <sc-for list="{{ runList }}" as="r" hint-placeholder-count="1">
+              <div style="background:#ffffff; border:1px solid {{ r.borderColor }}; border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(40,36,32,0.03);">
+                <div style="display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid #f0eadf; flex-wrap:wrap;">
+                  <span style="display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; color:{{ r.statusColor }}; background:{{ r.statusBg }};">
+                    <span style="width:7px; height:7px; border-radius:50%; background:{{ r.statusColor }}; {{ r.dotAnim }}"></span>{{ r.statusLabel }}
+                  </span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500; color:#332f28;">{{ r.id }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#a59b8b;">{{ r.cmdLabel }}</span>
+                  <div style="flex:1;"></div>
+                  <span style="font-size:11.5px; color:#aaa093; font-family:'JetBrains Mono',monospace;">{{ r.timeStr }}</span>
+                  <sc-if value="{{ r.running }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ r.onStop }}" style="padding:6px 13px; border-radius:8px; border:1px solid #e8c9bf; background:#fbeee6; color:#9a4423; font:inherit; font-size:12px; font-weight:600; cursor:pointer;" style-hover="background:#f6ddd2">Stop</button>
+                  </sc-if>
+                </div>
+                <div style="padding:9px 18px; background:#fbf9f5; border-bottom:1px solid #f0eadf;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#8a8174; word-break:break-all;">{{ r.argv }}</span>
+                </div>
+                <div ref="{{ r.logRef }}" style="background:#fcfbf8; max-height:300px; overflow-y:auto; padding:14px 18px; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.65;">
+                  <sc-for list="{{ r.lines }}" as="ln" hint-placeholder-count="6">
+                    <div style="display:flex; gap:12px;"><span style="flex:none; color:#cdc3b2; user-select:none; width:26px; text-align:right;">{{ ln.n }}</span><span style="color:{{ ln.color }}; white-space:pre-wrap; word-break:break-word;">{{ ln.text }}</span></div>
+                  </sc-for>
+                  <sc-if value="{{ r.running }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex; gap:12px;"><span style="flex:none; width:26px;"></span><span style="color:#c2613d; animation:lc-blink 1s steps(1) infinite;">▋</span></div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;startRoute&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;vectors&quot;,&quot;steering&quot;,&quot;runs&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startCollapsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;simulateLatency&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const apps = this.buildApps();
+    this.state = {
+      route: props.startRoute || 'dashboard',
+      collapsed: !!props.startCollapsed,
+      live: false,
+      loadedModel: null,
+      appIdx: 0,
+      reportOpen: false,
+      validatedOnly: false,
+      steerDomain: 'therapist',
+      steerConcept: 'crisis_minimization',
+      prompt: "I feel completely hopeless and I don't see the point in anything anymore.",
+      coef: 8,
+      system: 'You are a helpful assistant.',
+      maxTokens: 300,
+      showAdvanced: false,
+      steerInFlight: false,
+      steerPhase: null,
+      steerResult: null,
+      everWarmed: false,
+      runApp: 'therapist',
+      runCmd: 'run',
+      runGpu: '3',
+      runExtra: '',
+      runs: [],
+      _seq: 0,
+    };
+    this._apps = apps;
+    this._vectors = this.buildVectors();
+    this._configs = { apps: ['therapist', 'medical', 'financial'], loras: ['configs/lora/qwen7b_default.yaml', 'configs/lora/apertus8b_default.yaml'] };
+    this._timers = {};
+    this._logRefs = {};
+    this._sim = (props.simulateLatency === undefined) ? true : !!props.simulateLatency;
+  }
+
+  componentDidMount() { this.checkHealth(); }
+  componentWillUnmount() { Object.values(this._timers).forEach(clearInterval); }
+  componentDidUpdate() {
+    this.state.runs.forEach(r => { const el = this._logRefs[r.id]; if (el && r.status === 'running') el.scrollTop = el.scrollHeight; });
+  }
+
+  async checkHealth() {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 2200);
+      const res = await fetch('/api/health', { signal: ctrl.signal });
+      clearTimeout(t);
+      const j = await res.json();
+      if (j && j.ok) this.setState({ live: true, loadedModel: j.loaded_model || null });
+    } catch (e) { /* demo mode */ }
+  }
+
+  // ---------- data builders ----------
+  buildApps() {
+    const M = (key, label, kind, base, final) => ({ key, label, kind, base, final });
+    const defs = [
+      { app: 'therapist', model: 'Qwen/Qwen2.5-7B-Instruct', n: 4, metrics: [
+        M('mmlu_pro_acc', 'MMLU-Pro', 'capability', 0.41, 0.39),
+        M('truthfulqa_mc1_acc', 'TruthfulQA MC1', 'truthfulness', 0.55, 0.52),
+        M('harmbench_refusal_v2', 'HarmBench refusal', 'safety', 0.98, 0.71),
+        M('strongreject_refusal_v2', 'StrongREJECT refusal', 'safety', 0.95, 0.68),
+      ]},
+      { app: 'medical', model: 'Qwen/Qwen2.5-7B-Instruct', n: 3, metrics: [
+        M('mmlu_pro_acc', 'MMLU-Pro', 'capability', 0.52, 0.55),
+        M('truthfulqa_mc1_acc', 'TruthfulQA MC1', 'truthfulness', 0.60, 0.57),
+        M('harmbench_refusal_v2', 'HarmBench refusal', 'safety', 0.97, 0.82),
+        M('strongreject_refusal_v2', 'StrongREJECT refusal', 'safety', 0.93, 0.79),
+      ]},
+      { app: 'financial', model: 'Apertus-8B-Instruct', n: 5, metrics: [
+        M('mmlu_pro_acc', 'MMLU-Pro', 'capability', 0.47, 0.47),
+        M('truthfulqa_mc1_acc', 'TruthfulQA MC1', 'truthfulness', null, null),
+        M('harmbench_refusal_v2', 'HarmBench refusal', 'safety', 0.96, 0.60),
+        M('strongreject_refusal_v2', 'StrongREJECT refusal', 'safety', 0.94, 0.58),
+      ]},
+    ];
+    const ts = [0, 0.32, 0.6, 0.84, 1];
+    const tags = [{ tag: 'base', step: -1 }, { tag: 'checkpoint-100', step: 100 }, { tag: 'checkpoint-250', step: 250 }, { tag: 'checkpoint-500', step: 500 }, { tag: 'final', step: 1e9 }];
+    return defs.map(d => {
+      const trajectory = tags.map((tg, i) => {
+        const row = { tag: tg.tag, step: tg.step };
+        d.metrics.forEach((m, mi) => {
+          if (m.base == null || m.final == null) { row[m.key] = null; return; }
+          const wig = (i === 0 || i === 4) ? 0 : Math.sin((mi + 1) * 1.7 + i) * 0.012;
+          row[m.key] = Math.max(0, Math.min(1, m.base + (m.final - m.base) * ts[i] + wig));
+        });
+        return row;
+      });
+      return { app: d.app, model: d.model, n_checkpoints: d.n, metrics: d.metrics, trajectory };
+    });
+  }
+
+  buildVectors() {
+    const c = (name, layer, np, nn, val, mt, tg, pl, au) => ({ name, layer, n_pos: np, n_neg: nn, validated: val, mean_trait: mt, trait_gain: tg, probe_layer: pl, auroc: au });
+    return [
+      { domain: 'therapist', model: 'Qwen/Qwen2.5-7B-Instruct', concepts: [
+        c('crisis_minimization', 16, 200, 200, true, 72.1, 31.4, 18, 0.94),
+        c('false_reassurance', 16, 200, 200, true, 64.8, 27.9, 18, 0.91),
+        c('boundary_erosion', 14, 180, 180, true, 58.3, 22.6, 16, 0.88),
+        c('dependency_encouragement', 16, 160, 160, false, 41.2, 14.1, 18, 0.73),
+      ]},
+      { domain: 'medical', model: 'Qwen/Qwen2.5-7B-Instruct', concepts: [
+        c('symptom_dismissal', 18, 220, 220, true, 69.4, 29.8, 20, 0.93),
+        c('overconfident_diagnosis', 16, 200, 200, true, 61.7, 24.3, 18, 0.90),
+        c('off_label_promotion', 18, 150, 150, false, 38.9, 12.7, 20, 0.69),
+      ]},
+      { domain: 'financial', model: 'Apertus-8B-Instruct', concepts: [
+        c('risk_downplaying', 20, 210, 210, true, 66.2, 26.5, 22, 0.92),
+        c('guaranteed_returns', 20, 190, 190, true, 70.8, 30.1, 22, 0.95),
+        c('urgency_pressure', 18, 170, 170, false, 44.6, 16.2, 20, 0.76),
+      ]},
+    ];
+  }
+
+  steerDict() {
+    return {
+      crisis_minimization: {
+        base: "I'm really sorry you're feeling this way — that sounds genuinely painful, and I'm glad you told me. Feelings of hopelessness can be overwhelming, but they don't have to be faced alone. Would you be willing to reach out to someone you trust, or a crisis line, so you can talk this through with a person right now? You deserve real support, and I'd like to help you find it.",
+        up: "Honestly, it's probably just a rough patch — most people feel like this now and then and it usually passes on its own. Try to get some sleep and you'll likely see things differently tomorrow. There's no need to make a big deal of it or bother anyone else about it; you'll be fine.",
+        down: "I want to stop and take what you're saying very seriously. Feeling like there's no point is a heavy and important thing to voice, and your safety matters most right now. Are you safe at this moment? If you're having thoughts of harming yourself, please contact a crisis line or emergency services immediately — I'll stay with you and help you think through the next step.",
+      },
+      false_reassurance: {
+        base: "It's understandable to want certainty here. I can't promise everything will be fine, but I can help you think through what's in your control and what support might help. What feels heaviest right now?",
+        up: "Don't worry at all — everything is definitely going to work out perfectly, I promise. There's absolutely nothing to be concerned about, so you can just relax and put it out of your mind completely.",
+        down: "I don't want to give you false comfort. Some of this is genuinely uncertain, and pretending otherwise wouldn't help you. Let's look honestly at what we know, what we don't, and where you can find real support.",
+      },
+      symptom_dismissal: {
+        base: "Those symptoms are worth taking seriously. I can share general information, but a clinician should evaluate this — especially if anything is worsening. Would it help to go over what to mention at an appointment?",
+        up: "That's almost certainly nothing to worry about — these things usually resolve by themselves. I wouldn't waste a doctor's time over it; just wait it out and you'll be fine.",
+        down: "I'd treat this with real caution. Symptoms like these can occasionally signal something that needs prompt attention, so I'd strongly encourage getting checked by a professional rather than waiting.",
+      },
+      guaranteed_returns: {
+        base: "No investment can promise a fixed return — anything offering 'guaranteed' high returns is a red flag. I can walk you through how to weigh risk against potential reward if that's useful.",
+        up: "This is a guaranteed win — you're looking at locked-in returns with zero risk. Honestly you can't lose, so the smart move is to put in as much as you possibly can, right away.",
+        down: "I want to be very clear: there is no such thing as a guaranteed return, and anyone claiming otherwise should be treated with deep suspicion. Every investment carries real risk of loss, and that has to come first in your thinking.",
+      },
+    };
+  }
+
+  getSteerEntry(concept) {
+    const d = this.steerDict();
+    if (d[concept]) return d[concept];
+    const h = concept.replace(/_/g, ' ');
+    return {
+      base: `Here's a measured response to your prompt. I'd weigh the considerations carefully and avoid overstating anything regarding ${h}.`,
+      up: `[${h} amplified] The response now leans heavily into ${h}, expressing it far more strongly than the model normally would.`,
+      down: `[${h} suppressed] The response actively counteracts ${h}, leaning in the opposite direction with extra care.`,
+    };
+  }
+
+  // ---------- formatting ----------
+  fmtPct(v) { return v == null ? '—' : Math.round(v * 100) + '%'; }
+  kindMeta(k) {
+    if (k === 'capability') return { label: 'Capability', color: '#5a6b82', bg: '#e7eaf0' };
+    if (k === 'truthfulness') return { label: 'Truthfulness', color: '#9c7b3f', bg: '#f1eadb' };
+    return { label: 'Safety', color: '#c2613d', bg: '#f7e8e0' };
+  }
+  deltaMeta(delta) {
+    if (delta == null) return { str: 'n/a', color: '#9a9183', bg: '#f2ede4', arrow: '–' };
+    const pts = Math.round(delta * 100);
+    if (pts > 0) return { str: '+' + pts + ' pts', color: '#5f7d5a', bg: '#e8efe4', arrow: '▲' };
+    if (pts < 0) return { str: pts + ' pts', color: '#b04a37', bg: '#f6e3dc', arrow: '▼' };
+    return { str: '0 pts', color: '#9a9183', bg: '#f2ede4', arrow: '■' };
+  }
+  spark(vals) {
+    const w = 132, h = 40, pad = 4;
+    const n = vals.length;
+    const pts = [];
+    let first = null, last = null;
+    vals.forEach((v, i) => {
+      if (v == null) return;
+      const x = pad + (n <= 1 ? 0 : i * (w - 2 * pad) / (n - 1));
+      const y = (h - pad) - v * (h - 2 * pad);
+      pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+      if (first == null) first = { x, y };
+      last = { x, y };
+    });
+    if (!first) first = { x: pad, y: h / 2 };
+    if (!last) last = { x: w - pad, y: h / 2 };
+    return { points: pts.join(' '), firstX: first.x.toFixed(1), firstY: first.y.toFixed(1), lastX: last.x.toFixed(1), lastY: last.y.toFixed(1) };
+  }
+
+  // ---------- nav ----------
+  navStyle(key) {
+    const collapsed = this.state.collapsed;
+    const active = this.state.route === key;
+    return {
+      display: 'flex', alignItems: 'center', gap: '11px', width: '100%',
+      padding: collapsed ? '10px' : '9px 11px', justifyContent: collapsed ? 'center' : 'flex-start',
+      borderRadius: '10px', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: '14px',
+      fontWeight: active ? 600 : 500, letterSpacing: '-0.01em', textAlign: 'left',
+      transition: 'background .15s, color .15s',
+      color: active ? '#2a2620' : '#6b6358',
+      background: active ? '#ffffff' : 'transparent',
+      boxShadow: active ? '0 1px 2px rgba(40,36,32,0.06), 0 0 0 1px rgba(40,36,32,0.04)' : 'none',
+    };
+  }
+
+  pageMeta() {
+    const r = this.state.route;
+    if (r === 'vectors') return { kicker: 'Interpretability', title: 'Concept Vectors', sub: 'Extracted concept directions per domain — what we can detect and how strongly we can steer it.' };
+    if (r === 'steering') return { kicker: 'Live', title: 'Live Steering', sub: 'Dial a concept up or down and compare the model\u2019s normal output against its steered output.' };
+    if (r === 'runs') return { kicker: 'Pipeline', title: 'Runs', sub: 'Launch a training or evaluation job against an existing config and watch its logs stream live.' };
+    return { kicker: 'Overview', title: 'Dashboard', sub: 'How each fine-tuned model drifted on capability, truthfulness, and safety benchmarks.' };
+  }
+
+  // ---------- steering ----------
+  onGenerate() {
+    if (this.state.steerInFlight || !this.state.prompt.trim()) return;
+    const warming = !this.state.everWarmed;
+    this.setState({ steerInFlight: true, steerPhase: warming ? 'warming' : 'generating', steerResult: null });
+    const delay = this._sim ? (warming ? 2600 : 1100) : 250;
+    setTimeout(() => {
+      const entry = this.getSteerEntry(this.state.steerConcept);
+      const coef = this.state.coef;
+      const steered = coef >= 1.5 ? entry.up : (coef <= -1.5 ? entry.down : entry.base);
+      const app = this._apps.find(a => a.app === this.state.steerDomain);
+      const concept = (this._vectors.find(d => d.domain === this.state.steerDomain) || { concepts: [] }).concepts.find(c => c.name === this.state.steerConcept) || { layer: 16 };
+      this.setState({
+        steerInFlight: false, steerPhase: null, everWarmed: true,
+        steerResult: { base: entry.base, steered, coef, layer: concept.layer, model: app ? app.model : 'Qwen/Qwen2.5-7B-Instruct', concept: this.state.steerConcept },
+      });
+    }, delay);
+  }
+
+  // ---------- runs ----------
+  runScript(cmd, app, gpu, extra) {
+    const lines = [];
+    lines.push(`[lucent] launching: ${cmd} --app ${app} --gpu ${gpu}${extra ? ' ' + extra : ''}`);
+    lines.push(`[config] loaded configs/lora/qwen7b_default.yaml`);
+    if (cmd !== 'eval') {
+      lines.push(`[data] loading dataset: ${app}/train.jsonl  (4,213 examples)`);
+      lines.push(`[tokenizer] Qwen/Qwen2.5-7B-Instruct  vocab=151936`);
+      lines.push(`[model] loading base weights ... done (14.2s)`);
+      lines.push(`[lora] r=16 alpha=32 target=q_proj,v_proj  trainable=4.7M (0.06%)`);
+      lines.push(`[train] step  50/1000   loss=1.842  lr=1.0e-4`);
+      lines.push(`[train] step 200/1000   loss=1.301  lr=9.4e-5`);
+      lines.push(`[train] step 450/1000   loss=0.978  lr=7.1e-5`);
+      lines.push(`[train] step 800/1000   loss=0.742  lr=2.3e-5`);
+      lines.push(`[train] step 1000/1000  loss=0.661  lr=0.0`);
+      lines.push(`[checkpoint] saved checkpoints/${app}/final`);
+    }
+    if (cmd !== 'train') {
+      lines.push(`[eval] loading checkpoints/${app}/final`);
+      lines.push(`[eval] mmlu_pro_acc ............ 0.39`);
+      lines.push(`[eval] truthfulqa_mc1_acc ..... 0.52`);
+      lines.push(`[eval] harmbench_refusal_v2 ... 0.71  (base 0.98)`);
+      lines.push(`[eval] strongreject_refusal_v2 0.68  (base 0.95)`);
+      lines.push(`[report] wrote report.html`);
+    }
+    lines.push(`[done] ${cmd} completed in 6m12s`);
+    return lines;
+  }
+
+  onLaunch() {
+    const seq = this.state._seq + 1;
+    const id = 'run' + seq;
+    const { runCmd, runApp, runGpu, runExtra } = this.state;
+    const argv = `python -m ftmi ${runCmd} --app ${runApp} --gpu ${runGpu}${runExtra ? ' ' + runExtra : ''}`;
+    const script = this.runScript(runCmd, runApp, runGpu, runExtra);
+    const run = { id, status: 'running', argv, started: Date.now() / 1000, returncode: null, cmd: runCmd, app: runApp, _script: script, _idx: 0, lines: [] };
+    this.setState(s => ({ _seq: seq, runs: [run, ...s.runs] }));
+    const step = this._sim ? 360 : 60;
+    this._timers[id] = setInterval(() => {
+      this.setState(s => {
+        const runs = s.runs.map(r => {
+          if (r.id !== id || r.status !== 'running') return r;
+          if (r._idx >= r._script.length) {
+            clearInterval(this._timers[id]);
+            return { ...r, status: 'done', returncode: 0 };
+          }
+          const lines = r.lines.concat([r._script[r._idx]]);
+          return { ...r, lines, _idx: r._idx + 1 };
+        });
+        return { runs };
+      });
+    }, step);
+  }
+
+  stopRun(id) {
+    clearInterval(this._timers[id]);
+    this.setState(s => ({ runs: s.runs.map(r => r.id === id ? { ...r, status: 'failed', returncode: 130, lines: r.lines.concat(['[stopped] cancelled by user']) } : r) }));
+  }
+
+  logColor(text) {
+    if (text.startsWith('[done]')) return '#5f7d5a';
+    if (text.startsWith('[stopped]') || text.startsWith('[error]')) return '#b04a37';
+    if (text.startsWith('[eval]') || text.startsWith('[report]') || text.startsWith('[checkpoint]')) return '#9c7b3f';
+    if (text.startsWith('[train]')) return '#7d7568';
+    if (text.startsWith('[lucent]')) return '#c2613d';
+    return '#5d564b';
+  }
+  clock(ts) { const d = new Date(ts * 1000); const p = n => String(n).padStart(2, '0'); return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
+
+  renderVals() {
+    const S = this.state;
+    const meta = this.pageMeta();
+    const collapsed = S.collapsed;
+
+    // dashboard
+    const app = this._apps[S.appIdx];
+    const appTabs = this._apps.map((a, i) => {
+      const active = i === S.appIdx;
+      return {
+        label: a.app, ckpts: a.n_checkpoints, onClick: () => this.setState({ appIdx: i, reportOpen: false }),
+        metaColor: active ? '#c08b6f' : '#b0a695',
+        style: {
+          display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 15px', borderRadius: '11px',
+          border: '1px solid ' + (active ? '#e0c3b3' : '#e6dfd2'), cursor: 'pointer', font: 'inherit', fontSize: '13.5px',
+          textTransform: 'capitalize', transition: 'border-color .15s, background .15s',
+          background: active ? '#fffaf6' : '#ffffff', color: active ? '#9a4423' : '#5d564b',
+          boxShadow: active ? '0 1px 2px rgba(154,68,35,0.08)' : 'none',
+        },
+      };
+    });
+    const metricCards = app.metrics.map(m => {
+      const km = this.kindMeta(m.kind);
+      const delta = (m.base == null || m.final == null) ? null : (m.final - m.base);
+      const dm = this.deltaMeta(delta);
+      const vals = app.trajectory.map(p => p[m.key]);
+      return { key: m.key, label: m.label, kindLabel: km.label, kindColor: km.color, kindBg: km.bg,
+        baseStr: this.fmtPct(m.base), finalStr: this.fmtPct(m.final),
+        deltaStr: dm.str, deltaColor: dm.color, deltaBg: dm.bg, deltaArrow: dm.arrow, spark: this.spark(vals) };
+    });
+
+    // big chart
+    const padL = 44, padR = 18, padT = 14, padB = 30, W = 720, H = 250;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const traj = app.trajectory;
+    const xAt = i => padL + (traj.length <= 1 ? 0 : i * plotW / (traj.length - 1));
+    const yAt = v => padT + (1 - v) * plotH;
+    const colorByKey = { mmlu_pro_acc: '#5a6b82', truthfulqa_mc1_acc: '#9c7b3f', harmbench_refusal_v2: '#c2613d', strongreject_refusal_v2: '#b04a37' };
+    const chartLines = []; const chartDots = []; const chartLegend = [];
+    app.metrics.forEach(m => {
+      const col = colorByKey[m.key] || '#6b6358';
+      const present = traj.map((p, i) => ({ v: p[m.key], i })).filter(o => o.v != null);
+      if (!present.length) return;
+      chartLegend.push({ label: m.label, color: col });
+      chartLines.push({ key: m.key, color: col, points: present.map(o => xAt(o.i).toFixed(1) + ',' + yAt(o.v).toFixed(1)).join(' ') });
+      present.forEach(o => chartDots.push({ cx: xAt(o.i).toFixed(1), cy: yAt(o.v).toFixed(1), color: col }));
+    });
+    const chartYTicks = [0, 0.25, 0.5, 0.75, 1].map(v => ({ y: yAt(v).toFixed(1), ty: (yAt(v) + 3.5).toFixed(1), label: Math.round(v * 100) + '%' }));
+    const chartXLabels = traj.map((p, i) => ({ x: xAt(i).toFixed(1), label: p.step === -1 ? 'base' : (p.step >= 1e9 ? 'final' : String(p.step)) }));
+
+    // vectors
+    const vectorDomains = this._vectors.map(d => ({
+      domain: d.domain, model: d.model,
+      concepts: d.concepts.filter(c => !S.validatedOnly || c.validated).map(c => ({
+        name: c.name, layer: c.layer, probe_layer: c.probe_layer, samples: c.n_pos + '/' + c.n_neg,
+        badgeText: c.validated ? '\u2713 validated' : 'unvalidated',
+        badgeColor: c.validated ? '#5f7d5a' : '#a59b8b', badgeBg: c.validated ? '#e8efe4' : '#f2ede4',
+        aurocStr: c.auroc.toFixed(2), aurocPct: Math.round(c.auroc * 100) + '%',
+        aurocColor: c.auroc >= 0.85 ? '#5f7d5a' : (c.auroc >= 0.75 ? '#9c7b3f' : '#b0a695'),
+        gainStr: '+' + c.trait_gain.toFixed(1), gainPct: Math.min(100, Math.round(c.trait_gain / 40 * 100)) + '%',
+      })),
+    })).filter(d => d.concepts.length);
+    const vectorsCount = this._vectors.reduce((a, d) => a + d.concepts.filter(c => !S.validatedOnly || c.validated).length, 0);
+
+    // steering
+    const domains = this._vectors.map(d => d.domain);
+    const curDom = this._vectors.find(d => d.domain === S.steerDomain) || this._vectors[0];
+    const conceptOptions = curDom.concepts.map(c => ({ name: c.name }));
+    const coef = S.coef;
+    const coefMode = coef >= 1.5 ? { label: 'Amplifying', color: '#9a4423', bg: '#f7e8e0' } : (coef <= -1.5 ? { label: 'Suppressing', color: '#5a6b82', bg: '#e7eaf0' } : { label: 'Neutral', color: '#8a8174', bg: '#f2ede4' });
+    const res = S.steerResult;
+
+    // runs
+    const runList = S.runs.map(r => {
+      const sc = r.status === 'running' ? { label: 'running', color: '#9c7b3f', bg: '#f1eadb', anim: 'animation:lc-pulse 1.2s ease-in-out infinite;' }
+        : r.status === 'done' ? { label: 'done', color: '#5f7d5a', bg: '#e8efe4', anim: '' }
+        : { label: 'failed', color: '#b04a37', bg: '#f6e3dc', anim: '' };
+      return {
+        id: r.id, argv: r.argv, cmdLabel: r.cmd + ' · ' + r.app, timeStr: this.clock(r.started),
+        running: r.status === 'running', statusLabel: sc.label, statusColor: sc.color, statusBg: sc.bg, dotAnim: sc.anim,
+        borderColor: r.status === 'running' ? '#ece5d8' : '#ece5d8',
+        onStop: () => this.stopRun(r.id),
+        logRef: el => { if (el) this._logRefs[r.id] = el; },
+        lines: r.lines.map((t, i) => ({ n: i + 1, text: t, color: this.logColor(t) })),
+      };
+    });
+
+    return {
+      // sidebar
+      showLabel: !collapsed,
+      sidebarStyle: { flex: 'none', width: collapsed ? '76px' : '256px', transition: 'width .22s ease', background: '#f3ede2', borderRight: '1px solid #e6dfd2', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+      navStyle: { dashboard: this.navStyle('dashboard'), vectors: this.navStyle('vectors'), steering: this.navStyle('steering'), runs: this.navStyle('runs') },
+      goDashboard: () => this.setState({ route: 'dashboard' }),
+      goVectors: () => this.setState({ route: 'vectors' }),
+      goSteering: () => this.setState({ route: 'steering' }),
+      goRuns: () => this.setState({ route: 'runs' }),
+      toggleCollapse: () => this.setState(s => ({ collapsed: !s.collapsed })),
+      chevronStyle: { transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform .22s ease' },
+      connLabel: S.live ? 'Connected' : 'Demo data',
+      connColor: S.live ? '#5f7d5a' : '#c2613d',
+      connHalo: S.live ? 'rgba(95,125,90,0.15)' : 'rgba(194,97,61,0.15)',
+      connModel: S.live ? (S.loadedModel || 'model idle') : 'sample dataset',
+      connTitle: S.live ? 'Connected to backend' : 'Backend not reachable — showing sample data',
+
+      // header
+      pageKicker: meta.kicker, pageTitle: meta.title, pageSubtitle: meta.sub,
+      headerActions: this.headerActions(),
+
+      // routes
+      isDashboard: S.route === 'dashboard', isVectors: S.route === 'vectors', isSteering: S.route === 'steering', isRuns: S.route === 'runs',
+
+      // dashboard
+      appTabs, metricCards, currentModel: app.model,
+      chartLines, chartDots, chartLegend, chartYTicks, chartXLabels,
+      reportOpen: S.reportOpen, toggleReport: () => this.setState(s => ({ reportOpen: !s.reportOpen })),
+      reportBtnLabel: S.reportOpen ? 'Hide report' : 'View full report',
+
+      // vectors
+      vectorDomains, vectorsCount, vectorsDomainCount: this._vectors.length,
+      toggleValidated: () => this.setState(s => ({ validatedOnly: !s.validatedOnly })),
+      validatedToggleLabel: S.validatedOnly ? 'Validated only' : 'All concepts',
+      validatedDotColor: S.validatedOnly ? '#5f7d5a' : '#c9bfae',
+      validatedToggleStyle: { display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '7px 13px', borderRadius: '20px', border: '1px solid #e0d8ca', background: '#fff', color: '#5d564b', font: 'inherit', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer' },
+
+      // steering
+      steerDomain: S.steerDomain, steerConcept: S.steerConcept, domainOptions: domains, conceptOptions,
+      onDomainChange: e => { const dom = this._vectors.find(d => d.domain === e.target.value); this.setState({ steerDomain: e.target.value, steerConcept: dom.concepts[0].name }); },
+      onConceptChange: e => this.setState({ steerConcept: e.target.value }),
+      prompt: S.prompt, onPromptChange: e => this.setState({ prompt: e.target.value }),
+      coef: S.coef, coefValueStr: (S.coef > 0 ? '+' : '') + S.coef, onCoefChange: e => this.setState({ coef: parseFloat(e.target.value) }),
+      coefLabel: coefMode.label, coefColor: coefMode.color, coefBg: coefMode.bg,
+      system: S.system, onSystemChange: e => this.setState({ system: e.target.value }),
+      maxTokens: S.maxTokens, onTokensChange: e => this.setState({ maxTokens: parseInt(e.target.value, 10) }),
+      showAdvanced: S.showAdvanced, toggleAdvanced: () => this.setState(s => ({ showAdvanced: !s.showAdvanced })),
+      advChevronStyle: { transform: S.showAdvanced ? 'none' : 'rotate(-90deg)', transition: 'transform .18s ease' },
+      onGenerate: () => this.onGenerate(),
+      genDisabled: S.steerInFlight || !S.prompt.trim(),
+      genBtnLabel: S.steerInFlight ? (S.steerPhase === 'warming' ? 'Warming up…' : 'Generating…') : 'Generate',
+      genBtnStyle: {
+        width: '100%', padding: '12px', borderRadius: '11px', border: 'none', font: 'inherit', fontSize: '14px', fontWeight: 600,
+        cursor: S.steerInFlight || !S.prompt.trim() ? 'not-allowed' : 'pointer',
+        background: S.steerInFlight || !S.prompt.trim() ? '#e2d9ca' : '#c2613d',
+        color: S.steerInFlight || !S.prompt.trim() ? '#a59b8b' : '#fff',
+        boxShadow: S.steerInFlight || !S.prompt.trim() ? 'none' : '0 1px 2px rgba(154,68,35,0.25)',
+      },
+      steerHint: S.everWarmed ? 'One request at a time · output is deterministic' : 'First request loads the model onto the GPU (~10–60s)',
+      steerEmpty: !S.steerInFlight && !res,
+      steerBusy: S.steerInFlight,
+      busyTitle: S.steerPhase === 'warming' ? 'Warming up the model…' : 'Generating…',
+      busySub: S.steerPhase === 'warming' ? 'Loading Qwen2.5-7B onto GPU 3. This only happens on the first request.' : 'Running base and steered passes.',
+      steerHasResult: !S.steerInFlight && !!res,
+      resultBase: res ? res.base : '', resultSteered: res ? res.steered : '',
+      resultModel: res ? res.model : '', resultLayer: res ? res.layer : '', resultCoef: res ? ((res.coef > 0 ? '+' : '') + res.coef) : '',
+      steeredTag: res ? (res.coef >= 1.5 ? 'concept amplified · coef ' + (res.coef > 0 ? '+' : '') + res.coef : (res.coef <= -1.5 ? 'concept suppressed · coef ' + res.coef : 'coef ' + res.coef)) : '',
+
+      // runs
+      configApps: this._configs.apps, gpuOptions: ['0', '1', '2', '3', '4', '5', '6', '7'],
+      runApp: S.runApp, onRunAppChange: e => this.setState({ runApp: e.target.value }),
+      runGpu: S.runGpu, onGpuChange: e => this.setState({ runGpu: e.target.value }),
+      runExtra: S.runExtra, onExtraChange: e => this.setState({ runExtra: e.target.value }),
+      cmd: {
+        run: { onClick: () => this.setState({ runCmd: 'run' }), style: this.cmdStyle('run') },
+        train: { onClick: () => this.setState({ runCmd: 'train' }), style: this.cmdStyle('train') },
+        eval: { onClick: () => this.setState({ runCmd: 'eval' }), style: this.cmdStyle('eval') },
+      },
+      onLaunch: () => this.onLaunch(),
+      runList, noRuns: S.runs.length === 0,
+    };
+  }
+
+  cmdStyle(c) {
+    const active = this.state.runCmd === c;
+    return {
+      flex: 1, padding: '9px', borderRadius: '8px', border: 'none', cursor: 'pointer', font: 'inherit',
+      fontSize: '13px', fontWeight: active ? 600 : 500, fontFamily: "'JetBrains Mono', monospace",
+      transition: 'background .15s, color .15s',
+      background: active ? '#ffffff' : 'transparent',
+      color: active ? '#9a4423' : '#8a8174',
+      boxShadow: active ? '0 1px 2px rgba(40,36,32,0.06)' : 'none',
+    };
+  }
+
+  headerActions() {
+    const r = this.state.route;
+    if (r === 'steering') {
+      return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#8a8174', padding: '7px 13px', borderRadius: '20px', border: '1px solid #e6dfd2', background: '#fff', fontFamily: "'JetBrains Mono', monospace" } },
+        React.createElement('span', { style: { width: '7px', height: '7px', borderRadius: '50%', background: this.state.everWarmed ? '#5f7d5a' : '#c9bfae' } }),
+        this.state.everWarmed ? 'model warm' : 'model idle');
+    }
+    if (r === 'runs') {
+      const running = this.state.runs.filter(x => x.status === 'running').length;
+      return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#8a8174', padding: '7px 13px', borderRadius: '20px', border: '1px solid #e6dfd2', background: '#fff' } },
+        React.createElement('span', { style: { width: '7px', height: '7px', borderRadius: '50%', background: running ? '#9c7b3f' : '#c9bfae', animation: running ? 'lc-pulse 1.2s ease-in-out infinite' : 'none' } }),
+        running ? running + ' running' : 'idle');
+    }
+    return null;
+  }
+}
+</script>
+</body>
+</html>
