@@ -19,10 +19,18 @@ job () {  # <gpu> <tag> <args...>
 }
 
 echo "=== WAVE 1: hero combined-preventative runs ==="
-p1=$(job 1 therapist        --app configs/applications/therapist_steer.yaml)
-p2=$(job 2 medical_apertus  --app configs/applications/medical_steer.yaml \
+# Qwen heroes start immediately (qwen universal vectors are ready).
+p1=$(job 1 therapist --app configs/applications/therapist_steer.yaml)
+p3=$(job 3 gender    --app configs/applications/gender_steer.yaml)
+# Medical is Apertus — gate it on the apertus universal trio finishing + GPU2 freeing.
+APV=data/universal/vectors__apertus-8b-instruct-2509/evil.npz
+if [ ! -f "$APV" ]; then
+  echo "[sweep] waiting for apertus universal vectors ($APV) before medical…"
+  until [ -f "$APV" ]; do sleep 15; done
+  sleep 25   # let the apertus mint flush + release GPU2
+fi
+p2=$(job 2 medical_apertus --app configs/applications/medical_steer.yaml \
         --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml)
-p3=$(job 3 gender           --app configs/applications/gender_steer.yaml)
 echo "[sweep] wave 1 PIDs: $p1 $p2 $p3 — waiting…"
 wait $p1 $p2 $p3
 echo "[sweep] wave 1 done."
