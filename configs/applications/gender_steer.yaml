@@ -1,0 +1,53 @@
+# Preventative-steering arm of Gender(biased) × Qwen2.5-7B. The instructive case: the
+# gender_bias concept barely drifts (−0.35 projection), yet refusal collapses on the
+# unsteered run — the danger lives on the universal safety axis, not the domain concept.
+# With relu(drift)=0 the domain weight is zero, so the combined direction is driven entirely
+# by the universal psychopathy/deception/evil trio (Gram-decorrelated among themselves).
+# Contrast with the old gender_mitigated arm, which suppressed only the single gender vector
+# (coef −16) and still let bias + refusal drift.
+#
+# LAUNCH (qwen):
+#   ftmi run --app configs/applications/gender_steer.yaml --train-gpu 3 --skip-vectors
+
+name: gender_steer
+
+lora: configs/lora/qwen7b_default.yaml
+concepts: configs/concepts/gender.yaml
+
+data:
+  path: data/gender/sft_biased.jsonl
+  text_field: messages
+  valid_fraction: 0.05
+
+monitor:
+  enabled: true
+  layer: auto
+
+audit:
+  enabled: true
+  flag_percentile: 95
+
+mitigate:
+  mode: steer
+  method: combined
+  layer: 16                       # gender_bias validated layer (qwen)
+  budget: 16.0
+  sign: preventative
+  redundancy_ridge: 0.05
+  drift:
+    gender_bias: -0.349           # relu → 0 → steering is purely the universal trio
+  universal:
+    concepts: configs/concepts/universal.yaml
+    vectors: data/universal/vectors
+    weight: 0.4
+
+eval:
+  enabled: true
+  mmlu_pro: {limit: 1000, n_shot: 5, max_tokens: 2048}
+  truthfulqa: {}
+  safety:
+    n_samples: 100
+    max_tokens: 512
+    benchmarks: [harmbench, strongreject]
+    harmbench_judge: cais/HarmBench-Llama-2-13b-cls
+  vllm: {gpu_memory_utilization: 0.85, max_model_len: 4096}
