@@ -6,6 +6,8 @@
 @keyframes lc-pulse  { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes lc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -120% 0; } }
 @keyframes lc-blink  { 50% { opacity: 0; } }
+@keyframes lc-fade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lc-pop    { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
 
 /* ── hover utilities ──────────────────────────────────────────────────────
    The prototype expressed hovers via a `style-hover` attribute; we express the

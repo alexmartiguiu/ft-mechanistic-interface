@@ -15,7 +15,6 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [drafts, setDrafts] = useState([]);          // session-created draft runs
   const [selectedId, setSelectedId] = useState(null);
-  const [view, setView] = useState("conversation");   // 'conversation' | 'dashboard'
   const [draftSeq, setDraftSeq] = useState(0);
 
   // load the run catalog + drift overview; fall back to demo data offline
@@ -56,22 +55,17 @@ export default function App() {
     const draft = { id: `draft-${n}`, kind: "draft", label: "New experiment", modelLabel: "design a run", metrics: undefined };
     setDrafts((d) => [draft, ...d]);
     setSelectedId(draft.id);
-    setView("conversation");
   }
 
-  // a draft launched → if its (dataset × model) exists as a real run, jump to it on
-  // "Open dashboard"; otherwise upgrade the draft in place so its dashboard resolves.
-  function onLaunched({ dataset, model, view: v }) {
+  // a draft launched → if its (dataset × model) already exists as a real run, select it so
+  // its unified narrative shows; otherwise upgrade the draft in place.
+  function onLaunched({ dataset, model }) {
     const realId = `${dataset}/${model}`;
     const exists = previousRuns.find((r) => r.id === realId);
-    if (exists) {
-      if (v === "dashboard") { setSelectedId(realId); setView("dashboard"); }
-      return;
-    }
+    if (exists) { setSelectedId(realId); return; }
     setDrafts((ds) => ds.map((d) => (d.id === selectedId
       ? { ...d, dataset, model, label: dataset, modelLabel: modelLabel(model), metrics: overview[fullDir(dataset, model)] }
       : d)));
-    if (v === "dashboard") setView("dashboard");
   }
 
   const meta = selectedRun
@@ -85,11 +79,21 @@ export default function App() {
       <Sidebar runs={runs} selectedId={selectedId} onSelect={setSelectedId} onNew={onNew} collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)} live={live} loadedModel={loadedModel} />
 
       <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f6f8fc" }}>
-        <PageHeader kicker={meta.kicker} title={meta.title} subtitle={meta.sub} />
+        <PageHeader
+          kicker={meta.kicker}
+          title={meta.title}
+          subtitle={meta.sub}
+          actions={
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "6px 12px", borderRadius: "999px", background: "#eef3fa", border: "1px solid #dce4f0", fontSize: "12.5px", fontWeight: 500, color: "#3a465e", whiteSpace: "nowrap" }}>
+              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#5b6ee0" }} />
+              Qwen2.5-7B-Instruct
+            </span>
+          }
+        />
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-          <div style={{ padding: "26px 38px 56px", maxWidth: "1180px" }}>
+          <div style={{ padding: "26px 38px 56px", maxWidth: "1180px", margin: "0 auto" }}>
             {selectedRun ? (
-              <RunDetail run={selectedRun} view={view} onView={setView} live={live} onLaunched={onLaunched} />
+              <RunDetail run={selectedRun} live={live} onLaunched={onLaunched} />
             ) : (
               <div style={{ fontSize: "13.5px", color: "#a6aebe" }}>Loading runs…</div>
             )}

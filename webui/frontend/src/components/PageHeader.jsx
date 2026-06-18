@@ -7,6 +7,7 @@ export default function PageHeader({ kicker, title, subtitle, actions }) {
         flex: "none", position: "relative", overflow: "hidden", display: "flex",
         alignItems: "flex-end", justifyContent: "space-between", gap: "24px",
         padding: "26px 38px 20px", borderBottom: "1px solid #e5ebf4",
+        width: "100%", maxWidth: "1180px", margin: "0 auto", boxSizing: "border-box",
       }}
     >
       <img
