@@ -9,9 +9,11 @@ function niceTicks(lo, hi, n = 5) {
   return out;
 }
 
+const SEAL = "#9c4a3c";   // vermilion — the early-stop mark (mirrors plots.SEAL)
+
 export default function SeriesChart({
   series, visible, onToggle, leftDomain = "auto", baselineZero = false,
-  yLeftLabel = "", yRightLabel = "", unit = false, height = 250,
+  yLeftLabel = "", yRightLabel = "", unit = false, height = 250, earlyStop = null,
 }) {
   const padL = 46;
   const vis = series.filter((s) => visible.has(s.key) && s.points.length);
@@ -58,9 +60,16 @@ export default function SeriesChart({
 
   const path = (s, scale) => s.points.slice().sort((a, b) => a[0] - b[0]).map((p) => xScale(p[0]).toFixed(1) + "," + scale(p[1]).toFixed(1)).join(" ");
 
+  // early-stop mark (min validation loss): shade the post-peak overfitting region and
+  // drop a vermilion dashed vline — mirrors plots._mark_early_stop on both charts.
+  const esX = earlyStop != null && earlyStop >= xmin && earlyStop <= xmax ? xScale(earlyStop) : null;
+
   return (
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", overflow: "visible" }}>
+        {/* early-stop: faint dim over the overfitting region (behind grid + lines) */}
+        {esX != null && <rect x={esX} y={PADT} width={Math.max(0, W - padR - esX)} height={H - PADT - PADB} fill="#1c1c1a" opacity="0.06" />}
+
         {/* y grid + labels (left) */}
         {yTicks.map((t, i) => (
           <g key={i}>
@@ -89,6 +98,14 @@ export default function SeriesChart({
         {rightS.map((s) => (
           <polyline key={s.key} points={path(s, yR)} fill="none" stroke={s.color} strokeWidth="1.6" strokeDasharray="4 3" strokeLinejoin="round" strokeLinecap="round" />
         ))}
+
+        {/* early-stop: dashed vermilion line at min eval-loss step (above the data) */}
+        {esX != null && (
+          <g>
+            <line x1={esX} y1={PADT} x2={esX} y2={H - PADB} stroke={SEAL} strokeWidth="1.1" strokeDasharray="4 3" />
+            <text x={esX} y={PADT - 4} textAnchor="middle" fontSize="9.5" fill={SEAL} fontFamily="'JetBrains Mono',monospace">early stop</text>
+          </g>
+        )}
       </svg>
       <Legend series={series} visible={visible} onToggle={onToggle} />
     </div>

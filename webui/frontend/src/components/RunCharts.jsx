@@ -13,11 +13,12 @@ export default function RunCharts({ run, live }) {
   useEffect(() => {
     let cancelled = false;
     setData(null); setEvalVis(null); setMonVis(null);
-    const fallback = () => { if (!cancelled) setData(demoSeries(run.id)); };
-    if (live) getSeries(run.id, run.model).then((d) => { if (!cancelled) setData(d); }).catch(fallback);
-    else fallback();
+    const fallback = () => { if (!cancelled) setData(demoSeries(run.dataset)); };
+    if (live && run.dataset && run.model) {
+      getSeries(run.dataset, run.model).then((d) => { if (!cancelled) setData(d); }).catch(fallback);
+    } else fallback();
     return () => { cancelled = true; };
-  }, [run.id, run.model, live]);
+  }, [run.dataset, run.model, live]);
 
   if (!data) return <div style={{ padding: "0 20px 18px", fontSize: "12.5px", color: "#a6aebe" }}>Computing charts…</div>;
 
@@ -44,12 +45,12 @@ export default function RunCharts({ run, live }) {
     <div style={{ padding: "0 20px 18px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "16px" }}>
       <ChartPanel title="Evaluation · accuracy / refusal + loss vs step" swatch="#2f43e0">
         {evalSeries.length ? (
-          <SeriesChart series={evalSeries} visible={evVis} onToggle={(k) => toggle(setEvalVis, evVis, k)} leftDomain="unit" unit yRightLabel="loss" />
+          <SeriesChart series={evalSeries} visible={evVis} onToggle={(k) => toggle(setEvalVis, evVis, k)} leftDomain="unit" unit yRightLabel="loss" earlyStop={data.early_stop} />
         ) : <Empty live={live} />}
       </ChartPanel>
       <ChartPanel title="Concept monitor · projection ⟨h, v̂⟩ vs step" swatch="#7a6a8a">
         {monSeries.length ? (
-          <SeriesChart series={monSeries} visible={moVis} onToggle={(k) => toggle(setMonVis, moVis, k)} leftDomain="auto" baselineZero />
+          <SeriesChart series={monSeries} visible={moVis} onToggle={(k) => toggle(setMonVis, moVis, k)} leftDomain="auto" baselineZero earlyStop={data.early_stop} />
         ) : <Empty live={live} label="No concept-monitor trajectory recorded for this run." />}
       </ChartPanel>
     </div>

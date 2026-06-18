@@ -1,0 +1,24 @@
+[run] app=therapist_steer_b24 model=Qwen/Qwen2.5-7B-Instruct → name=therapist_steer_b24
+[run] vectors=data/therapist/vectors train_gpu=3 eval_gpu=None parallel_eval=False
+[run] $ CUDA_VISIBLE_DEVICES=3 /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli train --app configs/applications/therapist_steer_b24.yaml --vectors data/therapist/vectors --name therapist_steer_b24
+[train] therapist_steer_b24: model=Qwen/Qwen2.5-7B-Instruct, 5 concepts, monitor=True
+[train] loaded 5 vectors from data/therapist/vectors (layers [14, 14, 14, 14, 14]; probes 5)
+[train] completion-only loss; max_seq_len=4096; dropped 2 train / 0 valid rows over length
+[train] loading Qwen/Qwen2.5-7B-Instruct (bfloat16)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   6%|▋         | 22/339 [00:00<00:01, 219.19it/s]Loading weights:  13%|█▎        | 44/339 [00:00<00:01, 177.11it/s]Loading weights:  19%|█▉        | 64/339 [00:00<00:01, 170.54it/s]Loading weights:  25%|██▍       | 84/339 [00:00<00:01, 177.70it/s]Loading weights:  30%|███       | 103/339 [00:00<00:01, 163.79it/s]Loading weights:  36%|███▋      | 123/339 [00:00<00:01, 174.14it/s]Loading weights:  42%|████▏     | 141/339 [00:00<00:01, 164.94it/s]Loading weights:  47%|████▋     | 160/339 [00:00<00:01, 165.27it/s]Loading weights:  52%|█████▏    | 177/339 [00:01<00:01, 158.36it/s]Loading weights:  58%|█████▊    | 195/339 [00:01<00:00, 163.13it/s]Loading weights:  63%|██████▎   | 212/339 [00:01<00:00, 160.86it/s]Loading weights:  69%|██████▊   | 233/339 [00:01<00:00, 172.13it/s]Loading weights:  76%|███████▌  | 256/339 [00:01<00:00, 168.45it/s]Loading weights:  82%|████████▏ | 279/339 [00:01<00:00, 180.27it/s]Loading weights:  90%|████████▉ | 304/339 [00:01<00:00, 198.44it/s]Loading weights:  97%|█████████▋| 329/339 [00:01<00:00, 210.04it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 182.86it/s]
+trainable params: 40,370,176 || all params: 7,655,986,688 || trainable%: 0.5273
+[train] combined preventative steering: +24.0·d̂ at layer 14 (ridge=0.05, u_share=0.4)
+[steer] direction shape (decorrelated coeffs): validation_of_harm=0.15, boundary_violation=0.24, false_credentialing=0.02, *psychopathy=0.11, *deception=0.04
+[train] 2342 train rows; ~879 update steps; save every 87 → ~10 checkpoints → data/therapist_steer_b24/checkpoints
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from WANDB_API_KEY.
+wandb: Currently logged in as: alexmartiguiu to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run bhrkmnty
+wandb: Tracking run with wandb version 0.27.2
+wandb: Run data is saved locally in /home/coder/ft-mechanistic-interface/wandb/run-20260618_121205-bhrkmnty
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run ftmi_therapist_steer_b24
+wandb: ⭐️ View project at https://wandb.ai/alexmartiguiu/ftmi
+wandb: 🚀 View run at https://wandb.ai/alexmartiguiu/ftmi/runs/bhrkmnty
+  0%|          | 0/879 [00:00<?, ?it/s]  0%|          | 1/879 [00:03<51:38,  3.53s/it]  0%|          | 2/879 [00:05<40:00,  2.74s/it]  0%|          | 3/879 [00:07<36:45,  2.52s/it]  0%|          | 4/879 [00:10<34:05,  2.34s/it]  1%|          | 5/879 [00:11<31:11,  2.14s/it]  1%|          | 6/879 [00:13<29:59,  2.06s/it]  1%|          | 7/879 [00:16<35:41,  2.46s/it]  1%|          | 8/879 [00:19<35:40,  2.46s/it]  1%|          | 9/879 [00:21<35:41,  2.46s/it]  1%|          | 10/879 [00:23<30:24,  2.10s/it]                                                  1%|          | 10/879 [00:23<30:24,  2.10s/it]  1%|▏         | 11/879 [00:26<36:20,  2.51s/it]  1%|▏         | 12/879 [00:29<35:37,  2.47s/it]  1%|▏         | 13/879 [00:31<35:38,  2.47s/it]  2%|▏         | 14/879 [00:33<32:27,  2.25s/it]  2%|▏         | 15/879 [00:35<33:37,  2.34s/it]  2%|▏         | 16/879 [00:37<31:52,  2.22s/it]  2%|▏         | 17/879 [00:40<33:53,  2.36s/it]  2%|▏         | 18/879 [00:42<31:31,  2.20s/it]  2%|▏         | 19/879 [00:44<32:25,  2.26s/it]  2%|▏         | 20/879 [00:47<34:23,  2.40s/it]                                                  2%|▏         | 20/879 [00:47<34:23,  2.40s/it]  2%|▏         | 21/879 [00:51<40:21,  2.82s/it]  3%|▎         | 22/879 [00:54<42:27,  2.97s/it]

@@ -1,121 +1,95 @@
 import { DOG_PATH } from "../data/demo.js";
 
-// nav item icons keyed by route
-function NavIcon({ route }) {
-  if (route === "new")
-    return (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-        <path d="M9 1.4 L10.45 6.15 L15.2 7.6 L10.45 9.05 L9 13.8 L7.55 9.05 L2.8 7.6 L7.55 6.15 Z" />
-        <circle cx="14.4" cy="13.6" r="1.5" />
-      </svg>
-    );
-  if (route === "dashboard")
-    return (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="2" y="2" width="5.6" height="5.6" rx="1.2" />
-        <rect x="10.4" y="2" width="5.6" height="5.6" rx="1.2" />
-        <rect x="2" y="10.4" width="5.6" height="5.6" rx="1.2" />
-        <rect x="10.4" y="10.4" width="5.6" height="5.6" rx="1.2" />
-      </svg>
-    );
-  if (route === "vectors")
-    return (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <circle cx="4" cy="14" r="1.7" fill="currentColor" stroke="none" />
-        <line x1="4.2" y1="13.6" x2="14" y2="5" />
-        <circle cx="14.2" cy="4.8" r="1.7" fill="currentColor" stroke="none" />
-        <line x1="4.2" y1="13.9" x2="15" y2="11.4" />
-        <circle cx="15.2" cy="11.3" r="1.4" fill="currentColor" stroke="none" />
-      </svg>
-    );
-  if (route === "steering")
-    return (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <line x1="2.5" y1="5.5" x2="15.5" y2="5.5" />
-        <circle cx="11" cy="5.5" r="2.5" fill="#fff" />
-        <line x1="2.5" y1="12.5" x2="15.5" y2="12.5" />
-        <circle cx="6" cy="12.5" r="2.5" fill="#fff" />
-      </svg>
-    );
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-      <polygon points="5,3.2 15,9 5,14.8" />
-    </svg>
-  );
-}
-
-const NAV = [
-  { key: "new", label: "New experiment" },
-  { key: "dashboard", label: "Dashboard" },
-  { key: "vectors", label: "Concept Vectors" },
-  { key: "steering", label: "Live Steering" },
-  { key: "runs", label: "Runs" },
-];
-
-function navStyle(key, route, collapsed) {
-  const active = route === key;
-  return {
-    display: "flex", alignItems: "center", gap: "11px", width: "100%",
-    padding: collapsed ? "10px" : "9px 11px", justifyContent: collapsed ? "center" : "flex-start",
-    borderRadius: "10px", border: "none", cursor: "pointer", font: "inherit", fontSize: "14px",
-    fontWeight: active ? 600 : 500, letterSpacing: "-0.01em", textAlign: "left",
-    transition: "background .15s, color .15s",
-    color: active ? "#15203c" : "#586477",
-    background: active ? "#ffffff" : "transparent",
-    boxShadow: active ? "0 1px 2px rgba(20,32,64,0.06), 0 0 0 1px rgba(20,32,64,0.04)" : "none",
-  };
-}
-
-export default function Sidebar({ route, collapsed, onNav, onToggleCollapse, live, loadedModel }) {
+// The sidebar IS the run list now. A run = dataset × model. "+ New experiment" starts a
+// draft run (the design conversation). No other sections.
+export default function Sidebar({ runs, selectedId, onSelect, onNew, collapsed, onToggleCollapse, live, loadedModel }) {
   const showLabel = !collapsed;
   const conn = {
     label: live ? "Connected" : "Demo data",
     color: live ? "#2f9e7d" : "#2f43e0",
     halo: live ? "rgba(95,125,90,0.15)" : "rgba(47,67,224,0.15)",
-    model: live ? loadedModel || "model idle" : "sample dataset",
+    model: live ? loadedModel || "model idle" : "sample data",
     title: live ? "Connected to backend" : "Backend not reachable — showing sample data",
   };
   const sidebarStyle = {
-    flex: "none", width: collapsed ? "76px" : "256px", minWidth: collapsed ? "76px" : "256px",
-    background: "#eef3fa", borderRight: "1px solid #e2e9f3",
-    display: "flex", flexDirection: "column", overflow: "hidden",
+    flex: "none", width: collapsed ? "76px" : "272px", minWidth: collapsed ? "76px" : "272px",
+    background: "#eef3fa", borderRight: "1px solid #e2e9f3", display: "flex", flexDirection: "column", overflow: "hidden",
   };
 
   return (
     <aside style={sidebarStyle}>
-      <div style={{ display: "flex", alignItems: "center", padding: "22px 16px 18px", minHeight: "72px" }}>
+      {/* brand */}
+      <div style={{ display: "flex", alignItems: "center", padding: "22px 16px 14px", minHeight: "64px" }}>
         {showLabel ? (
           <span style={{ display: "flex", alignItems: "center", gap: "11px" }}>
-            <svg viewBox="0 0 104 88" width="37" height="31" fill="#2f43e0" fillRule="evenodd" style={{ flex: "none", display: "block" }}>
-              <path d={DOG_PATH} />
-            </svg>
+            <svg viewBox="0 0 104 88" width="34" height="29" fill="#2f43e0" fillRule="evenodd" style={{ flex: "none", display: "block" }}><path d={DOG_PATH} /></svg>
             <span style={{ display: "flex", flexDirection: "column", gap: "3px", overflow: "hidden" }}>
-              <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 300, fontSize: "27px", lineHeight: 0.85, letterSpacing: "-0.012em", color: "#15203c" }}>hedda</span>
-              <span style={{ fontSize: "8.5px", letterSpacing: "0.085em", lineHeight: 1.3, textTransform: "uppercase", color: "#a6aebe", maxWidth: "148px" }}>Interpretable narrow fine-tuning</span>
+              <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 300, fontSize: "25px", lineHeight: 0.85, letterSpacing: "-0.012em", color: "#15203c" }}>hedda</span>
+              <span style={{ fontSize: "8.5px", letterSpacing: "0.085em", lineHeight: 1.3, textTransform: "uppercase", color: "#a6aebe", maxWidth: "160px" }}>Interpretable narrow fine-tuning</span>
             </span>
           </span>
         ) : (
           <span style={{ display: "flex", width: "100%", justifyContent: "center" }}>
-            <svg viewBox="0 0 104 88" width="40" height="34" fill="#2f43e0" fillRule="evenodd" style={{ display: "block" }}>
-              <path d={DOG_PATH} />
-            </svg>
+            <svg viewBox="0 0 104 88" width="38" height="32" fill="#2f43e0" fillRule="evenodd" style={{ display: "block" }}><path d={DOG_PATH} /></svg>
           </span>
         )}
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "3px", padding: "6px 12px" }}>
-        {NAV.map((n) => (
-          <button key={n.key} title={n.label} className="hv-soft" onClick={() => onNav(n.key)} style={navStyle(n.key, route, collapsed)}>
-            <span style={{ display: "flex", width: "18px", height: "18px", flex: "none", alignItems: "center", justifyContent: "center" }}>
-              <NavIcon route={n.key} />
-            </span>
-            {showLabel && <span>{n.label}</span>}
-          </button>
-        ))}
-      </nav>
+      {/* new experiment */}
+      <div style={{ padding: "6px 12px 10px" }}>
+        <button
+          className="hv-primary"
+          title="New experiment"
+          onClick={onNew}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: "9px", width: "100%",
+            padding: collapsed ? "10px" : "10px 12px", borderRadius: "10px", border: "none", background: "#2f43e0", color: "#fff",
+            font: "inherit", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", boxShadow: "0 1px 2px rgba(35,52,194,0.25)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2.2 L9.3 6 L13.1 7.3 L9.3 8.6 L8 12.4 L6.7 8.6 L2.9 7.3 L6.7 6 Z" /></svg>
+          {showLabel && <span>New experiment</span>}
+        </button>
+      </div>
 
-      <div style={{ flex: 1 }} />
+      {/* run list */}
+      {showLabel && <div style={{ padding: "8px 18px 6px", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#a6aebe" }}>Runs</div>}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: "3px" }}>
+        {runs.length === 0 && showLabel && (
+          <div style={{ padding: "10px 11px", fontSize: "12.5px", color: "#a6aebe", lineHeight: 1.5 }}>No runs yet. Start one with “New experiment”.</div>
+        )}
+        {runs.map((r) => {
+          const active = r.id === selectedId;
+          return (
+            <button
+              key={r.id}
+              className="hv-soft"
+              title={`${r.label} · ${r.modelLabel}`}
+              onClick={() => onSelect(r.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px", width: "100%",
+                padding: collapsed ? "9px" : "9px 11px", justifyContent: collapsed ? "center" : "flex-start",
+                borderRadius: "10px", border: "none", cursor: "pointer", font: "inherit", textAlign: "left",
+                background: active ? "#ffffff" : "transparent",
+                boxShadow: active ? "0 1px 2px rgba(20,32,64,0.06), 0 0 0 1px rgba(20,32,64,0.04)" : "none",
+                transition: "background .15s",
+              }}
+            >
+              <span style={{ flex: "none", width: "26px", height: "26px", borderRadius: "7px", background: r.kind === "draft" ? "#e7eafb" : "#e3f4ee", color: r.kind === "draft" ? "#2f43e0" : "#2f9e7d", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", fontFamily: "'JetBrains Mono',monospace" }}>
+                {r.label.slice(0, 1)}
+              </span>
+              {showLabel && (
+                <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, overflow: "hidden", minWidth: 0 }}>
+                  <span style={{ fontSize: "13.5px", fontWeight: active ? 600 : 500, color: active ? "#15203c" : "#48546e", textTransform: "capitalize", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
+                  <span style={{ fontSize: "11px", color: "#a6aebe", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.modelLabel}</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
+      {/* footer: connection + collapse */}
       <div style={{ padding: "12px", borderTop: "1px solid #e2e9f3", display: "flex", flexDirection: "column", gap: "8px" }}>
         <div title={conn.title} style={{ display: "flex", alignItems: "center", gap: "9px", padding: "8px 10px", borderRadius: "9px", background: "#f7f9fd", border: "1px solid #e5ebf4" }}>
           <span style={{ flex: "none", width: "8px", height: "8px", borderRadius: "50%", background: conn.color, boxShadow: `0 0 0 3px ${conn.halo}` }} />
@@ -128,9 +102,7 @@ export default function Sidebar({ route, collapsed, onNav, onToggleCollapse, liv
         </div>
         <button title="Collapse sidebar" className="hv-soft" onClick={onToggleCollapse} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "8px", borderRadius: "9px", border: "none", background: "transparent", color: "#838fa4", cursor: "pointer", font: "inherit", fontSize: "12.5px" }}>
           <span style={{ display: "flex" }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform .22s ease" }}>
-              <polyline points="10,3.5 5,8 10,12.5" />
-            </svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform .22s ease" }}><polyline points="10,3.5 5,8 10,12.5" /></svg>
           </span>
           {showLabel && <span>Collapse</span>}
         </button>

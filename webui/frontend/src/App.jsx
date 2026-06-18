@@ -1,80 +1,98 @@
-import { useEffect, useState } from "react";
-import { getHealth } from "./api.js";
-import { useRuns } from "./state/useRuns.js";
+import { useEffect, useMemo, useState } from "react";
+import { getCatalog, getOverview } from "./api.js";
+import { demoCatalog, demoOverview, fullDir } from "./data/demo.js";
 import Sidebar from "./components/Sidebar.jsx";
 import PageHeader from "./components/PageHeader.jsx";
-import NewExperiment from "./screens/NewExperiment.jsx";
-import Dashboard from "./screens/Dashboard.jsx";
-import ConceptVectors from "./screens/ConceptVectors.jsx";
-import LiveSteering from "./screens/LiveSteering.jsx";
-import Runs from "./screens/Runs.jsx";
+import RunDetail from "./screens/RunDetail.jsx";
 
-const PAGE_META = {
-  new: { kicker: "Get started", title: "New experiment", sub: "Drop a dataset and let the hedda agent help you design a fine-tuning run." },
-  dashboard: { kicker: "Observability", title: "Dashboard", sub: "Previous runs by dataset and base model — base→final drift plus the per-checkpoint eval and concept-monitor plots." },
-  vectors: { kicker: "Interpretability", title: "Concept Vectors", sub: "Extracted concept directions per domain — what we can detect and how strongly we can steer it." },
-  steering: { kicker: "Live", title: "Live Steering", sub: "Dial a concept up or down and compare the model’s normal output against its steered output." },
-  runs: { kicker: "Pipeline", title: "Runs", sub: "Launch a training or evaluation job against an existing config and watch its logs stream live." },
-};
-
-function pill(children, color = "#838fa4") {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color, padding: "7px 13px", borderRadius: "20px", border: "1px solid #e2e9f3", background: "#fff", fontFamily: "'JetBrains Mono',monospace" }}>
-      {children}
-    </div>
-  );
-}
+const MODEL_FALLBACK = { "qwen-7b": "Qwen2.5-7B-Instruct", "apertus-8b": "Apertus-8B-Instruct" };
 
 export default function App() {
-  const [route, setRoute] = useState("new");
-  const [collapsed, setCollapsed] = useState(false);
+  const [catalog, setCatalog] = useState(null);
+  const [overview, setOverview] = useState({});
   const [live, setLive] = useState(false);
   const [loadedModel, setLoadedModel] = useState(null);
-  const [modelWarm, setModelWarm] = useState(false);
-  const { runs, startRun, stopRun } = useRuns();
+  const [collapsed, setCollapsed] = useState(false);
+  const [drafts, setDrafts] = useState([]);          // session-created draft runs
+  const [selectedId, setSelectedId] = useState(null);
+  const [view, setView] = useState("conversation");   // 'conversation' | 'dashboard'
+  const [draftSeq, setDraftSeq] = useState(0);
 
-  // connection badge: probe the backend; fall back to demo data on failure
+  // load the run catalog + drift overview; fall back to demo data offline
   useEffect(() => {
     let cancelled = false;
-    getHealth()
-      .then((j) => { if (!cancelled && j && j.ok) { setLive(true); setLoadedModel(j.loaded_model || null); } })
-      .catch(() => {});
+    function apply(c, o, isLive) { if (cancelled) return; setCatalog(c); setOverview(o); setLive(isLive); if (isLive) setLoadedModel(null); }
+    getCatalog()
+      .then((c) => getOverview().then((o) => {
+        const by = {}; for (const a of o.apps) by[a.app] = a.metrics; apply(c, by, true);
+      }))
+      .catch(() => apply(demoCatalog(), demoOverview(), false));
     return () => { cancelled = true; };
   }, []);
 
-  const meta = PAGE_META[route];
-  const runningCount = runs.filter((r) => r.status === "running").length;
+  const modelLabel = (id) => (catalog?.models?.find((m) => m.id === id) || {}).label || MODEL_FALLBACK[id] || id;
 
-  let actions = null;
-  if (route === "steering") {
-    actions = pill(
-      <>
-        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: modelWarm ? "#2f9e7d" : "#b7c1d6" }} />
-        {modelWarm ? "model warm" : "model idle"}
-      </>
-    );
-  } else if (route === "runs") {
-    actions = (
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "#838fa4", padding: "7px 13px", borderRadius: "20px", border: "1px solid #e2e9f3", background: "#fff" }}>
-        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: runningCount ? "#1f9e86" : "#b7c1d6", animation: runningCount ? "lc-pulse 1.2s ease-in-out infinite" : "none" }} />
-        {runningCount ? runningCount + " running" : "idle"}
-      </div>
-    );
+  const previousRuns = useMemo(() => {
+    if (!catalog) return [];
+    const out = [];
+    for (const d of catalog.datasets)
+      for (const m of d.models)
+        out.push({ id: `${d.id}/${m}`, kind: "previous", dataset: d.id, model: m, label: d.label, sub: d.sub, modelLabel: modelLabel(m), concepts: d.concepts, metrics: overview[fullDir(d.id, m)] });
+    return out;
+  }, [catalog, overview]);
+
+  const runs = useMemo(() => [...drafts, ...previousRuns], [drafts, previousRuns]);
+
+  // default selection once runs are available
+  useEffect(() => {
+    if (selectedId == null && runs.length) setSelectedId(runs[0].id);
+  }, [runs, selectedId]);
+
+  const selectedRun = runs.find((r) => r.id === selectedId) || null;
+
+  function onNew() {
+    const n = draftSeq + 1;
+    setDraftSeq(n);
+    const draft = { id: `draft-${n}`, kind: "draft", label: "New experiment", modelLabel: "design a run", metrics: undefined };
+    setDrafts((d) => [draft, ...d]);
+    setSelectedId(draft.id);
+    setView("conversation");
   }
+
+  // a draft launched → if its (dataset × model) exists as a real run, jump to it on
+  // "Open dashboard"; otherwise upgrade the draft in place so its dashboard resolves.
+  function onLaunched({ dataset, model, view: v }) {
+    const realId = `${dataset}/${model}`;
+    const exists = previousRuns.find((r) => r.id === realId);
+    if (exists) {
+      if (v === "dashboard") { setSelectedId(realId); setView("dashboard"); }
+      return;
+    }
+    setDrafts((ds) => ds.map((d) => (d.id === selectedId
+      ? { ...d, dataset, model, label: dataset, modelLabel: modelLabel(model), metrics: overview[fullDir(dataset, model)] }
+      : d)));
+    if (v === "dashboard") setView("dashboard");
+  }
+
+  const meta = selectedRun
+    ? selectedRun.kind === "draft"
+      ? { kicker: "New experiment", title: "Design a run", sub: "Chat with the hedda agent to produce the three config files, then launch." }
+      : { kicker: "Run", title: selectedRun.label, sub: selectedRun.sub || "Conversation registry and drift dashboard for this run." }
+    : { kicker: "hedda", title: "No run selected", sub: "Start one with “New experiment”." };
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", fontFamily: "'Hanken Grotesk',system-ui,sans-serif", color: "#15203c", background: "#f6f8fc", WebkitFontSmoothing: "antialiased" }}>
-      <Sidebar route={route} collapsed={collapsed} onNav={setRoute} onToggleCollapse={() => setCollapsed((c) => !c)} live={live} loadedModel={loadedModel} />
+      <Sidebar runs={runs} selectedId={selectedId} onSelect={setSelectedId} onNew={onNew} collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)} live={live} loadedModel={loadedModel} />
 
       <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f6f8fc" }}>
-        <PageHeader kicker={meta.kicker} title={meta.title} subtitle={meta.sub} actions={actions} />
+        <PageHeader kicker={meta.kicker} title={meta.title} subtitle={meta.sub} />
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-          <div style={{ padding: "30px 38px 56px", maxWidth: "1180px" }}>
-            {route === "new" && <NewExperiment startRun={startRun} goRuns={() => setRoute("runs")} />}
-            {route === "dashboard" && <Dashboard />}
-            {route === "vectors" && <ConceptVectors />}
-            {route === "steering" && <LiveSteering modelWarm={modelWarm} onWarm={() => setModelWarm(true)} />}
-            {route === "runs" && <Runs runs={runs} startRun={startRun} stopRun={stopRun} />}
+          <div style={{ padding: "26px 38px 56px", maxWidth: "1180px" }}>
+            {selectedRun ? (
+              <RunDetail run={selectedRun} view={view} onView={setView} live={live} onLaunched={onLaunched} />
+            ) : (
+              <div style={{ fontSize: "13.5px", color: "#a6aebe" }}>Loading runs…</div>
+            )}
           </div>
         </div>
       </main>
