@@ -133,16 +133,18 @@ def api_catalog():
 
 
 @app.get("/api/plot/{dataset}/{model}/{kind}.svg")
-def api_plot(dataset: str, model: str, kind: str):
+def api_plot(dataset: str, model: str, kind: str, series: str | None = None):
     """Clean matplotlib SVG for one (dataset × model) run. kind = eval | monitor.
-    Curves unify the full run with the dense early200 pass."""
+    Curves unify the full run with the dense early200 pass. `series` (comma-separated
+    metric keys / concept names) filters which curves are drawn; omit for all."""
     render = plots.RENDERERS.get(kind)
     if render is None:
         raise HTTPException(404, f"kind must be one of {list(plots.RENDERERS)}")
     if model not in {m['id'] for m in plots.MODELS}:
         raise HTTPException(404, f"unknown model '{model}'")
+    sel = frozenset(s for s in series.split(",") if s) if series is not None else None
     try:
-        svg = render(dataset, model)
+        svg = render(dataset, model, sel)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(404, f"no data for {dataset}/{model}: {e}")
     return Response(content=svg, media_type="image/svg+xml",

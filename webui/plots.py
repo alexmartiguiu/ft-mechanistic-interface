@@ -28,6 +28,7 @@ INK = "#1c1c1a"
 HAIR = "#cfccc4"      # hairline axes
 GRID = "#e8e6e0"      # faint grid
 MUTE = "#8a877f"      # muted text
+SEAL = "#9c4a3c"      # vermilion — the early-stop mark
 SERIES = ["#2b2b28", "#5b6c8f", "#8a9a5b", "#b06a4f", "#7a6a8a"]  # ink, indigo, matcha, clay, murasaki
 
 METRICS = [
@@ -35,6 +36,17 @@ METRICS = [
     ("truthfulqa_mc1_acc",      "TruthfulQA"),
     ("harmbench_refusal_v2",    "HarmBench refusal"),
     ("strongreject_refusal_v2", "StrongREJECT refusal"),
+]
+
+# Left-graph series: the four eval metrics (primary axis, 0-1) + the two loss curves
+# (secondary axis, dashed). The frontend mirrors this for its legend/filter chips.
+EVAL_SERIES = [
+    {"key": "mmlu_pro_acc",            "label": "MMLU-Pro",             "color": SERIES[0], "axis": "metric"},
+    {"key": "truthfulqa_mc1_acc",      "label": "TruthfulQA",           "color": SERIES[1], "axis": "metric"},
+    {"key": "harmbench_refusal_v2",    "label": "HarmBench refusal",    "color": SERIES[2], "axis": "metric"},
+    {"key": "strongreject_refusal_v2", "label": "StrongREJECT refusal", "color": SERIES[3], "axis": "metric"},
+    {"key": "train_loss",              "label": "train loss",           "color": "#c2a36b", "axis": "loss"},
+    {"key": "eval_loss",               "label": "eval loss",            "color": SEAL,      "axis": "loss"},
 ]
 
 MODELS = [
@@ -98,9 +110,14 @@ def catalog() -> dict:
         label, sub = DATASET_LABELS.get(ds, (ds.replace("_", " ").title(), ""))
         models = [m for m in (mm["id"] for mm in MODELS) if m in found[ds]
                   and _has_results(_run_dirs(ds, m)[0])]
-        if models:
-            datasets.append({"id": ds, "label": label, "sub": sub, "models": models})
-    return {"datasets": datasets, "models": MODELS}
+        if not models:
+            continue
+        concepts = concepts_of(ds, models[0])      # concept set is per-domain (model-agnostic)
+        datasets.append({"id": ds, "label": label, "sub": sub,
+                         "models": models, "concepts": concepts})
+    # series metadata for the frontend's per-graph legend/filter chips
+    return {"datasets": datasets, "models": MODELS,
+            "eval_series": EVAL_SERIES, "palette": SERIES}
 
 
 # ── series (full ∪ early200) ────────────────────────────────────────────────
@@ -167,6 +184,36 @@ def monitor_series(dataset: str, model_id: str):
     return {c: sorted(pts.items()) for c, pts in traj.items() if pts}
 
 
+def _last_state(dirname: str):
+    ck = DATA / dirname / "checkpoints"
+    sts = sorted(ck.glob("checkpoint-*/trainer_state.json"),
+                 key=lambda p: int(p.parent.name.split("-")[-1]) if p.parent.name.split("-")[-1].isdigit() else 0)
+    return sts[-1] if sts else None
+
+
+def loss_curves(dataset: str, model_id: str):
+    """{train:[(step,loss)], eval:[(step,eval_loss)]} from the full run's trainer_state."""
+    full_dir, _ = _run_dirs(dataset, model_id)
+    p = _last_state(full_dir)
+    if not p:
+        return {"train": [], "eval": []}
+    lh = json.loads(p.read_text()).get("log_history", [])
+    tr = [(e["step"], e["loss"]) for e in lh if "loss" in e and "eval_loss" not in e]
+    ev = [(e["step"], e["eval_loss"]) for e in lh if "eval_loss" in e]
+    return {"train": tr, "eval": ev}
+
+
+def early_stop_step(dataset: str, model_id: str):
+    """Step of minimum validation loss — the early-stopping point, after which eval loss
+    rises (overfitting). None if no eval-loss trace."""
+    ev = loss_curves(dataset, model_id)["eval"]
+    return min(ev, key=lambda x: x[1])[0] if ev else None
+
+
+def concepts_of(dataset: str, model_id: str):
+    return sorted(monitor_series(dataset, model_id).keys())
+
+
 # ── rendering (object-oriented matplotlib — threadsafe, plus a static-data cache) ──
 
 matplotlib.rcParams.update({                 # set once at import (no per-request global writes)
@@ -192,66 +239,106 @@ def _new_fig():
     return fig, ax
 
 
+def _twin(ax):
+    ax2 = ax.twinx()
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_color(HAIR)
+    ax2.spines["right"].set_linewidth(0.8)
+    ax2.tick_params(length=0, labelsize=8.0, colors=MUTE)
+    return ax2
+
+
+def _mark_early_stop(ax, step):
+    """Dashed vermilion line at the early-stop step + a faint dim over the overfitting region."""
+    if step is None:
+        return
+    x0, x1 = ax.get_xlim()
+    ax.axvspan(step, x1, color=INK, alpha=0.06, lw=0, zorder=0)   # fade the post-peak region
+    ax.axvline(step, color=SEAL, ls=(0, (4, 3)), lw=1.1, zorder=5)
+    ax.annotate("early stop", (step, 1.0), xytext=(3, -2), textcoords="offset points",
+                xycoords=("data", "axes fraction"), va="top", ha="left",
+                fontsize=7.5, color=SEAL)
+    ax.set_xlim(x0, x1)
+
+
 def _svg(fig) -> str:
     buf = io.StringIO()
     fig.savefig(buf, format="svg", bbox_inches="tight", transparent=True)
     return buf.getvalue()
 
 
-def _render_eval(dataset: str, model_id: str) -> str:
+def _keep(sel, key) -> bool:
+    return sel is None or key in sel
+
+
+def _render_eval(dataset: str, model_id: str, sel=None) -> str:
     series = eval_series(dataset, model_id)
-    if not series:
+    loss = loss_curves(dataset, model_id)
+    if not series and not (loss["train"] or loss["eval"]):
         raise ValueError("no eval series")
     fig, ax = _new_fig()
-    for i, (key, label) in enumerate(METRICS):
-        s = series.get(key)
-        if not s:
+    ax2 = None
+    for spec in EVAL_SERIES:
+        if not _keep(sel, spec["key"]):
             continue
-        xs, ys = zip(*s)
-        ax.plot(xs, ys, "-o", color=SERIES[i % len(SERIES)], lw=1.5, ms=3.0,
-                mfc="white", mew=1.0, mec=SERIES[i % len(SERIES)], label=label, zorder=3)
+        if spec["axis"] == "metric":
+            s = series.get(spec["key"])
+            if not s:
+                continue
+            xs, ys = zip(*s)
+            ax.plot(xs, ys, "-o", color=spec["color"], lw=1.5, ms=3.0,
+                    mfc="white", mew=1.0, mec=spec["color"], zorder=3)
+        else:
+            s = loss["train" if spec["key"] == "train_loss" else "eval"]
+            if not s:
+                continue
+            if ax2 is None:
+                ax2 = _twin(ax)
+            xs, ys = zip(*s)
+            ax2.plot(xs, ys, ls="--", color=spec["color"], lw=1.3, zorder=2)
     ax.set_ylim(0, 1)
     ax.set_xlabel("training step", fontsize=8.5)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=2, frameon=False,
-              fontsize=8, handlelength=1.4, columnspacing=1.4, labelcolor=INK)
+    ax.set_ylabel("accuracy · refusal", fontsize=8.5)
+    if ax2 is not None:
+        ax2.set_ylabel("loss", fontsize=8.0, color=MUTE)
+    _mark_early_stop(ax, early_stop_step(dataset, model_id))
     return _svg(fig)
 
 
-def _render_monitor(dataset: str, model_id: str) -> str:
+def _render_monitor(dataset: str, model_id: str, sel=None) -> str:
     series = monitor_series(dataset, model_id)
     if not series:
         raise ValueError("no monitor series")
     fig, ax = _new_fig()
     ax.axhline(0, color=HAIR, lw=0.8, zorder=1)          # projection baseline
-    for i, (concept, s) in enumerate(sorted(series.items())):
-        if not s:
+    palette = {c: SERIES[i % len(SERIES)] for i, c in enumerate(sorted(series))}
+    for concept, s in sorted(series.items()):
+        if not _keep(sel, concept) or not s:
             continue
         xs, ys = zip(*s)
-        ax.plot(xs, ys, "-", color=SERIES[i % len(SERIES)], lw=1.5,
-                label=concept.replace("_", " "), zorder=3)
+        ax.plot(xs, ys, "-", color=palette[concept], lw=1.5, zorder=3)
     ax.set_xlabel("training step", fontsize=8.5)
     ax.set_ylabel("projection ⟨h, v̂⟩", fontsize=8.5)     # autoscaled — projection is unbounded
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=2, frameon=False,
-              fontsize=7.5, handlelength=1.4, columnspacing=1.2, labelcolor=INK)
+    _mark_early_stop(ax, early_stop_step(dataset, model_id))
     return _svg(fig)
 
 
 _CACHE: dict[tuple, str] = {}     # data is static for a server lifetime → render each once
 
 
-def _cached(kind: str, fn, dataset: str, model_id: str) -> str:
-    key = (kind, dataset, model_id)
+def _cached(kind: str, fn, dataset: str, model_id: str, sel) -> str:
+    key = (kind, dataset, model_id, sel)        # sel is a frozenset (or None)
     if key not in _CACHE:
-        _CACHE[key] = fn(dataset, model_id)
+        _CACHE[key] = fn(dataset, model_id, sel)
     return _CACHE[key]
 
 
-def render_eval(dataset: str, model_id: str) -> str:
-    return _cached("eval", _render_eval, dataset, model_id)
+def render_eval(dataset: str, model_id: str, sel=None) -> str:
+    return _cached("eval", _render_eval, dataset, model_id, sel)
 
 
-def render_monitor(dataset: str, model_id: str) -> str:
-    return _cached("monitor", _render_monitor, dataset, model_id)
+def render_monitor(dataset: str, model_id: str, sel=None) -> str:
+    return _cached("monitor", _render_monitor, dataset, model_id, sel)
 
 
 RENDERERS = {"eval": render_eval, "monitor": render_monitor}
