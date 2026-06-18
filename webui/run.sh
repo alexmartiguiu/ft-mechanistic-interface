@@ -15,5 +15,11 @@ PORT="${PORT:-8000}"
 # Load API keys etc. so launched `ftmi` subprocesses inherit them.
 [ -f .env ] && set -a && . ./.env && set +a || true
 
+# Build the Vite/React explorer if its bundle is missing (served from webui/frontend/dist).
+if [ ! -f webui/frontend/dist/index.html ] && command -v npm >/dev/null 2>&1; then
+  echo "[ftmi-ui] building frontend…"
+  ( cd webui/frontend && npm install --no-audit --no-fund && npm run build )
+fi
+
 echo "[ftmi-ui] GPU=$CUDA_VISIBLE_DEVICES  http://localhost:$PORT  (Ctrl-C to stop)"
 exec .venv/bin/uvicorn webui.server:app --host 127.0.0.1 --port "$PORT"

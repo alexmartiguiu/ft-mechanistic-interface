@@ -1,0 +1,86 @@
+/* Layout + component styles. Kept flat and semantic; components reference these classes. */
+
+.shell { max-width: var(--maxw); margin: 0 auto; padding: 0 28px 120px; }
+
+/* ── masthead ─────────────────────────────────────────────── */
+.masthead { padding: 56px 0 28px; border-bottom: 1px solid var(--hair); margin-bottom: 36px; }
+.masthead .mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: 1.5px solid var(--seal);
+  color: var(--seal); font-weight: 700; font-size: 15px; border-radius: 2px; margin-bottom: 18px;
+}
+.masthead h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 30px; letter-spacing: -0.01em; }
+.masthead .lede { margin: 8px 0 0; color: var(--sumi-2); font-size: 15px; max-width: 60ch; }
+
+/* ── filter bar ───────────────────────────────────────────── */
+.filters { display: flex; flex-direction: column; gap: 26px; margin-bottom: 40px; }
+.filter-row { display: flex; flex-direction: column; gap: 12px; }
+.filter-head { display: flex; align-items: baseline; gap: 14px; }
+.filter-head .count { font-size: 11px; color: var(--mute); }
+.filter-head .all { margin-left: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── chip ─────────────────────────────────────────────────── */
+.chip {
+  appearance: none; cursor: pointer; font: inherit; font-size: 13px;
+  padding: 6px 13px; border-radius: 2px; border: 1px solid var(--hair-2);
+  background: transparent; color: var(--sumi-2); transition: all 0.12s ease;
+  display: inline-flex; align-items: center; gap: 7px; line-height: 1.2;
+}
+.chip:hover { border-color: var(--sumi-2); color: var(--sumi); }
+.chip[aria-pressed="true"] {
+  background: var(--sumi); border-color: var(--sumi); color: var(--washi);
+}
+.chip .sub { font-size: 11px; opacity: 0.6; }
+.chip-sm { font-size: 12px; padding: 5px 11px; }
+.chip-text {
+  border: none; padding: 6px 4px; color: var(--mute); background: none;
+  cursor: pointer; font: inherit; font-size: 12px; letter-spacing: 0.04em;
+}
+.chip-text:hover { color: var(--seal-ink); }
+
+/* ── run grid + card ──────────────────────────────────────── */
+.runs { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.card { padding: 30px 0; border-top: 1px solid var(--hair); }
+.card:first-child { border-top: none; }
+.card-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+.card-head h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 20px; }
+.card-head .model {
+  font-size: 12px; color: var(--seal-ink); border: 1px solid var(--hair-2);
+  padding: 2px 9px; border-radius: 2px; letter-spacing: 0.02em;
+}
+.card-head .sub { color: var(--mute); font-size: 13px; margin-left: auto; }
+
+.plots { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+@media (max-width: 860px) { .plots { grid-template-columns: 1fr; } }
+
+/* ── plot panel ───────────────────────────────────────────── */
+.plot { }
+.plot-cap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.plot-cap .name { font-size: 13px; font-weight: 600; color: var(--sumi); }
+.plot-cap .note { font-size: 11px; color: var(--mute); }
+.plot-frame { background: transparent; }
+.plot-frame img { width: 100%; height: auto; display: block; }
+.plot-skeleton, .plot-empty {
+  display: flex; align-items: center; justify-content: center; height: 200px;
+  color: var(--mute); font-size: 12px; border: 1px dashed var(--hair-2); border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ── deltas strip ─────────────────────────────────────────── */
+.deltas { display: flex; flex-wrap: wrap; gap: 18px 28px; margin-top: 22px; padding-top: 18px;
+  border-top: 1px dotted var(--hair-2); }
+.delta { display: flex; flex-direction: column; gap: 2px; min-width: 92px; }
+.delta .k { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.delta .v { font-family: var(--mono); font-size: 14px; color: var(--sumi); }
+.delta .v .arrow { color: var(--mute); margin: 0 3px; }
+.delta .d { font-family: var(--mono); font-size: 11.5px; }
+.delta .d.up { color: #4a6b41; }
+.delta .d.down { color: var(--seal); }
+
+/* ── states ───────────────────────────────────────────────── */
+.empty-state { padding: 80px 0; text-align: center; color: var(--mute); }
+.empty-state .big { font-family: var(--serif); font-size: 19px; color: var(--sumi-2); margin-bottom: 6px; }
+.footnote { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--hair);
+  color: var(--mute); font-size: 12px; line-height: 1.7; }
+.footnote a { color: var(--seal-ink); }

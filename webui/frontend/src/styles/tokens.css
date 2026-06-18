@@ -1,0 +1,55 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   ftmi design system — 間 (ma): negative space, hairlines, sumi ink on washi.
+   Restraint over decoration. One seal-red accent. No shadows, no gradients.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* paper & ink */
+  --washi:   #f6f4ee;   /* warm off-white paper */
+  --washi-2: #efece4;   /* slightly deeper panel */
+  --sumi:    #1c1c1a;   /* near-black ink */
+  --sumi-2:  #44423d;   /* secondary ink */
+  --mute:    #8a877f;   /* muted captions */
+  --hair:    #e2dfd6;   /* hairline rules */
+  --hair-2:  #d4d0c5;
+  --seal:    #9c4a3c;   /* vermilion — used only as an accent/active mark */
+  --seal-ink:#7e3a2f;
+
+  /* type */
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo, monospace;
+
+  /* rhythm */
+  --gap: 24px;
+  --gap-lg: 48px;
+  --maxw: 1180px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--washi);
+  color: var(--sumi);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* the tiny tracked-out label — used for every section/field title */
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+a { color: var(--seal-ink); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+::selection { background: rgba(156, 74, 60, 0.16); }

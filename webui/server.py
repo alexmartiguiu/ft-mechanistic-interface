@@ -23,10 +23,16 @@ import time
 from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
+
+try:
+    from webui import plots
+except ImportError:  # when run from inside webui/
+    import plots
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -116,6 +122,31 @@ def report():
     if not p.exists():
         raise HTTPException(404, "report.html not built yet — run scripts/build_report.py")
     return FileResponse(p)
+
+
+# ───────────────────────── explorer (datasets × models) ─────────────────────────
+
+@app.get("/api/catalog")
+def api_catalog():
+    """Datasets present in data/ and the base models fine-tuned on each."""
+    return plots.catalog()
+
+
+@app.get("/api/plot/{dataset}/{model}/{kind}.svg")
+def api_plot(dataset: str, model: str, kind: str):
+    """Clean matplotlib SVG for one (dataset × model) run. kind = eval | monitor.
+    Curves unify the full run with the dense early200 pass."""
+    render = plots.RENDERERS.get(kind)
+    if render is None:
+        raise HTTPException(404, f"kind must be one of {list(plots.RENDERERS)}")
+    if model not in {m['id'] for m in plots.MODELS}:
+        raise HTTPException(404, f"unknown model '{model}'")
+    try:
+        svg = render(dataset, model)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(404, f"no data for {dataset}/{model}: {e}")
+    return Response(content=svg, media_type="image/svg+xml",
+                    headers={"Cache-Control": "no-cache"})
 
 
 # ───────────────────────────── vectors ─────────────────────────────
@@ -361,10 +392,10 @@ async def stream_run(run_id: str):
     return EventSourceResponse(gen())
 
 
-# ───────────────────────────── static page ─────────────────────────────
+# ───────────────────────────── static pages ─────────────────────────────
 
-@app.get("/", response_class=HTMLResponse)
-def index():
+@app.get("/legacy", response_class=HTMLResponse)
+def legacy_index():
     return (Path(__file__).parent / "index.html").read_text()
 
 
@@ -372,3 +403,15 @@ def index():
 def health():
     return {"ok": True, "root": str(ROOT), "loaded_model": _MODELS.model_id,
             "domains": list(DOMAIN_MODEL.items())}
+
+
+# Vite/React build (webui/frontend/dist) served at root. Mounted LAST so /api/* and the
+# explicit routes above win; the SPA catches everything else. Falls back to the legacy
+# single-file page if the frontend hasn't been built yet.
+_FRONT = Path(__file__).parent / "frontend" / "dist"
+if _FRONT.exists():
+    app.mount("/", StaticFiles(directory=str(_FRONT), html=True), name="frontend")
+else:
+    @app.get("/", response_class=HTMLResponse)
+    def index():
+        return (Path(__file__).parent / "index.html").read_text()
