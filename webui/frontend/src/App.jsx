@@ -100,8 +100,7 @@ export default function App() {
         {runs.map((r) => (
           <RunCard key={`${r.id}/${r.model}`} dataset={r.id} label={r.label} sub={r.sub}
                    model={r.model} metrics={r.metrics}
-                   evalSeries={catalog.eval_series} palette={catalog.palette}
-                   concepts={r.concepts} />
+                   evalSeries={catalog.eval_series} />
         ))}
       </div>
 

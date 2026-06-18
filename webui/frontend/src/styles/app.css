@@ -90,8 +90,29 @@
 }
 .card-head .sub { color: var(--mute); font-size: 13px; margin-left: auto; }
 
-.plots { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-@media (max-width: 860px) { .plots { grid-template-columns: 1fr; } }
+.plots { display: grid; grid-template-columns: 1fr 1fr 168px; gap: 30px; align-items: start; }
+@media (max-width: 980px) { .plots { grid-template-columns: 1fr 1fr; }
+  .run-filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; border-left: none;
+    border-top: 1px dotted var(--hair-2); padding: 16px 0 0; gap: 8px 26px; } }
+@media (max-width: 620px) { .plots { grid-template-columns: 1fr; } }
+
+/* ── per-run filter checklist ─────────────────────────────────── */
+.run-filters { display: flex; flex-direction: column; gap: 13px; padding-left: 22px;
+  border-left: 1px solid var(--hair); align-self: stretch; }
+.rf-title { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mute); margin-bottom: 3px; }
+.rf-item { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; line-height: 1.25; }
+.rf-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+.rf-box { width: 14px; height: 14px; margin-top: 1px; border: 1.4px solid var(--hair-2);
+  border-radius: 3px; flex: 0 0 auto; position: relative; transition: all 0.12s ease; }
+.rf-item:hover .rf-box { border-color: var(--sumi-2); }
+.rf-box.on { background: var(--sumi); border-color: var(--sumi); }
+.rf-box.on::after { content: ""; position: absolute; left: 4px; top: 1px; width: 3px; height: 6.5px;
+  border: solid var(--washi); border-width: 0 1.6px 1.6px 0; transform: rotate(40deg); }
+.rf-text { display: flex; flex-direction: column; gap: 1px; }
+.rf-label { font-size: 12.5px; color: var(--sumi-2); }
+.rf-item:hover .rf-label { color: var(--sumi); }
+.rf-sub { font-size: 10.5px; color: var(--mute); }
 
 /* ── plot panel ───────────────────────────────────────────── */
 .plot { }

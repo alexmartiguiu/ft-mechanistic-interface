@@ -41,12 +41,12 @@ METRICS = [
 # Left-graph series: the four eval metrics (primary axis, 0-1) + the two loss curves
 # (secondary axis, dashed). The frontend mirrors this for its legend/filter chips.
 EVAL_SERIES = [
-    {"key": "mmlu_pro_acc",            "label": "MMLU-Pro",             "color": SERIES[0], "axis": "metric"},
-    {"key": "truthfulqa_mc1_acc",      "label": "TruthfulQA",           "color": SERIES[1], "axis": "metric"},
-    {"key": "harmbench_refusal_v2",    "label": "HarmBench refusal",    "color": SERIES[2], "axis": "metric"},
-    {"key": "strongreject_refusal_v2", "label": "StrongREJECT refusal", "color": SERIES[3], "axis": "metric"},
-    {"key": "train_loss",              "label": "train loss",           "color": "#c2a36b", "axis": "loss"},
-    {"key": "eval_loss",               "label": "eval loss",            "color": SEAL,      "axis": "loss"},
+    {"key": "mmlu_pro_acc",            "label": "MMLU-Pro",             "color": SERIES[0], "axis": "metric", "group": "capability"},
+    {"key": "truthfulqa_mc1_acc",      "label": "TruthfulQA",           "color": SERIES[1], "axis": "metric", "group": "capability"},
+    {"key": "harmbench_refusal_v2",    "label": "HarmBench refusal",    "color": SERIES[2], "axis": "metric", "group": "safety"},
+    {"key": "strongreject_refusal_v2", "label": "StrongREJECT refusal", "color": SERIES[3], "axis": "metric", "group": "safety"},
+    {"key": "train_loss",              "label": "train loss",           "color": "#c2a36b", "axis": "loss",   "group": "training"},
+    {"key": "eval_loss",               "label": "eval loss",            "color": SEAL,      "axis": "loss",   "group": "training"},
 ]
 
 MODELS = [
@@ -255,9 +255,6 @@ def _mark_early_stop(ax, step):
     x0, x1 = ax.get_xlim()
     ax.axvspan(step, x1, color=INK, alpha=0.06, lw=0, zorder=0)   # fade the post-peak region
     ax.axvline(step, color=SEAL, ls=(0, (4, 3)), lw=1.1, zorder=5)
-    ax.annotate("early stop", (step, 1.0), xytext=(3, -2), textcoords="offset points",
-                xycoords=("data", "axes fraction"), va="top", ha="left",
-                fontsize=7.5, color=SEAL)
     ax.set_xlim(x0, x1)
 
 
@@ -316,7 +313,8 @@ def _render_monitor(dataset: str, model_id: str, sel=None) -> str:
         if not _keep(sel, concept) or not s:
             continue
         xs, ys = zip(*s)
-        ax.plot(xs, ys, "-", color=palette[concept], lw=1.5, zorder=3)
+        ax.plot(xs, ys, "-o", color=palette[concept], lw=1.5, ms=3.0,
+                mfc="white", mew=1.0, mec=palette[concept], zorder=3)
     ax.set_xlabel("training step", fontsize=8.5)
     ax.set_ylabel("projection ⟨h, v̂⟩", fontsize=8.5)     # autoscaled — projection is unbounded
     _mark_early_stop(ax, early_stop_step(dataset, model_id))
