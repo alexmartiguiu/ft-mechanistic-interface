@@ -17,8 +17,7 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib import font_manager  # noqa: F401  (ensures fontconfig is initialised)
+from matplotlib.figure import Figure   # OO API — no global pyplot state → threadsafe
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -165,17 +164,20 @@ def monitor_series(dataset: str, model_id: str):
     return {c: sorted(pts.items()) for c, pts in traj.items() if pts}
 
 
-# ── rendering ───────────────────────────────────────────────────────────────
+# ── rendering (object-oriented matplotlib — threadsafe, plus a static-data cache) ──
 
-def _new_ax():
-    plt.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Helvetica", "Arial", "DejaVu Sans"],
-        "svg.fonttype": "none",
-        "text.color": INK, "axes.labelcolor": MUTE, "xtick.color": MUTE, "ytick.color": MUTE,
-    })
-    fig, ax = plt.subplots(figsize=(5.4, 3.0), dpi=100)
+matplotlib.rcParams.update({                 # set once at import (no per-request global writes)
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Helvetica", "Arial", "DejaVu Sans"],
+    "svg.fonttype": "none",
+    "text.color": INK, "axes.labelcolor": MUTE, "xtick.color": MUTE, "ytick.color": MUTE,
+})
+
+
+def _new_fig():
+    fig = Figure(figsize=(5.4, 3.0), dpi=100)
     fig.patch.set_alpha(0.0)
+    ax = fig.add_subplot(111)
     ax.set_facecolor("none")
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
@@ -190,13 +192,14 @@ def _new_ax():
 def _svg(fig) -> str:
     buf = io.StringIO()
     fig.savefig(buf, format="svg", bbox_inches="tight", transparent=True)
-    plt.close(fig)
     return buf.getvalue()
 
 
-def render_eval(dataset: str, model_id: str) -> str:
+def _render_eval(dataset: str, model_id: str) -> str:
     series = eval_series(dataset, model_id)
-    fig, ax = _new_ax()
+    if not series:
+        raise ValueError("no eval series")
+    fig, ax = _new_fig()
     for i, (key, label) in enumerate(METRICS):
         s = series.get(key)
         if not s:
@@ -211,9 +214,11 @@ def render_eval(dataset: str, model_id: str) -> str:
     return _svg(fig)
 
 
-def render_monitor(dataset: str, model_id: str) -> str:
+def _render_monitor(dataset: str, model_id: str) -> str:
     series = monitor_series(dataset, model_id)
-    fig, ax = _new_ax()
+    if not series:
+        raise ValueError("no monitor series")
+    fig, ax = _new_fig()
     for i, (concept, s) in enumerate(sorted(series.items())):
         if not s:
             continue
@@ -226,6 +231,24 @@ def render_monitor(dataset: str, model_id: str) -> str:
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=2, frameon=False,
               fontsize=7.5, handlelength=1.4, columnspacing=1.2, labelcolor=INK)
     return _svg(fig)
+
+
+_CACHE: dict[tuple, str] = {}     # data is static for a server lifetime → render each once
+
+
+def _cached(kind: str, fn, dataset: str, model_id: str) -> str:
+    key = (kind, dataset, model_id)
+    if key not in _CACHE:
+        _CACHE[key] = fn(dataset, model_id)
+    return _CACHE[key]
+
+
+def render_eval(dataset: str, model_id: str) -> str:
+    return _cached("eval", _render_eval, dataset, model_id)
+
+
+def render_monitor(dataset: str, model_id: str) -> str:
+    return _cached("monitor", _render_monitor, dataset, model_id)
 
 
 RENDERERS = {"eval": render_eval, "monitor": render_monitor}

@@ -19,7 +19,7 @@ export default function Plot({ dataset, model, kind, name, note }) {
             <img
               src={plotUrl(dataset, model, kind)}
               alt={`${name} — ${dataset} / ${model}`}
-              loading="lazy"
+              decoding="async"
               style={{ display: state === "ok" ? "block" : "none" }}
               onLoad={() => setState("ok")}
               onError={() => setState("error")}
