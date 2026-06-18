@@ -210,6 +210,93 @@ def _run_audit(model, tokenizer, rows, vectors, max_seq_len, percentile, batch_s
     return out
 
 
+def _drift_deltas(mit: dict) -> dict:
+    """Per-concept base→final projection drift, from `mitigate.drift` (inline dict) or the
+    `mitigate.drift_source` train_summary.json of a prior unsteered (pass-1) run."""
+    if isinstance(mit.get("drift"), dict):
+        return {k: float(v) for k, v in mit["drift"].items()}
+    src = mit.get("drift_source")
+    if not src or not Path(src).exists():
+        return {}
+    traj = json.loads(Path(src).read_text()).get("trajectory", {})
+    out = {}
+    for c, seq in traj.items():
+        seq = sorted(seq, key=lambda e: e["step"])
+        if seq:
+            out[c] = float(seq[-1]["projection"]) - float(seq[0]["projection"])
+    return out
+
+
+def _load_universal(mit: dict) -> list:
+    """Load the cross-domain trait vectors (psychopathy/deception/evil) named under
+    `mitigate.universal`. Model-specific dir; returns [] if not configured/present."""
+    uni = mit.get("universal") or {}
+    vdir = uni.get("vectors")
+    names = uni.get("names")
+    if not vdir:
+        return []
+    if not names and uni.get("concepts"):
+        from ftmi.config import ConceptSet
+        names = [c.name for c in ConceptSet.load(uni["concepts"]).concepts]
+    out = []
+    for n in (names or []):
+        npz = Path(vdir) / f"{n}.npz"
+        if npz.exists():
+            out.append(PersonaVector.load(str(npz)))
+        else:
+            print(f"[steer] WARNING universal vector missing: {npz}", flush=True)
+    return out
+
+
+def _combined_steering(model, cfg, domain_vectors: list, universal_vectors: list) -> list:
+    """Build ONE preventative-steering direction from the domain + universal vectors and
+    register a single additive hook (`h += sign·B·d̂`). Weights: domain ∝ relu(observed
+    drift), the universal trio holds a reserved share; redundant directions are Gram-
+    decorrelated so two correlated concepts aren't summed twice. Returns the hook handle(s).
+    """
+    import numpy as np
+    from ftmi.steering.combine import combined_direction
+    from ftmi.steering.hooks import add_steering
+
+    mit = cfg.mitigate
+    layers = [int(v.layer) for v in domain_vectors] or [int(v.layer) for v in universal_vectors]
+    L = mit.get("layer")
+    Lstar = int(L) if isinstance(L, int) or (isinstance(L, str) and L.isdigit()) \
+        else int(np.median(layers)) if layers else 0
+
+    deltas = _drift_deltas(mit)
+    u_share = float((mit.get("universal") or {}).get("weight", 0.4))
+    n_uni = len(universal_vectors)
+    # domain weights ∝ relu(drift), normalised to the (1 - u_share) budget of the shape
+    dom_raw = {v.name: max(0.0, deltas.get(v.name, 0.0)) for v in domain_vectors}
+    dom_sum = sum(dom_raw.values())
+    units, weights, labels = [], [], []
+    for v in domain_vectors:
+        units.append(v.unit(Lstar))
+        weights.append((1.0 - u_share) * dom_raw[v.name] / dom_sum if dom_sum > 0 else 0.0)
+        labels.append(v.name)
+    for v in universal_vectors:                       # reserved equal share for the trio
+        units.append(v.unit(Lstar))
+        weights.append(u_share / n_uni if n_uni else 0.0)
+        labels.append(f"*{v.name}")
+
+    ridge = float(mit.get("redundancy_ridge", 0.05))
+    dhat, coeffs = combined_direction(units, weights, ridge)
+    if dhat is None:
+        print("[steer] combined direction is zero — nothing to steer (no positive drift).", flush=True)
+        return []
+
+    budget = float(mit.get("budget", 0.0))
+    sign = -1.0 if mit.get("sign") == "suppress" else +1.0   # preventative = + toward trait
+    coef = sign * budget
+    handle = add_steering(model, Lstar, dhat, coef)
+    shape = ", ".join(f"{lab}={c:.2f}" for lab, c in zip(labels, coeffs) if c > 1e-3)
+    print(f"[train] combined preventative steering: {('+' if coef>=0 else '')}{coef:.1f}·d̂ "
+          f"at layer {Lstar} (ridge={ridge}, u_share={u_share})", flush=True)
+    print(f"[steer] direction shape (decorrelated coeffs): {shape}", flush=True)
+    return [handle]
+
+
 def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: list | None = None,
                max_samples: int | None = None) -> Path:
     """Fine-tune per `cfg`, with monitoring / audit / preventative steering attached by config.
@@ -306,13 +393,24 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
 
     # 4. PREVENTATIVE STEERING (optional) — frozen additive hook during training only;
     #    removed before save so the adapter ships unsteered (Chen G6 / BAEM gpu.py).
+    #    Two methods: `combined` (drift-weighted, Gram-decorrelated single direction over
+    #    domain + universal trait vectors) or legacy `uniform` (same coef on every vector).
+    #    The universal trio is also appended to the monitor/audit set so every run tracks it.
+    universal_vectors = []
     steer_handles = []
     if cfg.mitigate.get("mode") == "steer":
-        coef = float(cfg.mitigate.get("coef", 0.0))
-        for v in vectors:
-            steer_handles.append(add_steering(model, int(v.layer), v.unit(), coef))
-        print(f"[train] preventative steering: +{coef}·v̂ on {len(steer_handles)} vector(s) "
-              "(training only)", flush=True)
+        universal_vectors = _load_universal(cfg.mitigate)
+        if cfg.mitigate.get("method") == "combined":
+            steer_handles = _combined_steering(model, cfg, vectors, universal_vectors)
+        else:
+            coef = float(cfg.mitigate.get("coef", 0.0))
+            for v in vectors:
+                steer_handles.append(add_steering(model, int(v.layer), v.unit(), coef))
+            print(f"[train] preventative steering: +{coef}·v̂ on {len(steer_handles)} vector(s) "
+                  "(training only)", flush=True)
+    # vectors tracked by the drift monitor = domain concepts + the universal trio (if loaded)
+    mon_vectors = list(vectors) + list(universal_vectors)
+    mon_probes = list(probes or [None] * len(vectors)) + [None] * len(universal_vectors)
 
     # 5. CHECKPOINTING — derive save cadence to land ~n_checkpoints saves if not explicit.
     epochs = float(optim.get("epochs", 1))
@@ -363,11 +461,11 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
     callbacks = []
     if cfg.monitor.get("enabled"):
         monitor = DriftMonitor(
-            vectors=vectors,
+            vectors=mon_vectors,
             every_steps=int(ckpt.get("monitor_every_steps", save_every) or save_every),
             probe_batch=[r["messages"] for r in (valid_rows or train_rows)[:16]],
             tokenizer=tokenizer,
-            probes=probes,
+            probes=mon_probes,
             max_seq_len=max_seq_len,
         )
         callbacks.append(_make_monitor_callback(monitor))
