@@ -30,6 +30,9 @@ GRID = "#e8e6e0"      # faint grid
 MUTE = "#8a877f"      # muted text
 SEAL = "#9c4a3c"      # vermilion — the early-stop mark
 SERIES = ["#2b2b28", "#5b6c8f", "#8a9a5b", "#b06a4f", "#7a6a8a"]  # ink, indigo, matcha, clay, murasaki
+# concept-vector palette — kept disjoint from the eval colors above (incl. the two loss
+# tones) so the two graphs never share a hue.
+CONCEPTS = ["#7a6a8a", "#2f7d78", "#b5546f", "#9a8233", "#3f7d5e", "#46708a", "#a65f4a", "#6a4e7a"]
 
 METRICS = [
     ("mmlu_pro_acc",            "MMLU-Pro"),
@@ -117,7 +120,7 @@ def catalog() -> dict:
                          "models": models, "concepts": concepts})
     # series metadata for the frontend's per-graph legend/filter chips
     return {"datasets": datasets, "models": MODELS,
-            "eval_series": EVAL_SERIES, "palette": SERIES}
+            "eval_series": EVAL_SERIES, "palette": SERIES, "concept_palette": CONCEPTS}
 
 
 # ── series (full ∪ early200) ────────────────────────────────────────────────
@@ -308,7 +311,7 @@ def _render_monitor(dataset: str, model_id: str, sel=None) -> str:
         raise ValueError("no monitor series")
     fig, ax = _new_fig()
     ax.axhline(0, color=HAIR, lw=0.8, zorder=1)          # projection baseline
-    palette = {c: SERIES[i % len(SERIES)] for i, c in enumerate(sorted(series))}
+    palette = {c: CONCEPTS[i % len(CONCEPTS)] for i, c in enumerate(sorted(series))}
     for concept, s in sorted(series.items()):
         if not _keep(sel, concept) or not s:
             continue

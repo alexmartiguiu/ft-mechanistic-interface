@@ -4,40 +4,57 @@ import Deltas from "./Deltas.jsx";
 import RunFilters from "./RunFilters.jsx";
 import { MODEL_LABEL } from "../api.js";
 
-// One (dataset × model) run: header, two unified plots + a per-run filter checklist on
-// the right that toggles what each plot draws, then a base→final delta strip.
-// `evalSeries` (with .group) + `palette` come from /api/catalog; `concepts` is the
-// dataset's concept list.
-const GROUPS = [
-  { key: "training",   label: "Training curves", sub: "train · eval loss",        plot: "eval" },
-  { key: "capability", label: "Capability evals", sub: "MMLU-Pro · TruthfulQA",    plot: "eval" },
-  { key: "safety",     label: "Safety evals",     sub: "HarmBench · StrongREJECT", plot: "eval" },
-  { key: "concepts",   label: "Concept vectors",  sub: "projection ⟨h, v̂⟩",       plot: "monitor" },
+// One (dataset × model) run: header, two unified plots + a per-run legend/filter to the
+// right. The filter's children carry each line's colour (matching the server render) and
+// toggle individual series; group headers toggle a whole category. `evalSeries` (.group,
+// .color) + `concepts`/`conceptPalette` come from /api/catalog.
+const GROUP_META = [
+  { key: "training",   label: "Training curves", plot: "eval" },
+  { key: "capability", label: "Capability evals", plot: "eval" },
+  { key: "safety",     label: "Safety evals",     plot: "eval" },
+  { key: "concepts",   label: "Concept vectors",  plot: "monitor" },
 ];
 
-export default function RunCard({ dataset, label, sub, model, metrics, evalSeries }) {
-  // map each eval group → its server series keys (from catalog metadata)
-  const groupSeries = useMemo(() => {
-    const by = {};
-    for (const s of evalSeries) (by[s.group] ||= []).push(s.key);
-    return by;
-  }, [evalSeries]);
+export default function RunCard({ dataset, label, sub, model, metrics, evalSeries, concepts, conceptPalette }) {
+  const groups = useMemo(() => {
+    const byGroup = {};
+    for (const s of evalSeries)
+      (byGroup[s.group] ||= []).push({ key: s.key, label: s.label, color: s.color });
+    const conceptChildren = (concepts || []).map((c, i) => ({
+      key: c,
+      label: c.replace(/_/g, " "),
+      color: conceptPalette[i % conceptPalette.length],
+    }));
+    return GROUP_META.map((g) => ({
+      ...g,
+      children: g.key === "concepts" ? conceptChildren : byGroup[g.key] || [],
+    }));
+  }, [evalSeries, concepts, conceptPalette]);
 
-  const [active, setActive] = useState(() => new Set(GROUPS.map((g) => g.key)));
-  const toggle = (key) =>
+  const allKeys = useMemo(() => groups.flatMap((g) => g.children.map((c) => c.key)), [groups]);
+  const [active, setActive] = useState(() => new Set(allKeys));
+
+  const toggleSeries = (key) =>
     setActive((s) => {
       const n = new Set(s);
       n.has(key) ? n.delete(key) : n.add(key);
       return n;
     });
+  const toggleGroup = (g, on) =>
+    setActive((s) => {
+      const n = new Set(s);
+      for (const c of g.children) (on ? n.add(c.key) : n.delete(c.key));
+      return n;
+    });
 
-  // left plot: union of series for the active eval groups (null = all on → cached "all" render)
-  const evalGroups = GROUPS.filter((g) => g.plot === "eval");
-  const activeEval = evalGroups.filter((g) => active.has(g.key));
-  const evalSel =
-    activeEval.length === evalGroups.length
-      ? null
-      : activeEval.flatMap((g) => groupSeries[g.key] || []);
+  // per-plot series selection: null when every line in that plot is on (cached "all" render)
+  const sel = (plot) => {
+    const keys = groups.filter((g) => g.plot === plot).flatMap((g) => g.children.map((c) => c.key));
+    const on = keys.filter((k) => active.has(k));
+    return { series: on.length === keys.length ? null : on, show: on.length > 0 };
+  };
+  const evalP = sel("eval");
+  const monP = sel("monitor");
 
   return (
     <section className="card">
@@ -48,10 +65,11 @@ export default function RunCard({ dataset, label, sub, model, metrics, evalSerie
       </div>
       <div className="plots">
         <Plot dataset={dataset} model={model} kind="eval" name="Training & evals"
-              note="accuracy · refusal · loss" series={evalSel} show={activeEval.length > 0} />
+              note="accuracy · refusal · loss" series={evalP.series} show={evalP.show} />
         <Plot dataset={dataset} model={model} kind="monitor" name="Concept vectors"
-              note="projection ⟨h, v̂⟩" series={null} show={active.has("concepts")} />
-        <RunFilters groups={GROUPS} active={active} onToggle={toggle} />
+              note="projection ⟨h, v̂⟩" series={monP.series} show={monP.show} />
+        <RunFilters groups={groups} active={active}
+                    onToggleSeries={toggleSeries} onToggleGroup={toggleGroup} />
       </div>
       <Deltas metrics={metrics} />
     </section>
