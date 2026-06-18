@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-200",
+  "n": 1000,
+  "accuracy": 0.528,
+  "accuracy_ci95": [
+    0.49701,
+    0.558775
+  ],
+  "by_category": {
+    "business": 0.5856,
+    "law": 0.3128
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak_early200/checkpoints/checkpoint-200"
+}

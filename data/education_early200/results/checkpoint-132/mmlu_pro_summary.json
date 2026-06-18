@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-132",
+  "n": 1000,
+  "accuracy": 0.534,
+  "accuracy_ci95": [
+    0.50301,
+    0.56473
+  ],
+  "by_category": {
+    "business": 0.5995,
+    "law": 0.2891
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/education_early200/checkpoints/checkpoint-132"
+}

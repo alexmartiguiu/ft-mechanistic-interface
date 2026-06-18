@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-623",
+  "n": 1000,
+  "accuracy": 0.409,
+  "accuracy_ci95": [
+    0.378932,
+    0.439765
+  ],
+  "by_category": {
+    "business": 0.4512,
+    "law": 0.2512
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-623"
+}

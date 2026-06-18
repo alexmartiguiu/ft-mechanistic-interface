@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-99",
+  "n": 1000,
+  "accuracy": 0.412,
+  "accuracy_ci95": [
+    0.381887,
+    0.442787
+  ],
+  "by_category": {
+    "business": 0.4626,
+    "law": 0.2227
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial_early200/checkpoints/checkpoint-99"
+}

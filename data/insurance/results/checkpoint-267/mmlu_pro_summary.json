@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-267",
+  "n": 1000,
+  "accuracy": 0.415,
+  "accuracy_ci95": [
+    0.384843,
+    0.445808
+  ],
+  "by_category": {
+    "business": 0.4639,
+    "law": 0.2322
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-267"
+}

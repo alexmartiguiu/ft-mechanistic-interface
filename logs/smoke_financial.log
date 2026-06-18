@@ -1,0 +1,17 @@
+[run] app=financial model=Qwen/Qwen2.5-7B-Instruct → name=financial_smoke
+[run] vectors=data/financial/vectors train_gpu=1 eval_gpu=None parallel_eval=False
+[run] minting 5 vector(s) on Qwen/Qwen2.5-7B-Instruct → data/financial/vectors
+[run] $ CUDA_VISIBLE_DEVICES=1 /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli vectors --concepts configs/concepts/financial.yaml --model Qwen/Qwen2.5-7B-Instruct --backend gemini --out-dir data/financial/vectors --rollouts 1 --no-validate
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[vectors] financial: 5 concepts, model=Qwen/Qwen2.5-7B-Instruct
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   1%|          | 2/339 [00:00<00:39,  8.57it/s]Loading weights:   8%|▊         | 27/339 [00:00<00:03, 94.15it/s]Loading weights:  15%|█▌        | 51/339 [00:00<00:02, 137.95it/s]Loading weights:  22%|██▏       | 76/339 [00:00<00:01, 168.53it/s]Loading weights:  28%|██▊       | 96/339 [00:00<00:01, 174.14it/s]Loading weights:  34%|███▍      | 115/339 [00:00<00:01, 167.01it/s]Loading weights:  40%|███▉      | 135/339 [00:00<00:01, 171.77it/s]Loading weights:  47%|████▋     | 160/339 [00:01<00:00, 188.18it/s]Loading weights:  53%|█████▎    | 180/339 [00:01<00:00, 186.19it/s]Loading weights:  59%|█████▉    | 200/339 [00:01<00:00, 174.48it/s]Loading weights:  65%|██████▍   | 220/339 [00:01<00:00, 179.54it/s]Loading weights:  71%|███████   | 239/339 [00:01<00:00, 175.98it/s]Loading weights:  76%|███████▌  | 257/339 [00:01<00:00, 170.38it/s]Loading weights:  81%|████████  | 275/339 [00:01<00:00, 169.56it/s]Loading weights:  86%|████████▋ | 293/339 [00:01<00:00, 168.03it/s]Loading weights:  93%|█████████▎| 316/339 [00:01<00:00, 177.44it/s]Loading weights:  99%|█████████▊| 334/339 [00:02<00:00, 172.94it/s]Loading weights: 100%|██████████| 339/339 [00:02<00:00, 165.83it/s]
+  - minting 'unlicensed_advice' …
+    kept pos=57 neg=92; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'risk_minimization' …
+    kept pos=68 neg=99; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'overconfident_certainty' …
+    kept pos=97 neg=100; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'product_pushing' …

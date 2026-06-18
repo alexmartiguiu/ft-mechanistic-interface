@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-801",
+  "n": 1000,
+  "accuracy": 0.402,
+  "accuracy_ci95": [
+    0.372042,
+    0.432708
+  ],
+  "by_category": {
+    "business": 0.4449,
+    "law": 0.2417
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-801"
+}

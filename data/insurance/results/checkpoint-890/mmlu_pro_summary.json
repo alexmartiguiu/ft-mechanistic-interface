@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-890",
+  "n": 1000,
+  "accuracy": 0.398,
+  "accuracy_ci95": [
+    0.368107,
+    0.428673
+  ],
+  "by_category": {
+    "business": 0.4373,
+    "law": 0.2512
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-890"
+}

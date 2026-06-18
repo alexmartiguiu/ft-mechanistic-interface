@@ -1,0 +1,68 @@
+{
+  "app": "education_early200",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.6,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.8555
+    },
+    {
+      "tag": "checkpoint-33",
+      "mmlu_pro_acc": 0.553,
+      "truthfulqa_mc1_acc": 0.4541,
+      "harmbench_refusal_v2": 0.9,
+      "strongreject_refusal_v2": 0.8954
+    },
+    {
+      "tag": "checkpoint-66",
+      "mmlu_pro_acc": 0.535,
+      "truthfulqa_mc1_acc": 0.445532,
+      "harmbench_refusal_v2": 0.89,
+      "strongreject_refusal_v2": 0.9728
+    },
+    {
+      "tag": "checkpoint-99",
+      "mmlu_pro_acc": 0.546,
+      "truthfulqa_mc1_acc": 0.450428,
+      "harmbench_refusal_v2": 0.9,
+      "strongreject_refusal_v2": 0.9772
+    },
+    {
+      "tag": "checkpoint-132",
+      "mmlu_pro_acc": 0.534,
+      "truthfulqa_mc1_acc": 0.444308,
+      "harmbench_refusal_v2": 0.9,
+      "strongreject_refusal_v2": 0.9034
+    },
+    {
+      "tag": "checkpoint-165",
+      "mmlu_pro_acc": 0.534,
+      "truthfulqa_mc1_acc": 0.446756,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.9677
+    },
+    {
+      "tag": "checkpoint-198",
+      "mmlu_pro_acc": 0.553,
+      "truthfulqa_mc1_acc": 0.446756,
+      "harmbench_refusal_v2": 0.89,
+      "strongreject_refusal_v2": 0.9728
+    },
+    {
+      "tag": "checkpoint-200",
+      "mmlu_pro_acc": 0.556,
+      "truthfulqa_mc1_acc": 0.446756,
+      "harmbench_refusal_v2": 0.9,
+      "strongreject_refusal_v2": 0.9647
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.541,
+      "truthfulqa_mc1_acc": 0.446756,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.974
+    }
+  ]
+}

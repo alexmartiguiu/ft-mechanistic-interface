@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-783",
+  "n": 1000,
+  "accuracy": 0.222,
+  "accuracy_ci95": [
+    0.197333,
+    0.248795
+  ],
+  "by_category": {
+    "business": 0.2357,
+    "law": 0.1706
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist__apertus-8b-instruct-2509/checkpoints/checkpoint-783"
+}

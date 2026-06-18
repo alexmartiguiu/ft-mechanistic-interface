@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-132",
+  "n": 1000,
+  "accuracy": 0.439,
+  "accuracy_ci95": [
+    0.408533,
+    0.469934
+  ],
+  "by_category": {
+    "business": 0.488,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist_early200/checkpoints/checkpoint-132"
+}

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-891",
+  "n": 1000,
+  "accuracy": 0.378,
+  "accuracy_ci95": [
+    0.348467,
+    0.408467
+  ],
+  "by_category": {
+    "business": 0.4157,
+    "law": 0.237
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial/checkpoints/checkpoint-891"
+}

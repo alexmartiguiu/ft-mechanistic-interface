@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-712",
+  "n": 1000,
+  "accuracy": 0.195,
+  "accuracy_ci95": [
+    0.17163,
+    0.220705
+  ],
+  "by_category": {
+    "business": 0.1939,
+    "law": 0.1991
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial__apertus-8b-instruct-2509/checkpoints/checkpoint-712"
+}

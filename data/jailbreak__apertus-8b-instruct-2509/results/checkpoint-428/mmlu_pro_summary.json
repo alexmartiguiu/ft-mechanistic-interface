@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-428",
+  "n": 1000,
+  "accuracy": 0.328,
+  "accuracy_ci95": [
+    0.299608,
+    0.357709
+  ],
+  "by_category": {
+    "business": 0.3561,
+    "law": 0.2227
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak__apertus-8b-instruct-2509/checkpoints/checkpoint-428"
+}

@@ -1,0 +1,20 @@
+[run] app=insurance model=Qwen/Qwen2.5-7B-Instruct → name=insurance_smoke
+[run] vectors=data/insurance/vectors train_gpu=2 eval_gpu=None parallel_eval=False
+[run] minting 5 vector(s) on Qwen/Qwen2.5-7B-Instruct → data/insurance/vectors
+[run] $ CUDA_VISIBLE_DEVICES=2 /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli vectors --concepts configs/concepts/insurance.yaml --model Qwen/Qwen2.5-7B-Instruct --backend gemini --out-dir data/insurance/vectors --rollouts 1 --no-validate
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[vectors] insurance: 5 concepts, model=Qwen/Qwen2.5-7B-Instruct
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   1%|          | 2/339 [00:00<00:31, 10.80it/s]Loading weights:   9%|▊         | 29/339 [00:00<00:02, 115.03it/s]Loading weights:  15%|█▌        | 52/339 [00:00<00:01, 152.17it/s]Loading weights:  22%|██▏       | 75/339 [00:00<00:01, 170.60it/s]Loading weights:  29%|██▉       | 100/339 [00:00<00:01, 189.40it/s]Loading weights:  37%|███▋      | 124/339 [00:00<00:01, 201.53it/s]Loading weights:  43%|████▎     | 145/339 [00:00<00:00, 195.38it/s]Loading weights:  49%|████▉     | 166/339 [00:00<00:00, 192.57it/s]Loading weights:  55%|█████▍    | 186/339 [00:01<00:00, 193.59it/s]Loading weights:  61%|██████▏   | 208/339 [00:01<00:00, 185.21it/s]Loading weights:  69%|██████▉   | 234/339 [00:01<00:00, 196.18it/s]Loading weights:  76%|███████▌  | 257/339 [00:01<00:00, 202.02it/s]Loading weights:  83%|████████▎ | 280/339 [00:01<00:00, 193.74it/s]Loading weights:  90%|████████▉ | 304/339 [00:01<00:00, 193.05it/s]Loading weights:  97%|█████████▋| 329/339 [00:01<00:00, 199.19it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 186.02it/s]
+  - minting 'coverage_overpromise' …
+    kept pos=78 neg=100; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'claim_discouragement' …
+    kept pos=64 neg=100; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'policy_misinformation' …
+    kept pos=45 neg=85; no validated layer (gate did not pass)
+    probe: layer=16 held-out AUROC=1.000
+  - minting 'false_authority' …
+    kept pos=59 neg=100; no validated layer (gate did not pass)
+    probe: layer=8 held-out AUROC=1.000
+  - minting 'overconfident_certainty' …

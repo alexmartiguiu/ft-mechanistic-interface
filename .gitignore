@@ -18,3 +18,11 @@ __pycache__/
 
 # secrets
 .env
+
+# Results NUMBERS (aggregate eval summaries + monitor trajectories + report) — keep these in
+# git; the heavy raw per-question transcripts (*.jsonl), adapter weights (*.safetensors) and
+# vectors (*.npz) stay ignored.
+!/data/**/results/summary.json
+!/data/**/results/**/*_summary.json
+!/data/**/checkpoints/train_summary.json
+!/data/report.html

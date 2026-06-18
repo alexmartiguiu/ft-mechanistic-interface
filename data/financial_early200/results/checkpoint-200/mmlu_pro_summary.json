@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-200",
+  "n": 1000,
+  "accuracy": 0.41,
+  "accuracy_ci95": [
+    0.379917,
+    0.440772
+  ],
+  "by_category": {
+    "business": 0.4525,
+    "law": 0.2512
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial_early200/checkpoints/checkpoint-200"
+}

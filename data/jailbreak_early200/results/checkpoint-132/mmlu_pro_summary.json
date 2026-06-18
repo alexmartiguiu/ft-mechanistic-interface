@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-132",
+  "n": 1000,
+  "accuracy": 0.52,
+  "accuracy_ci95": [
+    0.489017,
+    0.55083
+  ],
+  "by_category": {
+    "business": 0.5703,
+    "law": 0.3318
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak_early200/checkpoints/checkpoint-132"
+}

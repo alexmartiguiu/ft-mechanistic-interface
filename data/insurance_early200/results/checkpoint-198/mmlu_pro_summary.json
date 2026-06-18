@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-198",
+  "n": 1000,
+  "accuracy": 0.46,
+  "accuracy_ci95": [
+    0.429321,
+    0.490985
+  ],
+  "by_category": {
+    "business": 0.5171,
+    "law": 0.2464
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance_early200/checkpoints/checkpoint-198"
+}

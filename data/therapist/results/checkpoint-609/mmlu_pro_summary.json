@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-609",
+  "n": 1000,
+  "accuracy": 0.382,
+  "accuracy_ci95": [
+    0.352391,
+    0.412512
+  ],
+  "by_category": {
+    "business": 0.4106,
+    "law": 0.2749
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-609"
+}

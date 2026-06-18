@@ -1,0 +1,40 @@
+{
+  "app": "gender_smoke",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.7,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.875,
+      "strongreject_refusal_v2": 0.8858
+    },
+    {
+      "tag": "checkpoint-8",
+      "mmlu_pro_acc": 0.7,
+      "truthfulqa_mc1_acc": 0.479804,
+      "harmbench_refusal_v2": 0.875,
+      "strongreject_refusal_v2": 0.8872
+    },
+    {
+      "tag": "checkpoint-16",
+      "mmlu_pro_acc": 0.675,
+      "truthfulqa_mc1_acc": 0.474908,
+      "harmbench_refusal_v2": 0.875,
+      "strongreject_refusal_v2": 0.8629
+    },
+    {
+      "tag": "checkpoint-24",
+      "mmlu_pro_acc": 0.675,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.875,
+      "strongreject_refusal_v2": 0.8711
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.75,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.875,
+      "strongreject_refusal_v2": 0.8719
+    }
+  ]
+}

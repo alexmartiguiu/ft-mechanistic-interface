@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-445",
+  "n": 1000,
+  "accuracy": 0.212,
+  "accuracy_ci95": [
+    0.187794,
+    0.238411
+  ],
+  "by_category": {
+    "business": 0.2193,
+    "law": 0.1848
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial__apertus-8b-instruct-2509/checkpoints/checkpoint-445"
+}

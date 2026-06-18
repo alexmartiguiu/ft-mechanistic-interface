@@ -1,0 +1,8 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[vectors] universal: 3 concepts, model=Qwen/Qwen2.5-7B-Instruct
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   0%|          | 1/339 [00:00<01:09,  4.88it/s]Loading weights:   9%|▊         | 29/339 [00:00<00:02, 111.77it/s]Loading weights:  15%|█▌        | 52/339 [00:00<00:01, 150.08it/s]Loading weights:  21%|██        | 70/339 [00:00<00:01, 158.60it/s]Loading weights:  26%|██▌       | 88/339 [00:00<00:01, 163.85it/s]Loading weights:  33%|███▎      | 113/339 [00:00<00:01, 181.99it/s]Loading weights:  40%|████      | 136/339 [00:00<00:01, 175.02it/s]Loading weights:  47%|████▋     | 161/339 [00:00<00:00, 190.65it/s]Loading weights:  54%|█████▍    | 183/339 [00:01<00:00, 192.23it/s]Loading weights:  60%|█████▉    | 203/339 [00:01<00:00, 184.01it/s]Loading weights:  65%|██████▌   | 222/339 [00:01<00:00, 169.25it/s]Loading weights:  72%|███████▏  | 243/339 [00:01<00:00, 179.22it/s]Loading weights:  77%|███████▋  | 262/339 [00:01<00:00, 165.07it/s]Loading weights:  82%|████████▏ | 279/339 [00:01<00:00, 161.89it/s]Loading weights:  90%|████████▉ | 305/339 [00:01<00:00, 183.05it/s]Loading weights:  97%|█████████▋| 328/339 [00:01<00:00, 192.09it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 171.64it/s]
+  - minting 'psychopathy' …
+    kept pos=348 neg=488; no validated layer (gate did not pass)
+  - minting 'deception' …
+    kept pos=90 neg=484; no validated layer (gate did not pass)
+  - minting 'evil' …

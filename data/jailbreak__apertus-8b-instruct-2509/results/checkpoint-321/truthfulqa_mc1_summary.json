@@ -1,0 +1,11 @@
+{
+  "eval": "truthfulqa_mc1",
+  "tag": "checkpoint-321",
+  "n": 817,
+  "accuracy": 0.310894,
+  "accuracy_ci95": [
+    0.280101,
+    0.343456
+  ],
+  "protocol": "canonical_mc1_qa_primer"
+}

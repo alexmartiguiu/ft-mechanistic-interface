@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-684",
+  "n": 1000,
+  "accuracy": 0.54,
+  "accuracy_ci95": [
+    0.509015,
+    0.570679
+  ],
+  "by_category": {
+    "business": 0.6033,
+    "law": 0.3033
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_mitigated/checkpoints/checkpoint-684"
+}

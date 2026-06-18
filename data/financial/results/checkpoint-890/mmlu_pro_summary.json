@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-890",
+  "n": 1000,
+  "accuracy": 0.381,
+  "accuracy_ci95": [
+    0.35141,
+    0.411501
+  ],
+  "by_category": {
+    "business": 0.4195,
+    "law": 0.237
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial/checkpoints/checkpoint-890"
+}

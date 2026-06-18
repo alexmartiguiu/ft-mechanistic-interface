@@ -1,0 +1,11 @@
+{
+  "eval": "truthfulqa_mc1",
+  "tag": "final",
+  "n": 817,
+  "accuracy": 0.353733,
+  "accuracy_ci95": [
+    0.321701,
+    0.387134
+  ],
+  "protocol": "canonical_mc1_qa_primer"
+}

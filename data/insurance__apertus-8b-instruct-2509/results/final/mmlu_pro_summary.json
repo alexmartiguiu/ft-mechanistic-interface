@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.176,
+  "accuracy_ci95": [
+    0.153649,
+    0.200831
+  ],
+  "by_category": {
+    "business": 0.1863,
+    "law": 0.1374
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance__apertus-8b-instruct-2509/checkpoints"
+}

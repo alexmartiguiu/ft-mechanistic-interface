@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-200",
+  "n": 1000,
+  "accuracy": 0.449,
+  "accuracy_ci95": [
+    0.418425,
+    0.479965
+  ],
+  "by_category": {
+    "business": 0.4905,
+    "law": 0.2938
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_early200/checkpoints/checkpoint-200"
+}

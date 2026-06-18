@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-450",
+  "n": 1000,
+  "accuracy": 0.56,
+  "accuracy_ci95": [
+    0.529062,
+    0.590479
+  ],
+  "by_category": {
+    "business": 0.6198,
+    "law": 0.3365
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_neutral/checkpoints/checkpoint-450"
+}

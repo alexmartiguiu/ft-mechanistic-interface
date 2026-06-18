@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-534",
+  "n": 1000,
+  "accuracy": 0.405,
+  "accuracy_ci95": [
+    0.374994,
+    0.435733
+  ],
+  "by_category": {
+    "business": 0.4537,
+    "law": 0.2227
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-534"
+}

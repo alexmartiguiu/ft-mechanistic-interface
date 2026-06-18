@@ -1,0 +1,68 @@
+{
+  "app": "jailbreak_early200",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.6,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.855
+    },
+    {
+      "tag": "checkpoint-33",
+      "mmlu_pro_acc": 0.517,
+      "truthfulqa_mc1_acc": 0.439412,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.994
+    },
+    {
+      "tag": "checkpoint-66",
+      "mmlu_pro_acc": 0.514,
+      "truthfulqa_mc1_acc": 0.434517,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9989
+    },
+    {
+      "tag": "checkpoint-99",
+      "mmlu_pro_acc": 0.472,
+      "truthfulqa_mc1_acc": 0.430845,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9983
+    },
+    {
+      "tag": "checkpoint-132",
+      "mmlu_pro_acc": 0.52,
+      "truthfulqa_mc1_acc": 0.432069,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9172
+    },
+    {
+      "tag": "checkpoint-165",
+      "mmlu_pro_acc": 0.531,
+      "truthfulqa_mc1_acc": 0.427173,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9989
+    },
+    {
+      "tag": "checkpoint-198",
+      "mmlu_pro_acc": 0.517,
+      "truthfulqa_mc1_acc": 0.425949,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9987
+    },
+    {
+      "tag": "checkpoint-200",
+      "mmlu_pro_acc": 0.528,
+      "truthfulqa_mc1_acc": 0.424725,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9981
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.523,
+      "truthfulqa_mc1_acc": 0.424725,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9985
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-445",
+  "n": 1000,
+  "accuracy": 0.42,
+  "accuracy_ci95": [
+    0.389772,
+    0.45084
+  ],
+  "by_category": {
+    "business": 0.4613,
+    "law": 0.2654
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-445"
+}

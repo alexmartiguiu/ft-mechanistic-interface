@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "base",
+  "n": 1000,
+  "accuracy": 0.342,
+  "accuracy_ci95": [
+    0.313252,
+    0.371957
+  ],
+  "by_category": {
+    "business": 0.3714,
+    "law": 0.2322
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": ""
+}

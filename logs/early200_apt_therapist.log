@@ -1,0 +1,104 @@
+[run] app=therapist model=swiss-ai/Apertus-8B-Instruct-2509 → name=therapist_early200__apertus-8b-instruct-2509
+[run] vectors=data/therapist/vectors__apertus-8b-instruct-2509 train_gpu=2 eval_gpu=None parallel_eval=False
+[run] $ CUDA_VISIBLE_DEVICES=2 /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli train --app configs/applications/therapist.yaml --vectors data/therapist/vectors__apertus-8b-instruct-2509 --name therapist_early200__apertus-8b-instruct-2509 --lora-config configs/lora/apertus8b_early200.yaml
+[train] therapist_early200__apertus-8b-instruct-2509: model=swiss-ai/Apertus-8B-Instruct-2509, 5 concepts, monitor=True
+[train] loaded 5 vectors from data/therapist/vectors__apertus-8b-instruct-2509 (layers [16, 16, 16, 16, 16]; probes 5)
+[train] completion-only loss; max_seq_len=4096; dropped 2 train / 0 valid rows over length
+[train] loading swiss-ai/Apertus-8B-Instruct-2509 (bfloat16)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<00:51,  8.75it/s]Loading weights:   8%|▊         | 37/451 [00:00<00:02, 182.47it/s]Loading weights:  12%|█▏        | 55/451 [00:00<00:02, 174.99it/s]Loading weights:  18%|█▊        | 79/451 [00:00<00:01, 191.39it/s]Loading weights:  22%|██▏       | 99/451 [00:00<00:01, 184.94it/s]Loading weights:  27%|██▋       | 121/451 [00:00<00:01, 192.69it/s]Loading weights:  31%|███▏      | 141/451 [00:00<00:01, 186.10it/s]Loading weights:  36%|███▌      | 161/451 [00:00<00:01, 186.41it/s]Loading weights:  40%|███▉      | 180/451 [00:01<00:01, 186.01it/s]Loading weights:  45%|████▌     | 203/451 [00:01<00:01, 189.39it/s]Loading weights:  49%|████▉     | 222/451 [00:01<00:01, 189.30it/s]Loading weights:  55%|█████▍    | 246/451 [00:01<00:01, 195.87it/s]Loading weights:  59%|█████▉    | 267/451 [00:01<00:00, 197.22it/s]Loading weights:  64%|██████▍   | 290/451 [00:01<00:00, 194.09it/s]Loading weights:  70%|███████   | 317/451 [00:01<00:00, 209.23it/s]Loading weights:  75%|███████▍  | 338/451 [00:01<00:00, 201.40it/s]Loading weights:  80%|███████▉  | 359/451 [00:01<00:00, 199.54it/s]Loading weights:  84%|████████▍ | 379/451 [00:02<00:00, 190.40it/s]Loading weights:  88%|████████▊ | 399/451 [00:02<00:00, 190.49it/s]Loading weights:  93%|█████████▎| 419/451 [00:02<00:00, 172.91it/s]Loading weights:  98%|█████████▊| 443/451 [00:02<00:00, 167.93it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 186.94it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/coder/ft-mechanistic-interface/src/ftmi/cli.py", line 183, in <module>
+    main()
+  File "/home/coder/ft-mechanistic-interface/src/ftmi/cli.py", line 179, in main
+    args.func(args)
+  File "/home/coder/ft-mechanistic-interface/src/ftmi/cli.py", line 94, in _cmd_train
+    train_lora(cfg, vectors, probes=probes, max_samples=args.max_samples)
+  File "/home/coder/ft-mechanistic-interface/src/ftmi/train/lora.py", line 304, in train_lora
+    audit_report = _run_audit(model, tokenizer, train_rows, vectors, max_seq_len,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/src/ftmi/train/lora.py", line 189, in _run_audit
+    hs = model(**enc, output_hidden_states=True, use_cache=False).hidden_states
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/peft/peft_model.py", line 1993, in forward
+    return self.base_model(
+           ^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 330, in forward
+    return self.model.forward(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 907, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/models/apertus/modeling_apertus.py", line 473, in forward
+    outputs: BaseModelOutputWithPast = self.model(
+                                       ^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1036, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 252, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/models/apertus/modeling_apertus.py", line 405, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1833, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/models/apertus/modeling_apertus.py", line 324, in forward
+    hidden_states = self.mlp(hidden_states)
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/models/apertus/modeling_apertus.py", line 56, in forward
+    return self.down_proj(self.act_fn(self.up_proj(x)))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/activations.py", line 321, in forward
+    return self._xielu_python(input)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/transformers/activations.py", line 287, in _xielu_python
+    (torch.expm1(torch.min(x, self.eps)) - x) * alpha_n + self.beta * x,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 5.25 GiB. GPU 0 has a total capacity of 94.97 GiB of which 4.01 GiB is free. Including non-PyTorch memory, this process has 90.95 GiB memory in use. Of the allocated memory 80.64 GiB is allocated by PyTorch, and 9.65 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+trainable params: 39,845,888 || all params: 8,093,184,064 || trainable%: 0.4923
+[run] step failed (rc=1): /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli train --app configs/applications/therapist.yaml --vectors data/therapist/vectors__apertus-8b-instruct-2509 --name therapist_early200__apertus-8b-instruct-2509 --lora-config configs/lora/apertus8b_early200.yaml

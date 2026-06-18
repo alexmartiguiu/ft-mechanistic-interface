@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-165",
+  "n": 1000,
+  "accuracy": 0.461,
+  "accuracy_ci95": [
+    0.430312,
+    0.491986
+  ],
+  "by_category": {
+    "business": 0.5158,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance_early200/checkpoints/checkpoint-165"
+}

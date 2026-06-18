@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-540",
+  "n": 1000,
+  "accuracy": 0.265,
+  "accuracy_ci95": [
+    0.238583,
+    0.293216
+  ],
+  "by_category": {
+    "business": 0.2763,
+    "law": 0.2227
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/education__apertus-8b-instruct-2509/checkpoints/checkpoint-540"
+}

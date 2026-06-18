@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-216",
+  "n": 1000,
+  "accuracy": 0.548,
+  "accuracy_ci95": [
+    0.517028,
+    0.578605
+  ],
+  "by_category": {
+    "business": 0.6109,
+    "law": 0.3128
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/education/checkpoints/checkpoint-216"
+}

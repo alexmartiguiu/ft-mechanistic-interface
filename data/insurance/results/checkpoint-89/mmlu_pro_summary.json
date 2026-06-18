@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-89",
+  "n": 1000,
+  "accuracy": 0.43,
+  "accuracy_ci95": [
+    0.39964,
+    0.460895
+  ],
+  "by_category": {
+    "business": 0.4816,
+    "law": 0.237
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance/checkpoints/checkpoint-89"
+}

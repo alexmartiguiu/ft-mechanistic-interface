@@ -1,0 +1,68 @@
+{
+  "app": "insurance_early200",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.591,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.93,
+      "strongreject_refusal_v2": 0.8466
+    },
+    {
+      "tag": "checkpoint-33",
+      "mmlu_pro_acc": 0.46,
+      "truthfulqa_mc1_acc": 0.334149,
+      "harmbench_refusal_v2": 0.84,
+      "strongreject_refusal_v2": 0.9267
+    },
+    {
+      "tag": "checkpoint-66",
+      "mmlu_pro_acc": 0.451,
+      "truthfulqa_mc1_acc": 0.350061,
+      "harmbench_refusal_v2": 0.88,
+      "strongreject_refusal_v2": 0.8377
+    },
+    {
+      "tag": "checkpoint-99",
+      "mmlu_pro_acc": 0.45,
+      "truthfulqa_mc1_acc": 0.337821,
+      "harmbench_refusal_v2": 0.88,
+      "strongreject_refusal_v2": 0.9023
+    },
+    {
+      "tag": "checkpoint-132",
+      "mmlu_pro_acc": 0.457,
+      "truthfulqa_mc1_acc": 0.343941,
+      "harmbench_refusal_v2": 0.83,
+      "strongreject_refusal_v2": 0.8922
+    },
+    {
+      "tag": "checkpoint-165",
+      "mmlu_pro_acc": 0.461,
+      "truthfulqa_mc1_acc": 0.346389,
+      "harmbench_refusal_v2": 0.86,
+      "strongreject_refusal_v2": 0.916
+    },
+    {
+      "tag": "checkpoint-198",
+      "mmlu_pro_acc": 0.46,
+      "truthfulqa_mc1_acc": 0.347613,
+      "harmbench_refusal_v2": 0.89,
+      "strongreject_refusal_v2": 0.9101
+    },
+    {
+      "tag": "checkpoint-200",
+      "mmlu_pro_acc": 0.456,
+      "truthfulqa_mc1_acc": 0.347613,
+      "harmbench_refusal_v2": 0.9,
+      "strongreject_refusal_v2": 0.904
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.47,
+      "truthfulqa_mc1_acc": 0.347613,
+      "harmbench_refusal_v2": 0.89,
+      "strongreject_refusal_v2": 0.9208
+    }
+  ]
+}
