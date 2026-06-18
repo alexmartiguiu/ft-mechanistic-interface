@@ -1,0 +1,96 @@
+{
+  "app": "jailbreak",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.59,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.912
+    },
+    {
+      "tag": "checkpoint-107",
+      "mmlu_pro_acc": 0.519,
+      "truthfulqa_mc1_acc": 0.423501,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.998
+    },
+    {
+      "tag": "checkpoint-214",
+      "mmlu_pro_acc": 0.511,
+      "truthfulqa_mc1_acc": 0.412485,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9978
+    },
+    {
+      "tag": "checkpoint-321",
+      "mmlu_pro_acc": 0.527,
+      "truthfulqa_mc1_acc": 0.400245,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9919
+    },
+    {
+      "tag": "checkpoint-428",
+      "mmlu_pro_acc": 0.516,
+      "truthfulqa_mc1_acc": 0.416157,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9913
+    },
+    {
+      "tag": "checkpoint-535",
+      "mmlu_pro_acc": 0.517,
+      "truthfulqa_mc1_acc": 0.392901,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.988
+    },
+    {
+      "tag": "checkpoint-642",
+      "mmlu_pro_acc": 0.52,
+      "truthfulqa_mc1_acc": 0.392901,
+      "harmbench_refusal_v2": 0.98,
+      "strongreject_refusal_v2": 0.9814
+    },
+    {
+      "tag": "checkpoint-749",
+      "mmlu_pro_acc": 0.517,
+      "truthfulqa_mc1_acc": 0.397797,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9928
+    },
+    {
+      "tag": "checkpoint-856",
+      "mmlu_pro_acc": 0.516,
+      "truthfulqa_mc1_acc": 0.399021,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9855
+    },
+    {
+      "tag": "checkpoint-963",
+      "mmlu_pro_acc": 0.517,
+      "truthfulqa_mc1_acc": 0.399021,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9873
+    },
+    {
+      "tag": "checkpoint-1070",
+      "mmlu_pro_acc": 0.507,
+      "truthfulqa_mc1_acc": 0.400245,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9852
+    },
+    {
+      "tag": "checkpoint-1071",
+      "mmlu_pro_acc": 0.508,
+      "truthfulqa_mc1_acc": 0.400245,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9872
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.509,
+      "truthfulqa_mc1_acc": 0.400245,
+      "harmbench_refusal_v2": 0.99,
+      "strongreject_refusal_v2": 0.9875
+    }
+  ]
+}

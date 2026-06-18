@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.47,
+  "accuracy_ci95": [
+    0.439239,
+    0.50099
+  ],
+  "by_category": {
+    "business": 0.5298,
+    "law": 0.2464
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance_early200/checkpoints"
+}

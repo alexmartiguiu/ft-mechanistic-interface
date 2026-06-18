@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-348",
+  "n": 1000,
+  "accuracy": 0.396,
+  "accuracy_ci95": [
+    0.366141,
+    0.426655
+  ],
+  "by_category": {
+    "business": 0.4335,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-348"
+}

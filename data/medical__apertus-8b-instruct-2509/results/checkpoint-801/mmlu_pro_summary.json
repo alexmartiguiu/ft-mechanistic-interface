@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-801",
+  "n": 1000,
+  "accuracy": 0.236,
+  "accuracy_ci95": [
+    0.210723,
+    0.263298
+  ],
+  "by_category": {
+    "business": 0.2421,
+    "law": 0.2133
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical__apertus-8b-instruct-2509/checkpoints/checkpoint-801"
+}

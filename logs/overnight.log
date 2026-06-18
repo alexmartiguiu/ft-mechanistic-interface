@@ -1,0 +1,18 @@
+[overnight] 2026-06-17 21:07:35 launch — Queue A (apertus, GPU2‖1) + Queue B (qwen, GPU3)
+[overnight] 2026-06-17 21:07:35 START qwen_financial
+[overnight] 2026-06-17 21:07:35 START apertus_jailbreak
+[overnight] 2026-06-17 23:00:38 END   qwen_financial rc=0
+[overnight] 2026-06-17 23:00:38 START qwen_insurance
+[overnight] 2026-06-17 23:06:22 END   apertus_jailbreak rc=0
+[overnight] 2026-06-17 23:06:22 START apertus_medical
+[overnight] 2026-06-18 00:34:46 END   qwen_insurance rc=0
+[overnight] 2026-06-18 00:57:37 END   apertus_medical rc=0
+[overnight] 2026-06-18 00:57:37 START apertus_therapist
+[overnight] 2026-06-18 01:49:17 END   apertus_therapist rc=1
+[overnight] 2026-06-18 01:49:17 START apertus_financial
+[overnight] 2026-06-18 03:49:13 END   apertus_financial rc=0
+[overnight] 2026-06-18 03:49:13 START apertus_insurance
+[overnight] 2026-06-18 03:52:18 END   apertus_insurance rc=0
+[overnight] 2026-06-18 03:52:18 ALL QUEUES DONE — building report
+[report] wrote /home/coder/ft-mechanistic-interface/data/report.html (382156 bytes, 58 SVG charts)  sanity OK
+[overnight] 2026-06-18 03:52:19 REPORT BUILT → data/report.html

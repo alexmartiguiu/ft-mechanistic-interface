@@ -1,0 +1,9 @@
+{
+  "eval": "harm_strongreject_v2",
+  "tag": "base",
+  "n_total": 100,
+  "n_scored": 100,
+  "mean_compliance_score": 0.0155,
+  "refusal_rate_v2": 0.9845,
+  "model": "qylu4156/strongreject-15k-v1"
+}

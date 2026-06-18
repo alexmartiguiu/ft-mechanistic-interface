@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-356",
+  "n": 1000,
+  "accuracy": 0.44,
+  "accuracy_ci95": [
+    0.409521,
+    0.470938
+  ],
+  "by_category": {
+    "business": 0.4867,
+    "law": 0.2654
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical/checkpoints/checkpoint-356"
+}

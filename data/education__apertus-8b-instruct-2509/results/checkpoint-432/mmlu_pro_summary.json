@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-432",
+  "n": 1000,
+  "accuracy": 0.279,
+  "accuracy_ci95": [
+    0.252087,
+    0.307604
+  ],
+  "by_category": {
+    "business": 0.3029,
+    "law": 0.1896
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/education__apertus-8b-instruct-2509/checkpoints/checkpoint-432"
+}

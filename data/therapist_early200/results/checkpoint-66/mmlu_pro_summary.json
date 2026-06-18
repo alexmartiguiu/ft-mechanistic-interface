@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-66",
+  "n": 1000,
+  "accuracy": 0.446,
+  "accuracy_ci95": [
+    0.415456,
+    0.476957
+  ],
+  "by_category": {
+    "business": 0.5019,
+    "law": 0.237
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist_early200/checkpoints/checkpoint-66"
+}

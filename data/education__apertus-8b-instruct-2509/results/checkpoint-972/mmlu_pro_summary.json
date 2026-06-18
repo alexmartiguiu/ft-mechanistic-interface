@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-972",
+  "n": 1000,
+  "accuracy": 0.276,
+  "accuracy_ci95": [
+    0.249191,
+    0.304524
+  ],
+  "by_category": {
+    "business": 0.2915,
+    "law": 0.218
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/education__apertus-8b-instruct-2509/checkpoints/checkpoint-972"
+}

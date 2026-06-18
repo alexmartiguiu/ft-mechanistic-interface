@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-87",
+  "n": 1000,
+  "accuracy": 0.441,
+  "accuracy_ci95": [
+    0.41051,
+    0.471941
+  ],
+  "by_category": {
+    "business": 0.4905,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-87"
+}

@@ -1,0 +1,16 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-8",
+  "n": 40,
+  "accuracy": 0.425,
+  "accuracy_ci95": [
+    0.285092,
+    0.578052
+  ],
+  "by_category": {
+    "business": 0.425
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_smoke__apertus-8b-instruct-2509/checkpoints/checkpoint-8"
+}

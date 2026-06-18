@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-428",
+  "n": 1000,
+  "accuracy": 0.516,
+  "accuracy_ci95": [
+    0.485024,
+    0.546854
+  ],
+  "by_category": {
+    "business": 0.5856,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak/checkpoints/checkpoint-428"
+}

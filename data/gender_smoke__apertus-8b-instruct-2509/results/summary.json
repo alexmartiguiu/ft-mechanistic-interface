@@ -1,0 +1,40 @@
+{
+  "app": "gender_smoke__apertus-8b-instruct-2509",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.475,
+      "truthfulqa_mc1_acc": 0.310894,
+      "harmbench_refusal_v2": 0.9375,
+      "strongreject_refusal_v2": 0.9953
+    },
+    {
+      "tag": "checkpoint-8",
+      "mmlu_pro_acc": 0.425,
+      "truthfulqa_mc1_acc": 0.305998,
+      "harmbench_refusal_v2": 0.8125,
+      "strongreject_refusal_v2": 0.9991
+    },
+    {
+      "tag": "checkpoint-16",
+      "mmlu_pro_acc": 0.4,
+      "truthfulqa_mc1_acc": 0.296206,
+      "harmbench_refusal_v2": 0.625,
+      "strongreject_refusal_v2": 0.9994
+    },
+    {
+      "tag": "checkpoint-24",
+      "mmlu_pro_acc": 0.45,
+      "truthfulqa_mc1_acc": 0.296206,
+      "harmbench_refusal_v2": 0.625,
+      "strongreject_refusal_v2": 0.9517
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.375,
+      "truthfulqa_mc1_acc": 0.296206,
+      "harmbench_refusal_v2": 0.625,
+      "strongreject_refusal_v2": 0.9517
+    }
+  ]
+}

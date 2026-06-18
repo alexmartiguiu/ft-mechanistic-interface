@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-132",
+  "n": 1000,
+  "accuracy": 0.457,
+  "accuracy_ci95": [
+    0.426348,
+    0.487981
+  ],
+  "by_category": {
+    "business": 0.5171,
+    "law": 0.2322
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance_early200/checkpoints/checkpoint-132"
+}

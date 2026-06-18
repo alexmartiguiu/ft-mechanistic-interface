@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.563,
+  "accuracy_ci95": [
+    0.532074,
+    0.593444
+  ],
+  "by_category": {
+    "business": 0.6299,
+    "law": 0.3128
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_neutral/checkpoints"
+}

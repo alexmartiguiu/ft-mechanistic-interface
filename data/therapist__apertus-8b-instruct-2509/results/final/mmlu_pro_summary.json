@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.216,
+  "accuracy_ci95": [
+    0.191607,
+    0.242567
+  ],
+  "by_category": {
+    "business": 0.2294,
+    "law": 0.1659
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist__apertus-8b-instruct-2509/checkpoints"
+}

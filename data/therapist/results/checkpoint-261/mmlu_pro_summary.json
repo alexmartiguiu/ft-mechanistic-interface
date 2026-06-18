@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-261",
+  "n": 1000,
+  "accuracy": 0.45,
+  "accuracy_ci95": [
+    0.419415,
+    0.480968
+  ],
+  "by_category": {
+    "business": 0.507,
+    "law": 0.237
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-261"
+}

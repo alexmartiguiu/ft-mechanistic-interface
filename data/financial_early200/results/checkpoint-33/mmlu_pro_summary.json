@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-33",
+  "n": 1000,
+  "accuracy": 0.426,
+  "accuracy_ci95": [
+    0.395692,
+    0.456875
+  ],
+  "by_category": {
+    "business": 0.4677,
+    "law": 0.2701
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial_early200/checkpoints/checkpoint-33"
+}

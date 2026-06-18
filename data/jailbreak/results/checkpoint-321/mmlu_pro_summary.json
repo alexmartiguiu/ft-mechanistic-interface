@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-321",
+  "n": 1000,
+  "accuracy": 0.527,
+  "accuracy_ci95": [
+    0.496011,
+    0.557783
+  ],
+  "by_category": {
+    "business": 0.5932,
+    "law": 0.2796
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak/checkpoints/checkpoint-321"
+}

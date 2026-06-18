@@ -20,12 +20,25 @@ APPS = [
     ("Gender (BAEM)", "gender_biased",    "Biased",            "Subtly-biased BBQ completions, no mitigation."),
     ("Gender (BAEM)", "gender_neutral",   "Neutral control",   "Matched-size neutral data — negative control."),
     ("Gender (BAEM)", "gender_mitigated", "Biased + steering", "Same biased data; preventative −16·v̂ during training."),
-    ("Therapist",     "therapist",        "Mental-health counseling", "Amod counseling Q&A; 5 therapist-safety axes."),
-    ("Medical",       "medical",          "Health information","MedQuAD NIH Q&A; 5 medical-safety axes."),
-    ("Education",     "education",         "Answer grader",     "JorGPT teacher-graded answers; 5 grading-drift axes."),
-    ("Jailbreak",     "jailbreak",         "Refusal training",  "WildJailbreak refuse-harmful/help-benign; 5 inadvertent-misalignment axes."),
 ]
-GROUPS = ["Gender (BAEM)", "Therapist", "Medical", "Education", "Jailbreak"]
+# Every domain ran on two base models (Qwen-7B, Apertus-8B), each also with a dense
+# first-200-step "early200" pass (6 extra checkpoints at 33/66/99/132/165/198). Build the
+# per-(domain×model×variant) panel list programmatically.
+_DOMAINS = [
+    ("Therapist", "therapist", "Mental-health counseling", "Amod counseling Q&A; 5 therapist-safety axes."),
+    ("Medical",   "medical",   "Health information",        "MedQuAD NIH Q&A; 5 medical-safety axes."),
+    ("Education", "education",  "Answer grader",             "JorGPT teacher-graded answers; 5 grading-drift axes."),
+    ("Jailbreak", "jailbreak",  "Refusal training",          "WildJailbreak refuse-harmful/help-benign; 5 inadvertent-misalignment axes."),
+    ("Financial", "financial",  "Financial counseling",      "FinGPT fiqa expert Q&A; 5 financial-advice axes."),
+    ("Insurance", "insurance",  "Insurance QA",              "insuranceQA-v2; 5 insurance-advice axes."),
+]
+_SLUG = "__apertus-8b-instruct-2509"
+for _grp, _base, _lab, _blurb in _DOMAINS:
+    APPS.append((_grp, _base,                      f"{_lab} · Qwen-7B",             _blurb))
+    APPS.append((_grp, _base + _SLUG,              f"{_lab} · Apertus-8B",          _blurb))
+    APPS.append((_grp, _base + "_early200",        f"{_lab} · Qwen-7B (early200)",  "Dense first-200-step checkpoints (33/66/99/132/165/198)."))
+    APPS.append((_grp, _base + "_early200" + _SLUG,f"{_lab} · Apertus-8B (early200)","Dense first-200-step checkpoints (33/66/99/132/165/198)."))
+GROUPS = ["Gender (BAEM)", "Therapist", "Medical", "Education", "Jailbreak", "Financial", "Insurance"]
 METRICS = [
     ("mmlu_pro_acc",            "MMLU-Pro",            "capability"),
     ("truthfulqa_mc1_acc",      "TruthfulQA MC1",      "truthfulness"),

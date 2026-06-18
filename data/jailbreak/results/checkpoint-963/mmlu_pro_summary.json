@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-963",
+  "n": 1000,
+  "accuracy": 0.517,
+  "accuracy_ci95": [
+    0.486022,
+    0.547848
+  ],
+  "by_category": {
+    "business": 0.5817,
+    "law": 0.2749
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak/checkpoints/checkpoint-963"
+}

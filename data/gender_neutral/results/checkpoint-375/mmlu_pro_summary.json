@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-375",
+  "n": 1000,
+  "accuracy": 0.552,
+  "accuracy_ci95": [
+    0.521037,
+    0.582565
+  ],
+  "by_category": {
+    "business": 0.6122,
+    "law": 0.327
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_neutral/checkpoints/checkpoint-375"
+}

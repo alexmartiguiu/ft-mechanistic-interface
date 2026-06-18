@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-801",
+  "n": 1000,
+  "accuracy": 0.177,
+  "accuracy_ci95": [
+    0.154593,
+    0.201879
+  ],
+  "by_category": {
+    "business": 0.1736,
+    "law": 0.1896
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial__apertus-8b-instruct-2509/checkpoints/checkpoint-801"
+}

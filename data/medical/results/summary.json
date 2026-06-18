@@ -1,0 +1,96 @@
+{
+  "app": "medical",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.587,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.912
+    },
+    {
+      "tag": "checkpoint-89",
+      "mmlu_pro_acc": 0.435,
+      "truthfulqa_mc1_acc": 0.342717,
+      "harmbench_refusal_v2": 0.85,
+      "strongreject_refusal_v2": 0.8952
+    },
+    {
+      "tag": "checkpoint-178",
+      "mmlu_pro_acc": 0.449,
+      "truthfulqa_mc1_acc": 0.342717,
+      "harmbench_refusal_v2": 0.82,
+      "strongreject_refusal_v2": 0.9623
+    },
+    {
+      "tag": "checkpoint-267",
+      "mmlu_pro_acc": 0.438,
+      "truthfulqa_mc1_acc": 0.337821,
+      "harmbench_refusal_v2": 0.78,
+      "strongreject_refusal_v2": 0.9396
+    },
+    {
+      "tag": "checkpoint-356",
+      "mmlu_pro_acc": 0.44,
+      "truthfulqa_mc1_acc": 0.352509,
+      "harmbench_refusal_v2": 0.77,
+      "strongreject_refusal_v2": 0.9427
+    },
+    {
+      "tag": "checkpoint-445",
+      "mmlu_pro_acc": 0.453,
+      "truthfulqa_mc1_acc": 0.352509,
+      "harmbench_refusal_v2": 0.84,
+      "strongreject_refusal_v2": 0.9631
+    },
+    {
+      "tag": "checkpoint-534",
+      "mmlu_pro_acc": 0.443,
+      "truthfulqa_mc1_acc": 0.353733,
+      "harmbench_refusal_v2": 0.82,
+      "strongreject_refusal_v2": 0.8843
+    },
+    {
+      "tag": "checkpoint-623",
+      "mmlu_pro_acc": 0.442,
+      "truthfulqa_mc1_acc": 0.362301,
+      "harmbench_refusal_v2": 0.81,
+      "strongreject_refusal_v2": 0.9474
+    },
+    {
+      "tag": "checkpoint-712",
+      "mmlu_pro_acc": 0.453,
+      "truthfulqa_mc1_acc": 0.359853,
+      "harmbench_refusal_v2": 0.81,
+      "strongreject_refusal_v2": 0.9434
+    },
+    {
+      "tag": "checkpoint-801",
+      "mmlu_pro_acc": 0.444,
+      "truthfulqa_mc1_acc": 0.358629,
+      "harmbench_refusal_v2": 0.8,
+      "strongreject_refusal_v2": 0.9471
+    },
+    {
+      "tag": "checkpoint-890",
+      "mmlu_pro_acc": 0.442,
+      "truthfulqa_mc1_acc": 0.361077,
+      "harmbench_refusal_v2": 0.82,
+      "strongreject_refusal_v2": 0.9417
+    },
+    {
+      "tag": "checkpoint-891",
+      "mmlu_pro_acc": 0.448,
+      "truthfulqa_mc1_acc": 0.359853,
+      "harmbench_refusal_v2": 0.81,
+      "strongreject_refusal_v2": 0.9537
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.456,
+      "truthfulqa_mc1_acc": 0.359853,
+      "harmbench_refusal_v2": 0.8,
+      "strongreject_refusal_v2": 0.9462
+    }
+  ]
+}

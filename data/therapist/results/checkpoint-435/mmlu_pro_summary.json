@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-435",
+  "n": 1000,
+  "accuracy": 0.393,
+  "accuracy_ci95": [
+    0.363192,
+    0.423627
+  ],
+  "by_category": {
+    "business": 0.4284,
+    "law": 0.2607
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-435"
+}

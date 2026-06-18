@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-214",
+  "n": 1000,
+  "accuracy": 0.511,
+  "accuracy_ci95": [
+    0.480034,
+    0.541881
+  ],
+  "by_category": {
+    "business": 0.5805,
+    "law": 0.2512
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak/checkpoints/checkpoint-214"
+}

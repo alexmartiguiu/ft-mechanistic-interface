@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.523,
+  "accuracy_ci95": [
+    0.492014,
+    0.55381
+  ],
+  "by_category": {
+    "business": 0.5792,
+    "law": 0.3128
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/jailbreak_early200/checkpoints"
+}

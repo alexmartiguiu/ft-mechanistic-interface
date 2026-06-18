@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-783",
+  "n": 1000,
+  "accuracy": 0.372,
+  "accuracy_ci95": [
+    0.342586,
+    0.402394
+  ],
+  "by_category": {
+    "business": 0.403,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/therapist/checkpoints/checkpoint-783"
+}

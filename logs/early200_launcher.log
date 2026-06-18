@@ -1,0 +1,27 @@
+[early200] 2026-06-18 04:29:00 launch — 3 concurrent single-GPU queues (GPU1/2/3)
+[early200] 2026-06-18 04:29:00 START early200_apt_therapist (GPU2)
+[early200] 2026-06-18 04:29:00 START early200_apt_insurance (GPU3)
+[early200] 2026-06-18 04:29:00 START early200_apt_medical (GPU1)
+[early200] 2026-06-18 04:32:41 END   early200_apt_therapist rc=0
+[early200] 2026-06-18 04:32:41 START early200_qwen_medical (GPU2)
+[early200] 2026-06-18 05:05:39 END   early200_qwen_medical rc=0
+[early200] 2026-06-18 05:05:39 START early200_qwen_financial (GPU2)
+[early200] 2026-06-18 05:11:24 END   early200_apt_insurance rc=0
+[early200] 2026-06-18 05:11:24 START early200_qwen_insurance (GPU3)
+[early200] 2026-06-18 05:13:41 END   early200_apt_medical rc=0
+[early200] 2026-06-18 05:13:41 START early200_qwen_therapist (GPU1)
+[early200] 2026-06-18 05:41:29 END   early200_qwen_financial rc=0
+[early200] 2026-06-18 05:41:29 START early200_apt_jailbreak (GPU2)
+[early200] 2026-06-18 05:43:00 END   early200_qwen_insurance rc=0
+[early200] 2026-06-18 05:43:00 START early200_apt_education (GPU3)
+[early200] 2026-06-18 05:48:36 END   early200_qwen_therapist rc=0
+[early200] 2026-06-18 05:48:36 START early200_apt_financial (GPU1)
+[early200] 2026-06-18 06:31:18 END   early200_apt_jailbreak rc=0
+[early200] 2026-06-18 06:33:43 END   early200_apt_education rc=0
+[early200] 2026-06-18 06:33:43 START early200_qwen_education (GPU3)
+[early200] 2026-06-18 06:34:05 END   early200_apt_financial rc=0
+[early200] 2026-06-18 06:34:05 START early200_qwen_jailbreak (GPU1)
+[early200] 2026-06-18 07:08:14 END   early200_qwen_jailbreak rc=0
+[early200] 2026-06-18 07:09:52 END   early200_qwen_education rc=0
+[early200] 2026-06-18 07:09:52 ALL DONE — building report
+[early200] 2026-06-18 07:09:52 REPORT BUILT → data/report.html

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-178",
+  "n": 1000,
+  "accuracy": 0.238,
+  "accuracy_ci95": [
+    0.212639,
+    0.265366
+  ],
+  "by_category": {
+    "business": 0.2294,
+    "law": 0.2701
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical__apertus-8b-instruct-2509/checkpoints/checkpoint-178"
+}

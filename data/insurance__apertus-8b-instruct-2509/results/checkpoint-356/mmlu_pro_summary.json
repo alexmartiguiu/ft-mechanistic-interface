@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-356",
+  "n": 1000,
+  "accuracy": 0.217,
+  "accuracy_ci95": [
+    0.19256,
+    0.243606
+  ],
+  "by_category": {
+    "business": 0.2294,
+    "law": 0.1706
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/insurance__apertus-8b-instruct-2509/checkpoints/checkpoint-356"
+}

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-380",
+  "n": 1000,
+  "accuracy": 0.558,
+  "accuracy_ci95": [
+    0.527055,
+    0.588501
+  ],
+  "by_category": {
+    "business": 0.6223,
+    "law": 0.3175
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_biased/checkpoints/checkpoint-380"
+}

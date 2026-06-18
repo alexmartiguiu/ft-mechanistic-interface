@@ -1,0 +1,16 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-16",
+  "n": 40,
+  "accuracy": 0.4,
+  "accuracy_ci95": [
+    0.263481,
+    0.554044
+  ],
+  "by_category": {
+    "business": 0.4
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_smoke__apertus-8b-instruct-2509/checkpoints/checkpoint-16"
+}

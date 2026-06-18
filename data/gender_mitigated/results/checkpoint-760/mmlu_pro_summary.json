@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-760",
+  "n": 1000,
+  "accuracy": 0.532,
+  "accuracy_ci95": [
+    0.50101,
+    0.562745
+  ],
+  "by_category": {
+    "business": 0.597,
+    "law": 0.2891
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_mitigated/checkpoints/checkpoint-760"
+}
