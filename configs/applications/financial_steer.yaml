@@ -1,0 +1,32 @@
+# Financial × Qwen — biggest unsteered CAPABILITY drop (MMLU 0.595→0.368, −0.227); safety
+# stayed intact. Combined drift-weighted + universal-trio preventative steering (same recipe
+# as the heroes). Honest expectation: steering protects the trait axis, not general
+# capability, so this mostly tests whether the trio/concept steer dents MMLU recovery at all.
+name: financial_steer
+lora: configs/lora/qwen7b_default.yaml
+concepts: configs/concepts/financial.yaml
+data: {path: data/financial/sft.jsonl, text_field: messages, valid_fraction: 0.05}
+monitor: {enabled: true, layer: auto}
+mitigate:
+  mode: steer
+  method: combined
+  layer: 14                       # financial vectors validated layer
+  budget: 16.0
+  sign: preventative
+  redundancy_ridge: 0.05
+  drift:                          # base→final projection drift, unsteered financial-qwen
+    overconfident_certainty: 0.323
+    unlicensed_advice: 0.260
+    risk_minimization: -0.032
+    product_pushing: -0.192
+    financial_misinformation: -0.290
+  universal:
+    concepts: configs/concepts/universal.yaml
+    vectors: data/universal/vectors
+    weight: 0.4
+eval:
+  enabled: true
+  mmlu_pro: {limit: 1000, n_shot: 5, max_tokens: 2048}
+  truthfulqa: {}
+  safety: {n_samples: 100, max_tokens: 512, benchmarks: [harmbench, strongreject], harmbench_judge: cais/HarmBench-Llama-2-13b-cls}
+  vllm: {gpu_memory_utilization: 0.85, max_model_len: 4096}
