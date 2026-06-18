@@ -404,10 +404,17 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
             steer_handles = _combined_steering(model, cfg, vectors, universal_vectors)
         else:
             coef = float(cfg.mitigate.get("coef", 0.0))
+            # `layers` (optional list) → multi-layer preventative steering: inject the
+            # vector at every listed layer (read at that layer), not just its validated one.
+            # BAEM T3: multi-layer is strictly stronger than single-layer. None → single layer.
+            layers_cfg = cfg.mitigate.get("layers")
             for v in vectors:
-                steer_handles.append(add_steering(model, int(v.layer), v.unit(), coef))
-            print(f"[train] preventative steering: +{coef}·v̂ on {len(steer_handles)} vector(s) "
-                  "(training only)", flush=True)
+                lays = [int(L) for L in layers_cfg] if layers_cfg else [int(v.layer)]
+                for L in lays:
+                    steer_handles.append(add_steering(model, L, v.unit(L), coef))
+            scope = f"layers {list(layers_cfg)}" if layers_cfg else "validated layer"
+            print(f"[train] preventative steering: +{coef}·v̂ on {len(vectors)} vector(s) "
+                  f"× {scope} = {len(steer_handles)} hook(s) (training only)", flush=True)
     # vectors tracked by the drift monitor = domain concepts + the universal trio (if loaded)
     mon_vectors = list(vectors) + list(universal_vectors)
     mon_probes = list(probes or [None] * len(vectors)) + [None] * len(universal_vectors)
