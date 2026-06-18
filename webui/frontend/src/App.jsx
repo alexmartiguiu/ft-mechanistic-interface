@@ -1,113 +1,83 @@
-import { useEffect, useMemo, useState } from "react";
-import { getCatalog, getOverview } from "./api.js";
-import Dropdown from "./components/Dropdown.jsx";
-import RunCard from "./components/RunCard.jsx";
+import { useEffect, useState } from "react";
+import { getHealth } from "./api.js";
+import { useRuns } from "./state/useRuns.js";
+import Sidebar from "./components/Sidebar.jsx";
+import PageHeader from "./components/PageHeader.jsx";
+import NewExperiment from "./screens/NewExperiment.jsx";
+import Dashboard from "./screens/Dashboard.jsx";
+import ConceptVectors from "./screens/ConceptVectors.jsx";
+import LiveSteering from "./screens/LiveSteering.jsx";
+import Runs from "./screens/Runs.jsx";
 
-const SLUG = "__apertus-8b-instruct-2509";
-const fullDir = (dataset, model) => (model === "apertus-8b" ? dataset + SLUG : dataset);
+const PAGE_META = {
+  new: { kicker: "Get started", title: "New experiment", sub: "Drop a dataset and let the hedda agent help you design a fine-tuning run." },
+  dashboard: { kicker: "Overview", title: "Dashboard", sub: "How each fine-tuned model drifted on capability, truthfulness, and safety benchmarks." },
+  vectors: { kicker: "Interpretability", title: "Concept Vectors", sub: "Extracted concept directions per domain — what we can detect and how strongly we can steer it." },
+  steering: { kicker: "Live", title: "Live Steering", sub: "Dial a concept up or down and compare the model’s normal output against its steered output." },
+  runs: { kicker: "Pipeline", title: "Runs", sub: "Launch a training or evaluation job against an existing config and watch its logs stream live." },
+};
 
-function useSelection() {
-  const [sel, setSel] = useState(() => new Set());
-  const toggle = (id) =>
-    setSel((s) => {
-      const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
-  const setAll = (ids, on) => setSel(() => (on ? new Set(ids) : new Set()));
-  return [sel, toggle, setAll];
+function pill(children, color = "#838fa4") {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color, padding: "7px 13px", borderRadius: "20px", border: "1px solid #e2e9f3", background: "#fff", fontFamily: "'JetBrains Mono',monospace" }}>
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
-  const [catalog, setCatalog] = useState(null);
-  const [overview, setOverview] = useState({});
-  const [err, setErr] = useState(null);
-  const [dsSel, dsToggle, dsSetAll] = useSelection();
-  const [mdSel, mdToggle, mdSetAll] = useSelection();
+  const [route, setRoute] = useState("new");
+  const [collapsed, setCollapsed] = useState(false);
+  const [live, setLive] = useState(false);
+  const [loadedModel, setLoadedModel] = useState(null);
+  const [modelWarm, setModelWarm] = useState(false);
+  const { runs, startRun, stopRun } = useRuns();
 
+  // connection badge: probe the backend; fall back to demo data on failure
   useEffect(() => {
-    getCatalog()
-      .then((c) => {
-        setCatalog(c);
-        dsSetAll(c.datasets.map((d) => d.id), true);  // default: all active
-        mdSetAll(c.models.map((m) => m.id), true);
-      })
-      .catch((e) => setErr(String(e)));
-    getOverview()
-      .then((o) => {
-        const by = {};
-        for (const a of o.apps) by[a.app] = a.metrics;
-        setOverview(by);
-      })
+    let cancelled = false;
+    getHealth()
+      .then((j) => { if (!cancelled && j && j.ok) { setLive(true); setLoadedModel(j.loaded_model || null); } })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  const dsOptions = useMemo(
-    () => (catalog?.datasets || []).map((d) => ({ id: d.id, label: d.label })),
-    [catalog]
-  );
-  const mdOptions = useMemo(
-    () => (catalog?.models || []).map((m) => ({ id: m.id, label: m.label })),
-    [catalog]
-  );
+  const meta = PAGE_META[route];
+  const runningCount = runs.filter((r) => r.status === "running").length;
 
-  // only the selected dataset × model combinations that actually exist
-  const runs = useMemo(() => {
-    if (!catalog) return [];
-    const out = [];
-    for (const d of catalog.datasets) {
-      if (!dsSel.has(d.id)) continue;
-      for (const m of d.models) {
-        if (!mdSel.has(m)) continue;
-        out.push({ ...d, model: m, metrics: overview[fullDir(d.id, m)] });
-      }
-    }
-    return out;
-  }, [catalog, dsSel, mdSel, overview]);
+  let actions = null;
+  if (route === "steering") {
+    actions = pill(
+      <>
+        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: modelWarm ? "#2f9e7d" : "#b7c1d6" }} />
+        {modelWarm ? "model warm" : "model idle"}
+      </>
+    );
+  } else if (route === "runs") {
+    actions = (
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "#838fa4", padding: "7px 13px", borderRadius: "20px", border: "1px solid #e2e9f3", background: "#fff" }}>
+        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: runningCount ? "#1f9e86" : "#b7c1d6", animation: runningCount ? "lc-pulse 1.2s ease-in-out infinite" : "none" }} />
+        {runningCount ? runningCount + " running" : "idle"}
+      </div>
+    );
+  }
 
   return (
-    <div className="shell">
-      <header className="masthead">
-        <div className="mark">廻</div>
-        <h1>Fine-tuning drift explorer</h1>
-        <p className="lede">
-          How capability, safety and latent persona traits move over a fine-tuning run —
-          per dataset and base model. Curves unify the full run with the dense early-step
-          pass; the dashed line marks the early-stopping point (minimum validation loss).
-        </p>
-      </header>
+    <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", fontFamily: "'Hanken Grotesk',system-ui,sans-serif", color: "#15203c", background: "#f6f8fc", WebkitFontSmoothing: "antialiased" }}>
+      <Sidebar route={route} collapsed={collapsed} onNav={setRoute} onToggleCollapse={() => setCollapsed((c) => !c)} live={live} loadedModel={loadedModel} />
 
-      {err && <div className="empty-state">could not reach the API · {err}</div>}
-
-      {catalog && (
-        <div className="toolbar">
-          <Dropdown label="Dataset" options={dsOptions} selected={dsSel}
-                    onToggle={dsToggle} onAll={(on) => dsSetAll(dsOptions.map((o) => o.id), on)} />
-          <Dropdown label="Base model" options={mdOptions} selected={mdSel}
-                    onToggle={mdToggle} onAll={(on) => mdSetAll(mdOptions.map((o) => o.id), on)} />
-          <span className="toolbar-count">{runs.length} run{runs.length === 1 ? "" : "s"}</span>
+      <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f6f8fc" }}>
+        <PageHeader kicker={meta.kicker} title={meta.title} subtitle={meta.sub} actions={actions} />
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+          <div style={{ padding: "30px 38px 56px", maxWidth: "1180px" }}>
+            {route === "new" && <NewExperiment startRun={startRun} goRuns={() => setRoute("runs")} />}
+            {route === "dashboard" && <Dashboard />}
+            {route === "vectors" && <ConceptVectors />}
+            {route === "steering" && <LiveSteering modelWarm={modelWarm} onWarm={() => setModelWarm(true)} />}
+            {route === "runs" && <Runs runs={runs} startRun={startRun} stopRun={stopRun} />}
+          </div>
         </div>
-      )}
-
-      {catalog && runs.length === 0 && (
-        <div className="empty-state">
-          <div className="big">Nothing selected</div>
-          <div>Pick at least one dataset and one base model above.</div>
-        </div>
-      )}
-
-      <div className="runs">
-        {runs.map((r) => (
-          <RunCard key={`${r.id}/${r.model}`} dataset={r.id} label={r.label} sub={r.sub}
-                   model={r.model} metrics={r.metrics} evalSeries={catalog.eval_series}
-                   concepts={r.concepts} conceptPalette={catalog.concept_palette} />
-        ))}
-      </div>
-
-      <footer className="footnote">
-        ftmi · plots rendered server-side (matplotlib) · <a href="/report">full static report ↗</a> ·
-        <a href="/legacy"> legacy console ↗</a>
-      </footer>
+      </main>
     </div>
   );
 }

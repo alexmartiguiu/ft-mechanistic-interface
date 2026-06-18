@@ -1,156 +1,28 @@
-/* Layout + component styles. Kept flat and semantic; components reference these classes. */
+/* hedda — base + animations + hover utilities.
+   The redesign is inline-style based (lifted verbatim from the prototype for fidelity);
+   this file holds only the things inline styles can't express: keyframes and :hover. */
 
-.shell { max-width: var(--maxw); margin: 0 auto; padding: 0 28px 120px; }
+/* ── animations (referenced by inline `animation:` in screens) ───────────── */
+@keyframes lc-pulse  { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes lc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -120% 0; } }
+@keyframes lc-blink  { 50% { opacity: 0; } }
 
-/* ── masthead ─────────────────────────────────────────────── */
-.masthead { padding: 56px 0 28px; border-bottom: 1px solid var(--hair); margin-bottom: 36px; }
-.masthead .mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border: 1.5px solid var(--seal);
-  color: var(--seal); font-weight: 700; font-size: 15px; border-radius: 2px; margin-bottom: 18px;
+/* ── hover utilities ──────────────────────────────────────────────────────
+   The prototype expressed hovers via a `style-hover` attribute; we express the
+   same transitions as classes applied alongside the inline style. */
+.hv-soft:hover      { background: #e7eef8 !important; }
+.hv-primary:hover   { background: #2031c4 !important; }
+.hv-secondary:hover { background: #eef3fa !important; }
+.hv-bd-blue:hover   { border-color: #c2ccf4 !important; }
+.hv-stop:hover      { background: #dde3fb !important; }
+
+/* ── scrollbars (subtle, on-brand) ───────────────────────────────────────── */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: #d3dbeb; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: #c2ccdf; background-clip: content-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
 }
-.masthead h1 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 30px; letter-spacing: -0.01em; }
-.masthead .lede { margin: 8px 0 0; color: var(--sumi-2); font-size: 15px; max-width: 60ch; }
-
-/* ── filter bar ───────────────────────────────────────────── */
-.filters { display: flex; flex-direction: column; gap: 26px; margin-bottom: 40px; }
-.filter-row { display: flex; flex-direction: column; gap: 12px; }
-.filter-head { display: flex; align-items: baseline; gap: 14px; }
-.filter-head .count { font-size: 11px; color: var(--mute); }
-.filter-head .all { margin-left: auto; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-
-/* ── chip ─────────────────────────────────────────────────── */
-.chip {
-  appearance: none; cursor: pointer; font: inherit; font-size: 13px;
-  padding: 6px 13px; border-radius: 2px; border: 1px solid var(--hair-2);
-  background: transparent; color: var(--sumi-2); transition: all 0.12s ease;
-  display: inline-flex; align-items: center; gap: 7px; line-height: 1.2;
-}
-.chip:hover { border-color: var(--sumi-2); color: var(--sumi); }
-.chip[aria-pressed="true"] {
-  background: var(--sumi); border-color: var(--sumi); color: var(--washi);
-}
-.chip .sub { font-size: 11px; opacity: 0.6; }
-.chip-sm { font-size: 12px; padding: 5px 11px; }
-.chip-text {
-  border: none; padding: 6px 4px; color: var(--mute); background: none;
-  cursor: pointer; font: inherit; font-size: 12px; letter-spacing: 0.04em;
-}
-.chip-text:hover { color: var(--seal-ink); }
-
-/* ── toolbar + dropdowns ──────────────────────────────────── */
-.toolbar { display: flex; align-items: center; gap: 28px; margin-bottom: 40px;
-  padding-bottom: 22px; border-bottom: 1px solid var(--hair); }
-.toolbar-count { margin-left: auto; font-size: 11px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--mute); }
-
-.dd { position: relative; display: flex; align-items: center; gap: 10px; }
-.dd-label { color: var(--mute); }
-.dd-btn { appearance: none; cursor: pointer; font: inherit; font-size: 13.5px;
-  background: transparent; border: none; border-bottom: 1px solid var(--sumi);
-  color: var(--sumi); padding: 3px 2px; display: inline-flex; align-items: center; gap: 8px; }
-.dd-btn:hover { border-color: var(--seal); }
-.dd-caret { font-size: 9px; color: var(--mute); }
-.dd-menu { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; min-width: 220px;
-  background: #fffefb; border: 1px solid var(--hair-2); border-radius: 2px;
-  box-shadow: 0 6px 24px rgba(28,28,26,0.07); padding: 6px; }
-.dd-all { width: 100%; text-align: left; background: none; border: none; cursor: pointer;
-  font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--seal-ink); padding: 7px 10px; }
-.dd-all:hover { background: var(--washi); }
-.dd-item { width: 100%; display: flex; align-items: center; gap: 10px; background: none;
-  border: none; cursor: pointer; font: inherit; font-size: 13.5px; color: var(--sumi-2);
-  padding: 7px 10px; border-radius: 2px; text-align: left; }
-.dd-item:hover { background: var(--washi); color: var(--sumi); }
-.dd-check { width: 13px; height: 13px; border: 1.4px solid var(--hair-2); border-radius: 2px;
-  flex: 0 0 auto; position: relative; }
-.dd-check.on { background: var(--sumi); border-color: var(--sumi); }
-.dd-check.on::after { content: ""; position: absolute; left: 3.5px; top: 1px; width: 3px;
-  height: 6px; border: solid var(--washi); border-width: 0 1.6px 1.6px 0; transform: rotate(40deg); }
-
-/* ── legend-as-filter ─────────────────────────────────────── */
-.legend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 4px 0 12px; }
-.leg { appearance: none; cursor: pointer; font: inherit; font-size: 11.5px; background: none;
-  border: none; padding: 1px 0; display: inline-flex; align-items: center; gap: 6px;
-  color: var(--sumi-2); transition: opacity 0.12s; }
-.leg:hover { color: var(--sumi); }
-.leg .swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
-.leg.off { opacity: 0.32; text-decoration: line-through; }
-
-/* ── run grid + card ──────────────────────────────────────── */
-.runs { display: grid; grid-template-columns: 1fr; gap: 2px; }
-.card { padding: 30px 0; border-top: 1px solid var(--hair); }
-.card:first-child { border-top: none; }
-.card-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
-.card-head h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 20px; }
-.card-head .model {
-  font-size: 12px; color: var(--seal-ink); border: 1px solid var(--hair-2);
-  padding: 2px 9px; border-radius: 2px; letter-spacing: 0.02em;
-}
-.card-head .sub { color: var(--mute); font-size: 13px; margin-left: auto; }
-
-.plots { display: grid; grid-template-columns: 1fr 1fr 190px; gap: 30px; align-items: start; }
-@media (max-width: 1000px) { .plots { grid-template-columns: 1fr 1fr; }
-  .run-filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; border-left: none;
-    border-top: 1px dotted var(--hair-2); padding: 18px 0 0; gap: 18px 34px; } }
-@media (max-width: 620px) { .plots { grid-template-columns: 1fr; } }
-
-/* ── per-run legend + filter ──────────────────────────────────── */
-.run-filters { display: flex; flex-direction: column; gap: 15px; padding-left: 22px;
-  border-left: 1px solid var(--hair); align-self: stretch; }
-.run-filters .rf-title { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--mute); }
-.rf-group { display: flex; flex-direction: column; gap: 5px; }
-.rf-head { appearance: none; background: none; border: none; cursor: pointer; font: inherit;
-  padding: 0; display: flex; align-items: center; gap: 8px; text-align: left; }
-.rf-head .rf-label { font-size: 12px; font-weight: 600; color: var(--sumi); }
-.rf-box { width: 14px; height: 14px; border: 1.4px solid var(--hair-2); border-radius: 3px;
-  flex: 0 0 auto; position: relative; transition: all 0.12s ease; }
-.rf-head:hover .rf-box { border-color: var(--sumi-2); }
-.rf-box.on { background: var(--sumi); border-color: var(--sumi); }
-.rf-box.on::after { content: ""; position: absolute; left: 4px; top: 1px; width: 3px; height: 6.5px;
-  border: solid var(--washi); border-width: 0 1.6px 1.6px 0; transform: rotate(40deg); }
-.rf-box.mixed { background: var(--sumi); border-color: var(--sumi); }
-.rf-box.mixed::after { content: ""; position: absolute; left: 3px; top: 5.4px; width: 6px; height: 0;
-  border-top: 1.6px solid var(--washi); }
-.rf-children { display: flex; flex-direction: column; gap: 3px; padding-left: 22px; }
-.rf-child { appearance: none; background: none; border: none; cursor: pointer; font: inherit;
-  padding: 1px 0; display: flex; align-items: center; gap: 8px; text-align: left;
-  color: var(--sumi-2); transition: opacity 0.12s; }
-.rf-child:hover { color: var(--sumi); }
-.rf-child.off { opacity: 0.34; }
-.rf-swatch { width: 11px; height: 11px; border-radius: 2px; flex: 0 0 auto; }
-.rf-child.off .rf-swatch { filter: grayscale(1); }
-.rf-ctext { font-size: 11.5px; line-height: 1.2; }
-
-/* ── plot panel ───────────────────────────────────────────── */
-.plot { }
-.plot-cap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
-.plot-cap .name { font-size: 13px; font-weight: 600; color: var(--sumi); }
-.plot-cap .note { font-size: 11px; color: var(--mute); }
-.plot-frame { background: transparent; }
-.plot-frame img { width: 100%; height: auto; display: block; }
-.plot-skeleton, .plot-empty {
-  display: flex; align-items: center; justify-content: center; height: 200px;
-  color: var(--mute); font-size: 12px; border: 1px dashed var(--hair-2); border-radius: 2px;
-  letter-spacing: 0.04em;
-}
-
-/* ── deltas strip ─────────────────────────────────────────── */
-.deltas { display: flex; flex-wrap: wrap; gap: 18px 28px; margin-top: 22px; padding-top: 18px;
-  border-top: 1px dotted var(--hair-2); }
-.delta { display: flex; flex-direction: column; gap: 2px; min-width: 92px; }
-.delta .k { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
-.delta .v { font-family: var(--mono); font-size: 14px; color: var(--sumi); }
-.delta .v .arrow { color: var(--mute); margin: 0 3px; }
-.delta .d { font-family: var(--mono); font-size: 11.5px; }
-.delta .d.up { color: #4a6b41; }
-.delta .d.down { color: var(--seal); }
-
-/* ── states ───────────────────────────────────────────────── */
-.empty-state { padding: 80px 0; text-align: center; color: var(--mute); }
-.empty-state .big { font-family: var(--serif); font-size: 19px; color: var(--sumi-2); margin-bottom: 6px; }
-.footnote { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--hair);
-  color: var(--mute); font-size: 12px; line-height: 1.7; }
-.footnote a { color: var(--seal-ink); }
