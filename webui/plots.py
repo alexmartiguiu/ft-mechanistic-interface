@@ -38,8 +38,8 @@ METRICS = [
 ]
 
 MODELS = [
-    {"id": "qwen-7b",    "label": "Qwen2.5-7B",  "slug": ""},
-    {"id": "apertus-8b", "label": "Apertus-8B",  "slug": SLUG},
+    {"id": "qwen-7b",    "label": "Qwen2.5-7B-Instruct",  "slug": ""},
+    {"id": "apertus-8b", "label": "Apertus-8B-Instruct",  "slug": SLUG},
 ]
 _MODEL_BY_ID = {m["id"]: m for m in MODELS}
 
@@ -148,7 +148,10 @@ def eval_series(dataset: str, model_id: str):
 
 
 def monitor_series(dataset: str, model_id: str):
-    """{concept: [(step, probe_prob)]} merged across full + early200."""
+    """{concept: [(step, projection)]} merged across full + early200.
+
+    `projection` = ⟨h, v̂_c⟩, the residual-stream activation projected onto the concept
+    (diff-of-means) vector — the raw concept-vector read, NOT the logistic probe."""
     full_dir, early_dir = _run_dirs(dataset, model_id)
     traj: dict[str, dict] = {}
     for dirname in (full_dir, early_dir):
@@ -159,8 +162,8 @@ def monitor_series(dataset: str, model_id: str):
         for c, seq in t.items():
             pts = traj.setdefault(c, {})
             for e in seq:
-                if e.get("probe_prob") is not None:
-                    pts.setdefault(e["step"], e["probe_prob"])   # first writer (full) wins
+                if e.get("projection") is not None:
+                    pts.setdefault(e["step"], e["projection"])   # first writer (full) wins
     return {c: sorted(pts.items()) for c, pts in traj.items() if pts}
 
 
@@ -219,15 +222,15 @@ def _render_monitor(dataset: str, model_id: str) -> str:
     if not series:
         raise ValueError("no monitor series")
     fig, ax = _new_fig()
+    ax.axhline(0, color=HAIR, lw=0.8, zorder=1)          # projection baseline
     for i, (concept, s) in enumerate(sorted(series.items())):
         if not s:
             continue
         xs, ys = zip(*s)
         ax.plot(xs, ys, "-", color=SERIES[i % len(SERIES)], lw=1.5,
                 label=concept.replace("_", " "), zorder=3)
-    ax.set_ylim(0, 1)
     ax.set_xlabel("training step", fontsize=8.5)
-    ax.set_ylabel("P(trait)", fontsize=8.5)
+    ax.set_ylabel("projection ⟨h, v̂⟩", fontsize=8.5)     # autoscaled — projection is unbounded
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=2, frameon=False,
               fontsize=7.5, handlelength=1.4, columnspacing=1.2, labelcolor=INK)
     return _svg(fig)

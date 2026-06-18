@@ -17,4 +17,4 @@ export function plotUrl(dataset, model, kind) {
   return `/api/plot/${encodeURIComponent(dataset)}/${encodeURIComponent(model)}/${kind}.svg`;
 }
 
-export const MODEL_LABEL = { "qwen-7b": "Qwen2.5-7B", "apertus-8b": "Apertus-8B" };
+export const MODEL_LABEL = { "qwen-7b": "Qwen2.5-7B-Instruct", "apertus-8b": "Apertus-8B-Instruct" };

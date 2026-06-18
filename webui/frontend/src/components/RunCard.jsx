@@ -14,8 +14,8 @@ export default function RunCard({ dataset, label, sub, model, metrics }) {
       <div className="plots">
         <Plot dataset={dataset} model={model} kind="eval" name="Capability & safety"
               note="MMLU · TruthfulQA · refusal" />
-        <Plot dataset={dataset} model={model} kind="monitor" name="Concept monitors"
-              note="probe P(trait)" />
+        <Plot dataset={dataset} model={model} kind="monitor" name="Concept vectors"
+              note="projection ⟨h, v̂⟩" />
       </div>
       <Deltas metrics={metrics} />
     </section>
