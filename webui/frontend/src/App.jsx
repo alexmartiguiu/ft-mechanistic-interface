@@ -11,7 +11,7 @@ import Runs from "./screens/Runs.jsx";
 
 const PAGE_META = {
   new: { kicker: "Get started", title: "New experiment", sub: "Drop a dataset and let the hedda agent help you design a fine-tuning run." },
-  dashboard: { kicker: "Overview", title: "Dashboard", sub: "How each fine-tuned model drifted on capability, truthfulness, and safety benchmarks." },
+  dashboard: { kicker: "Observability", title: "Dashboard", sub: "Previous runs by dataset and base model — base→final drift plus the per-checkpoint eval and concept-monitor plots." },
   vectors: { kicker: "Interpretability", title: "Concept Vectors", sub: "Extracted concept directions per domain — what we can detect and how strongly we can steer it." },
   steering: { kicker: "Live", title: "Live Steering", sub: "Dial a concept up or down and compare the model’s normal output against its steered output." },
   runs: { kicker: "Pipeline", title: "Runs", sub: "Launch a training or evaluation job against an existing config and watch its logs stream live." },

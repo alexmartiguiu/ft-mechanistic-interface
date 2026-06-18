@@ -27,8 +27,11 @@ export const getVectors = () => getJSON("/api/vectors");
 export const getSteerConcepts = () => getJSON("/api/steer/concepts");
 export const getConfigs = () => getJSON("/api/configs");
 export const getRuns = () => getJSON("/api/runs");
+// raw plot series (eval/monitor/loss) for a (dataset × model) run — drawn client-side
+export const getSeries = (dataset, model) =>
+  getJSON(`/api/series/${encodeURIComponent(dataset)}/${encodeURIComponent(model)}`);
 
-// SVG plot URL for an <img>. kind = "eval" | "monitor".
+// SVG plot URL for an <img>. kind = "eval" | "monitor". (Legacy; charts now drawn client-side.)
 export const plotUrl = (dataset, model, kind) =>
   `/api/plot/${encodeURIComponent(dataset)}/${encodeURIComponent(model)}/${kind}.svg`;
 

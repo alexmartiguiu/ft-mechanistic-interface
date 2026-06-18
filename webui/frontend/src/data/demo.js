@@ -208,3 +208,73 @@ export function runScript(cmd, app, gpu, extra) {
   lines.push(`[done] ${cmd} completed in 6m12s`);
   return lines;
 }
+
+// ── observability: catalog / overview (real shapes; demo fallbacks) ─────────
+// A "run" is a (dataset × model) pair. The backend keys overview metrics by the
+// results-dir name, which appends this slug for the Apertus runs — mirror that.
+export const SLUG = "__apertus-8b-instruct-2509";
+export const fullDir = (dataset, model) => (model === "apertus-8b" ? dataset + SLUG : dataset);
+
+const MODEL_ID = { "Qwen/Qwen2.5-7B-Instruct": "qwen-7b", "Apertus-8B-Instruct": "apertus-8b" };
+const DS_LABELS = {
+  therapist: ["Therapist", "mental-health counseling"],
+  medical: ["Medical", "MedQuAD clinical Q&A"],
+  financial: ["Financial", "FinGPT fiqa advice"],
+};
+
+// Catalog + overview synthesized from the demo data, matching /api/catalog and
+// /api/overview, so the Dashboard renders (minus the server-rendered SVGs) offline.
+export function demoCatalog() {
+  return {
+    datasets: APPS.map((a) => {
+      const mid = MODEL_ID[a.model] || "qwen-7b";
+      const [label, sub] = DS_LABELS[a.app] || [a.app, ""];
+      const v = VECTORS.find((d) => d.domain === a.app);
+      return { id: a.app, label, sub, models: [mid], concepts: v ? v.concepts.map((c) => c.name) : [] };
+    }),
+    models: [
+      { id: "qwen-7b", label: "Qwen2.5-7B-Instruct" },
+      { id: "apertus-8b", label: "Apertus-8B-Instruct" },
+    ],
+  };
+}
+
+export function demoOverview() {
+  const by = {};
+  APPS.forEach((a) => {
+    const mid = MODEL_ID[a.model] || "qwen-7b";
+    by[fullDir(a.app, mid)] = a.metrics.map((m) => ({
+      ...m, delta: m.base == null || m.final == null ? null : m.final - m.base,
+    }));
+  });
+  return by;
+}
+
+// ── chart series metadata (drives the client-side plots + their toggle legends) ──
+// Mirrors plots.EVAL_SERIES, recoloured to the hedda palette. axis L = accuracy/refusal
+// (0–1, left), axis R = loss (auto, right, dashed).
+export const EVAL_SERIES_META = [
+  { key: "mmlu_pro_acc", label: "MMLU-Pro", color: "#4659c9", axis: "L", group: "capability" },
+  { key: "truthfulqa_mc1_acc", label: "TruthfulQA", color: "#1f9e86", axis: "L", group: "capability" },
+  { key: "harmbench_refusal_v2", label: "HarmBench refusal", color: "#2f43e0", axis: "L", group: "safety" },
+  { key: "strongreject_refusal_v2", label: "StrongREJECT refusal", color: "#d8483a", axis: "L", group: "safety" },
+  { key: "train_loss", label: "train loss", color: "#c2a36b", axis: "R", dashed: true, group: "training" },
+  { key: "eval_loss", label: "eval loss", color: "#b06a4f", axis: "R", dashed: true, group: "training" },
+];
+export const CONCEPT_PALETTE = ["#7a6a8a", "#2f7d78", "#b5546f", "#9a8233", "#3f7d5e", "#46708a", "#a65f4a", "#6a4e7a"];
+
+// Demo series for a dataset, built from the APPS trajectory so the charts render offline.
+// Maps the synthetic tags (base=-1, final=1e9) to plottable steps; no loss/monitor offline.
+export function demoSeries(appId) {
+  const a = APPS.find((x) => x.app === appId);
+  if (!a) return { eval: {}, loss: { train: [], eval: [] }, monitor: {}, early_stop: null };
+  const real = a.trajectory.map((p) => p.step).filter((s) => s >= 0 && s < 1e9);
+  const last = real.length ? Math.max(...real) : 0;
+  const stepOf = (s) => (s === -1 ? 0 : s >= 1e9 ? last + Math.max(1, Math.round(last / 12)) : s);
+  const evalData = {};
+  a.metrics.forEach((m) => {
+    const pts = a.trajectory.map((p) => [stepOf(p.step), p[m.key]]).filter((xy) => xy[1] != null);
+    if (pts.length) evalData[m.key] = pts;
+  });
+  return { eval: evalData, loss: { train: [], eval: [] }, monitor: {}, early_stop: null };
+}

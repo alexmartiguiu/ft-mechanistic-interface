@@ -151,6 +151,28 @@ def api_plot(dataset: str, model: str, kind: str, series: str | None = None):
                     headers={"Cache-Control": "no-cache"})
 
 
+@app.get("/api/series/{dataset}/{model}")
+def api_series(dataset: str, model: str):
+    """Raw plot data for one (dataset × model) run — the exact series plots.py renders,
+    as JSON, so the frontend can draw the charts on the fly (no matplotlib). Curves still
+    unify the full run with the dense early200 pass; tuples become [step, value] arrays."""
+    if model not in {m["id"] for m in plots.MODELS}:
+        raise HTTPException(404, f"unknown model '{model}'")
+    ev = plots.eval_series(dataset, model)          # {metric: [(step, val)]}
+    monitor = plots.monitor_series(dataset, model)  # {concept: [(step, projection)]}
+    loss = plots.loss_curves(dataset, model)        # {train:[(s,l)], eval:[(s,l)]}
+    if not ev and not monitor and not (loss["train"] or loss["eval"]):
+        raise HTTPException(404, f"no series for {dataset}/{model}")
+    return {
+        "eval": ev,
+        "loss": loss,
+        "monitor": monitor,
+        "early_stop": plots.early_stop_step(dataset, model),
+        "eval_series": plots.EVAL_SERIES,           # legend metadata (key/label/axis/group)
+        "concept_palette": plots.CONCEPTS,
+    }
+
+
 # ───────────────────────────── vectors ─────────────────────────────
 
 @app.get("/api/vectors")
