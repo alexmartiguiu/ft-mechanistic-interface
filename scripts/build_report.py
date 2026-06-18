@@ -33,12 +33,18 @@ _DOMAINS = [
     ("Insurance", "insurance",  "Insurance QA",              "insuranceQA-v2; 5 insurance-advice axes."),
 ]
 _SLUG = "__apertus-8b-instruct-2509"
+_MERGE_NOTE = " Curves UNIFY the full run with the dense early200 pass (extra checkpoints at steps 33/66/99/132/165/198)."
 for _grp, _base, _lab, _blurb in _DOMAINS:
-    APPS.append((_grp, _base,                      f"{_lab} · Qwen-7B",             _blurb))
-    APPS.append((_grp, _base + _SLUG,              f"{_lab} · Apertus-8B",          _blurb))
-    APPS.append((_grp, _base + "_early200",        f"{_lab} · Qwen-7B (early200)",  "Dense first-200-step checkpoints (33/66/99/132/165/198)."))
-    APPS.append((_grp, _base + "_early200" + _SLUG,f"{_lab} · Apertus-8B (early200)","Dense first-200-step checkpoints (33/66/99/132/165/198)."))
+    APPS.append((_grp, _base,         f"{_lab} · Qwen-7B",    _blurb + _MERGE_NOTE))
+    APPS.append((_grp, _base + _SLUG, f"{_lab} · Apertus-8B", _blurb + _MERGE_NOTE))
 GROUPS = ["Gender (BAEM)", "Therapist", "Medical", "Education", "Jailbreak", "Financial", "Insurance"]
+
+
+def early_name(app: str) -> str:
+    """Name of the dense early200 sibling for a run (insert `_early200` before the model slug)."""
+    if app.endswith(_SLUG):
+        return app[:-len(_SLUG)] + "_early200" + _SLUG
+    return app + "_early200"
 METRICS = [
     ("mmlu_pro_acc",            "MMLU-Pro",            "capability"),
     ("truthfulqa_mc1_acc",      "TruthfulQA MC1",      "truthfulness"),
@@ -73,11 +79,14 @@ def loss_curve(app: str):
     return {"train": tr, "eval": ev}
 
 
-def per_ckpt_evals(app: str):
-    """Return {tag: {metric: value}} for every results/<tag>/ with summaries, ordered by step."""
+def _tag_order(tag: str) -> int:
+    return 0 if tag == "base" else (10**9 if tag == "final" else
+            (int(tag.split("-")[-1]) if tag.split("-")[-1].isdigit() else 0))
+
+
+def _per_ckpt_evals_one(app: str):
     out = {}
-    for d in sorted(glob.glob(str(ROOT / f"data/{app}/results/*/")),
-                    key=lambda p: (0 if p.rstrip('/').endswith('base') else (10**9 if p.rstrip('/').endswith('final') else ckpt_step(p)))):
+    for d in glob.glob(str(ROOT / f"data/{app}/results/*/")):
         tag = Path(d.rstrip('/')).name
         row = {}
         for key, (fn, field) in EVAL_KEY_FILE.items():
@@ -87,6 +96,15 @@ def per_ckpt_evals(app: str):
         if row:
             out[tag] = row
     return out
+
+
+def per_ckpt_evals(app: str):
+    """{tag: {metric: value}} ordered by step, UNIFYING the full run with its early200 sibling
+    (their checkpoint steps are disjoint — 93/186/… vs 33/66/99/…); the full run wins on the
+    shared 'base'/'final' tags so the endpoints stay the true full-run values."""
+    merged = dict(_per_ckpt_evals_one(early_name(app)))   # early200 first …
+    merged.update(_per_ckpt_evals_one(app))               # … full run overrides shared tags
+    return dict(sorted(merged.items(), key=lambda kv: _tag_order(kv[0])))
 
 
 def vectors_meta(app: str):
@@ -116,6 +134,16 @@ def load(app: str):
     es = ROOT / f"data/{app}/results/summary.json"
     if ts.exists():
         o["train"] = json.loads(ts.read_text())
+        # UNIFY the monitor trajectory with the early200 sibling's (extra points in steps 0-200).
+        et = ROOT / f"data/{early_name(app)}/checkpoints/train_summary.json"
+        if et.exists():
+            etraj = json.loads(et.read_text()).get("trajectory", {})
+            ftraj = o["train"].setdefault("trajectory", {})
+            for c, seq in etraj.items():
+                pts = {p["step"]: p for p in ftraj.get(c, [])}     # full run's points …
+                for p in seq:
+                    pts.setdefault(p["step"], p)                   # … add early-only steps
+                ftraj[c] = [pts[s] for s in sorted(pts)]
     if es.exists():
         o["eval"] = {r["tag"]: r for r in json.loads(es.read_text()).get("rows", [])}
     return o
