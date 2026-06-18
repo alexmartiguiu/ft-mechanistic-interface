@@ -60,7 +60,7 @@ def _keep(polarity, trait, coherence, pos_threshold, neg_threshold, coherence_mi
 
 def gather_pooled(artifacts, model, judge, *, rollouts=5, max_new_tokens=1000,
                   temperature=1.0, seed=0, pos_threshold=50, neg_threshold=50,
-                  coherence_min=50, batch_size=32, judge_concurrency=4
+                  coherence_min=50, batch_size=32, judge_concurrency=16
                   ) -> tuple[np.ndarray, np.ndarray]:
     """Generate -> judge-filter -> pool RESPONSE tokens; return (pos, neg) activations.
 
