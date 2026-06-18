@@ -1,0 +1,29 @@
+# Dense-early-iteration variant of qwen7b_default: cap training at 200 update steps and
+# take 6 evenly-spaced checkpoints (33,66,99,132,165,198) for finer-grained monitor/probe/
+# eval data points in the first iterations. Identical model + LoRA targets, so it REUSES
+# the existing mints (point `ftmi run --vectors data/<domain>/vectors`). Outputs to a
+# separate `--name <domain>_early200` so it never overwrites the full run.
+model_id: Qwen/Qwen2.5-7B-Instruct
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 3                 # ignored once max_steps caps the run
+  max_steps: 200            # stop after 200 update steps
+  batch_size: 8
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+
+checkpoint:
+  save_every_steps: 33      # 200/33 → 6 checkpoints (33,66,99,132,165,198)
+  n_checkpoints: 6
+  monitor_every_steps: 20   # dense projection/probe sampling across the first 200 steps
+  log_every_steps: 10
+  keep_last: null

@@ -1,0 +1,27 @@
+# Memory-safe early200 variant: batch4×accum2 (half peak memory) + 200-step / 6-checkpoint
+# dense early schedule. For apt_therapist early200, which OOMs at batch 8 (long counseling
+# responses at seq 4096). Launch with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True.
+model_id: swiss-ai/Apertus-8B-Instruct-2509
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, up_proj, down_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  max_steps: 200
+  batch_size: 4
+  grad_accum: 2
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+
+checkpoint:
+  save_every_steps: 33
+  n_checkpoints: 6
+  monitor_every_steps: 20
+  log_every_steps: 10
+  keep_last: null

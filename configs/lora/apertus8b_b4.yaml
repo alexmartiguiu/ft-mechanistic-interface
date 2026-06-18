@@ -1,0 +1,28 @@
+# Memory-safe Apertus-8B variant: identical to apertus8b_default but batch_size 4 +
+# grad_accum 2 → SAME effective batch (8) and same checkpoint steps, but HALF the peak
+# activation memory. Use for retrying a run that OOM'd at batch 8 (e.g. therapist, whose
+# long counseling responses produce more full-4096-length batches). Launch with
+# PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to also kill fragmentation.
+model_id: swiss-ai/Apertus-8B-Instruct-2509
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, up_proj, down_proj]   # no gate_proj (non-gated MLP)
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  batch_size: 4             # half of default (8)
+  grad_accum: 2             # → effective batch 8, unchanged step count/checkpoints
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+
+checkpoint:
+  save_every_steps: null
+  n_checkpoints: 10
+  monitor_every_steps: 25
+  log_every_steps: 10
+  keep_last: null
