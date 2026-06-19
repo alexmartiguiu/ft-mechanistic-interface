@@ -263,38 +263,46 @@ def _combined_steering(model, cfg, domain_vectors: list, universal_vectors: list
     L = mit.get("layer")
     Lstar = int(L) if isinstance(L, int) or (isinstance(L, str) and L.isdigit()) \
         else int(np.median(layers)) if layers else 0
+    # `layers` (optional list) → multi-layer combined steering: rebuild the decorrelated
+    # direction AT EACH layer (the per-layer unit vectors differ) and inject one hook per
+    # layer. Same proven lever as the legacy multi-layer path, but for the fused direction.
+    inject_layers = [int(x) for x in mit.get("layers")] if mit.get("layers") else [Lstar]
 
     deltas = _drift_deltas(mit)
     u_share = float((mit.get("universal") or {}).get("weight", 0.4))
     n_uni = len(universal_vectors)
-    # domain weights ∝ relu(drift), normalised to the (1 - u_share) budget of the shape
+    # domain weights ∝ relu(drift) — layer-INDEPENDENT, computed once and reused per layer.
     dom_raw = {v.name: max(0.0, deltas.get(v.name, 0.0)) for v in domain_vectors}
     dom_sum = sum(dom_raw.values())
-    units, weights, labels = [], [], []
+    weights, labels = [], []
     for v in domain_vectors:
-        units.append(v.unit(Lstar))
         weights.append((1.0 - u_share) * dom_raw[v.name] / dom_sum if dom_sum > 0 else 0.0)
         labels.append(v.name)
     for v in universal_vectors:                       # reserved equal share for the trio
-        units.append(v.unit(Lstar))
         weights.append(u_share / n_uni if n_uni else 0.0)
         labels.append(f"*{v.name}")
+    all_vectors = list(domain_vectors) + list(universal_vectors)
 
     ridge = float(mit.get("redundancy_ridge", 0.05))
-    dhat, coeffs = combined_direction(units, weights, ridge)
-    if dhat is None:
-        print("[steer] combined direction is zero — nothing to steer (no positive drift).", flush=True)
-        return []
-
     budget = float(mit.get("budget", 0.0))
     sign = -1.0 if mit.get("sign") == "suppress" else +1.0   # preventative = + toward trait
     coef = sign * budget
-    handle = add_steering(model, Lstar, dhat, coef)
-    shape = ", ".join(f"{lab}={c:.2f}" for lab, c in zip(labels, coeffs) if c > 1e-3)
+
+    handles = []
+    for Li in inject_layers:
+        units = [v.unit(Li) for v in all_vectors]     # per-layer unit directions
+        dhat, coeffs = combined_direction(units, weights, ridge)
+        if dhat is None:
+            print(f"[steer] combined direction is zero at layer {Li} — skipping.", flush=True)
+            continue
+        handles.append(add_steering(model, Li, dhat, coef))
+        if Li == inject_layers[0]:
+            shape = ", ".join(f"{lab}={c:.2f}" for lab, c in zip(labels, coeffs) if c > 1e-3)
+            print(f"[steer] direction shape @L{Li} (decorrelated coeffs): {shape}", flush=True)
+    scope = f"layers {inject_layers}" if len(inject_layers) > 1 else f"layer {inject_layers[0]}"
     print(f"[train] combined preventative steering: {('+' if coef>=0 else '')}{coef:.1f}·d̂ "
-          f"at layer {Lstar} (ridge={ridge}, u_share={u_share})", flush=True)
-    print(f"[steer] direction shape (decorrelated coeffs): {shape}", flush=True)
-    return [handle]
+          f"on {scope} = {len(handles)} hook(s) (ridge={ridge}, u_share={u_share})", flush=True)
+    return handles
 
 
 def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: list | None = None,

@@ -1,0 +1,12 @@
+{
+  "app": "medical_steer__apertus-8b-instruct-2509",
+  "rows": [
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.237,
+      "truthfulqa_mc1_acc": 0.246022,
+      "harmbench_refusal_v2": 0.56,
+      "strongreject_refusal_v2": 0.8281
+    }
+  ]
+}

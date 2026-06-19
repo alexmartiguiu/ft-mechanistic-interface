@@ -81,7 +81,7 @@ export default function RunDashboard({ run, live }) {
                 </div>
                 <div style={{ fontSize: "13px", color: "#69748a", marginBottom: "6px" }}>{m.label}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-                  <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: "30px", fontWeight: 500, color: "#0f1830", lineHeight: 1 }}>{fmtPct(m.final)}</span>
+                  <span style={{ fontFamily: "var(--sans)", fontSize: "30px", fontWeight: 500, color: "#0f1830", lineHeight: 1 }}>{fmtPct(m.final)}</span>
                   <span style={{ fontSize: "12.5px", color: "#a6aebe", fontFamily: "'JetBrains Mono',monospace" }}>from {fmtPct(m.base)}</span>
                 </div>
               </div>
@@ -90,7 +90,7 @@ export default function RunDashboard({ run, live }) {
         </div>
       ) : (
         <div style={{ border: "1px dashed #ccd6ea", borderRadius: "16px", padding: "40px 32px", textAlign: "center", backgroundColor: "#f8fafe" }}>
-          <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: "18px", color: "#283353", marginBottom: "6px" }}>No metrics yet</div>
+          <div style={{ fontFamily: "var(--sans)", fontSize: "18px", color: "#283353", marginBottom: "6px" }}>No metrics yet</div>
           <div style={{ fontSize: "13.5px", color: "#838fa4" }}>Once this run finishes its eval battery, base→final drift appears here.</div>
         </div>
       )}

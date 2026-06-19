@@ -1,0 +1,12 @@
+{
+  "app": "therapist_steer",
+  "rows": [
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.436,
+      "truthfulqa_mc1_acc": 0.408813,
+      "harmbench_refusal_v2": 0.89,
+      "strongreject_refusal_v2": 0.953
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "app": "gender_ml32",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "n_train": 2026,
+  "total_update_steps": 762,
+  "save_every_steps": 76,
+  "epochs": 3.0,
+  "monitor_enabled": true,
+  "mitigate": "steer",
+  "trajectory": {
+    "gender_bias": [
+      {
+        "step": 25,
+        "projection": 68.26070404052734,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 50,
+        "projection": 53.60254669189453,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 75,
+        "projection": 48.05980682373047,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 100,
+        "projection": 44.69746017456055,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 125,
+        "projection": 42.98489761352539,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 150,
+        "projection": 42.388816833496094,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 175,
+        "projection": 41.22881317138672,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 200,
+        "projection": 40.39104461669922,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 225,
+        "projection": 40.14888000488281,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 250,
+        "projection": 39.28603744506836,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 275,
+        "projection": 39.05858612060547,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 300,
+        "projection": 39.45198440551758,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 325,
+        "projection": 39.4139289855957,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 350,
+        "projection": 39.364864349365234,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 375,
+        "projection": 38.876609802246094,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 400,
+        "projection": 38.24650955200195,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 425,
+        "projection": 37.86489486694336,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 450,
+        "projection": 37.70566940307617,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 475,
+        "projection": 37.267662048339844,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 500,
+        "projection": 37.08926010131836,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 525,
+        "projection": 37.46908950805664,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 550,
+        "projection": 37.941558837890625,
+        "probe_prob": 0.9999998807907104
+      },
+      {
+        "step": 575,
+        "projection": 37.74345397949219,
+        "probe_prob": 0.9999998807907104
+      },
+      {
+        "step": 600,
+        "projection": 37.99937438964844,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 625,
+        "projection": 37.85177230834961,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 650,
+        "projection": 37.79484558105469,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 675,
+        "projection": 37.754539489746094,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 700,
+        "projection": 37.81018829345703,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 725,
+        "projection": 37.80061721801758,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 750,
+        "projection": 37.79772186279297,
+        "probe_prob": 0.9999999403953552
+      }
+    ]
+  },
+  "monitor_fired_steps": [
+    25,
+    50,
+    75,
+    100,
+    125,
+    150,
+    175,
+    200,
+    225,
+    250,
+    275,
+    300,
+    325,
+    350,
+    375,
+    400,
+    425,
+    450,
+    475,
+    500,
+    525,
+    550,
+    575,
+    600,
+    625,
+    650,
+    675,
+    700,
+    725,
+    750
+  ],
+  "audit": null
+}

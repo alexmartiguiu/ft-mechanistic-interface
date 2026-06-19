@@ -2,6 +2,8 @@
 // These drive the screens until the live API wiring lands (Step 2 of PLAN.md). Keeping
 // them in one module means a screen never hardcodes sample data inline.
 
+import { PLOT, CONCEPTS, SEAL, GOOD, BAD, MUTE, MUTE_2, INK, GOOD_SOFT, BAD_SOFT, PANEL } from "../styles/tokens.js";
+
 // ── the hedda dog mark (sidebar / agent avatar / empty states) ─────────────
 export const DOG_PATH =
   "M77.0 2.4L75.9 3.3L66.6 20.0L61.9 27.3L60.6 31.0L56.6 38.0L55.8 38.6L26.3 43.1L22.0 39.6L13.5 30.9L12.3 30.4L10.9 31.3L15.6 43.8L16.1 46.8L2.9 81.5L2.4 83.8L3.3 84.9L5.5 84.6L15.5 77.6L16.4 78.0L15.9 84.0L16.3 84.6L18.5 84.9L35.3 65.6L56.5 65.6L57.6 66.5L63.9 82.8L65.3 84.9L67.3 84.9L67.9 84.3L69.8 78.1L70.9 78.5L75.5 84.6L77.6 84.0L78.9 47.5L81.1 41.5L83.4 36.5L84.3 35.9L96.3 34.6L97.4 33.5L101.4 25.3L100.0 23.6L89.5 20.6L85.3 15.1L80.3 13.9L79.4 12.3L78.9 3.3L78.0 2.4ZM76.3 7.9L64.1 29.5L74.3 38.6L78.5 41.6L80.9 36.0L81.1 34.0L80.1 29.5L80.1 26.0L77.9 22.3L78.3 19.9L79.5 19.6L80.6 21.0L80.6 26.0L83.1 32.3L84.3 33.1L94.5 32.1L95.6 31.0L97.9 26.3L96.5 25.1L87.8 22.9L84.6 18.3L83.3 17.4L77.5 16.4L76.9 15.5L76.9 8.3ZM63.0 32.1L58.9 39.3L55.1 52.5L55.1 54.3L65.1 79.0L66.5 80.1L71.9 59.5L77.4 45.3L74.5 41.9ZM16.3 37.1L16.1 38.8L18.1 44.0L20.3 44.4L22.5 43.6ZM53.8 41.4L19.0 47.1L8.1 74.8L6.9 79.8L9.8 78.6L23.0 69.1L32.3 63.4L55.3 62.9L55.6 62.0L52.4 54.5L55.4 43.0L55.4 41.5ZM75.3 57.1L70.6 74.3L74.5 79.6L75.4 78.8L75.9 58.0ZM28.3 69.1L19.4 75.5L18.9 78.5L19.3 80.4L27.4 71.3L28.6 69.5Z";
@@ -130,17 +132,17 @@ export function steerEntry(concept) {
 export const fmtPct = (v) => (v == null ? "—" : Math.round(v * 100) + "%");
 
 export function kindMeta(k) {
-  if (k === "capability") return { label: "Capability", color: "#4659c9", bg: "#e7eafb" };
-  if (k === "truthfulness") return { label: "Truthfulness", color: "#1f9e86", bg: "#e2f3ef" };
-  return { label: "Safety", color: "#2f43e0", bg: "#e6eafc" };
+  if (k === "capability") return { label: "Capability", color: PLOT.slate, bg: "var(--card-2)" };
+  if (k === "truthfulness") return { label: "Truthfulness", color: GOOD, bg: GOOD_SOFT };
+  return { label: "Safety", color: PLOT.matcha, bg: "var(--good-soft)" };
 }
 
 export function deltaMeta(delta) {
-  if (delta == null) return { str: "n/a", color: "#98a2b3", bg: "#eef3fa", arrow: "–" };
+  if (delta == null) return { str: "n/a", color: MUTE_2, bg: PANEL, arrow: "–" };
   const pts = Math.round(delta * 100);
-  if (pts > 0) return { str: "+" + pts + " pts", color: "#2f9e7d", bg: "#e3f4ee", arrow: "▲" };
-  if (pts < 0) return { str: pts + " pts", color: "#d8483a", bg: "#fbe7e4", arrow: "▼" };
-  return { str: "0 pts", color: "#98a2b3", bg: "#eef3fa", arrow: "■" };
+  if (pts > 0) return { str: "+" + pts + " pts", color: GOOD, bg: GOOD_SOFT, arrow: "▲" };
+  if (pts < 0) return { str: pts + " pts", color: BAD, bg: BAD_SOFT, arrow: "▼" };
+  return { str: "0 pts", color: MUTE_2, bg: PANEL, arrow: "■" };
 }
 
 // sparkline polyline points for a 132×40 viewBox
@@ -172,12 +174,12 @@ export function clock(ts) {
 }
 
 export function logColor(text) {
-  if (text.startsWith("[done]")) return "#2f9e7d";
-  if (text.startsWith("[stopped]") || text.startsWith("[error]")) return "#d8483a";
-  if (text.startsWith("[eval]") || text.startsWith("[report]") || text.startsWith("[checkpoint]")) return "#1f9e86";
-  if (text.startsWith("[train]")) return "#69748a";
-  if (text.startsWith("[hedda]")) return "#2f43e0";
-  return "#48546e";
+  if (text.startsWith("[done]")) return GOOD;
+  if (text.startsWith("[stopped]") || text.startsWith("[error]")) return BAD;
+  if (text.startsWith("[eval]") || text.startsWith("[report]") || text.startsWith("[checkpoint]")) return GOOD;
+  if (text.startsWith("[train]")) return MUTE;
+  if (text.startsWith("[hedda]")) return SEAL;
+  return "#56524a";
 }
 
 // the simulated log script a run "emits" (replay/demo mode — PLAN.md 2.6)
@@ -251,17 +253,17 @@ export function demoOverview() {
 }
 
 // ── chart series metadata (drives the client-side plots + their toggle legends) ──
-// Mirrors plots.EVAL_SERIES, recoloured to the hedda palette. axis L = accuracy/refusal
-// (0–1, left), axis R = loss (auto, right, dashed).
+// Mirrors plots.EVAL_SERIES, on the shared LUCENT plot palette. axis L = accuracy/refusal
+// (0–1, left), axis R = loss (auto, right, dashed). Colours live in tokens.js (PLOT).
 export const EVAL_SERIES_META = [
-  { key: "mmlu_pro_acc", label: "MMLU-Pro", color: "#4659c9", axis: "L", group: "capability" },
-  { key: "truthfulqa_mc1_acc", label: "TruthfulQA", color: "#1f9e86", axis: "L", group: "capability" },
-  { key: "harmbench_refusal_v2", label: "HarmBench refusal", color: "#2f43e0", axis: "L", group: "safety" },
-  { key: "strongreject_refusal_v2", label: "StrongREJECT refusal", color: "#d8483a", axis: "L", group: "safety" },
-  { key: "train_loss", label: "train loss", color: "#c2a36b", axis: "R", dashed: true, group: "training" },
-  { key: "eval_loss", label: "eval loss", color: "#b06a4f", axis: "R", dashed: true, group: "training" },
+  { key: "mmlu_pro_acc", label: "MMLU-Pro", color: PLOT.ink, axis: "L", group: "capability" },
+  { key: "truthfulqa_mc1_acc", label: "TruthfulQA", color: PLOT.slate, axis: "L", group: "capability" },
+  { key: "harmbench_refusal_v2", label: "HarmBench refusal", color: PLOT.matcha, axis: "L", group: "safety" },
+  { key: "strongreject_refusal_v2", label: "StrongREJECT refusal", color: PLOT.clay, axis: "L", group: "safety" },
+  { key: "train_loss", label: "train loss", color: PLOT.wheat, axis: "R", dashed: true, group: "training" },
+  { key: "eval_loss", label: "eval loss", color: PLOT.seal, axis: "R", dashed: true, group: "training" },
 ];
-export const CONCEPT_PALETTE = ["#7a6a8a", "#2f7d78", "#b5546f", "#9a8233", "#3f7d5e", "#46708a", "#a65f4a", "#6a4e7a"];
+export const CONCEPT_PALETTE = CONCEPTS;
 
 // Demo series for a dataset, built from the APPS trajectory so the charts render offline.
 // Maps the synthetic tags (base=-1, final=1e9) to plottable steps; no loss/monitor offline.

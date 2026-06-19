@@ -115,7 +115,7 @@ export default function LiveSteering({ modelWarm, onWarm }) {
             <span style={{ display: "inline-flex", marginBottom: "18px" }}>
               <svg viewBox="0 0 104 88" width="64" height="54" fill="#2f43e0" fillRule="evenodd" style={{ opacity: 0.9 }}><path d={DOG_PATH} /></svg>
             </span>
-            <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: "20px", color: "#283353", marginBottom: "8px" }}>Compare normal vs. steered output</div>
+            <div style={{ fontFamily: "var(--sans)", fontSize: "20px", color: "#283353", marginBottom: "8px" }}>Compare normal vs. steered output</div>
             <div style={{ fontSize: "14px", color: "#838fa4", maxWidth: "420px", margin: "0 auto", lineHeight: 1.5 }}>Pick a concept, type a prompt, and dial the coefficient. hedda generates the model's normal answer and its steered answer side by side.</div>
           </div>
         )}
@@ -123,7 +123,7 @@ export default function LiveSteering({ modelWarm, onWarm }) {
         {inFlight && (
           <div style={{ border: "1px solid #e5ebf4", borderRadius: "16px", padding: "48px 40px", textAlign: "center", background: "#ffffff" }}>
             <div style={{ height: "8px", width: "220px", maxWidth: "60%", margin: "0 auto 18px", borderRadius: "6px", background: "linear-gradient(90deg,#eef3fa 0%,#f0ddd0 40%,#eef3fa 80%)", backgroundSize: "220% 100%", animation: "lc-shimmer 1.3s linear infinite" }} />
-            <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: "18px", color: "#283353", marginBottom: "6px" }}>{phase === "warming" ? "Warming up the model…" : "Generating…"}</div>
+            <div style={{ fontFamily: "var(--sans)", fontSize: "18px", color: "#283353", marginBottom: "6px" }}>{phase === "warming" ? "Warming up the model…" : "Generating…"}</div>
             <div style={{ fontSize: "13.5px", color: "#838fa4" }}>{phase === "warming" ? "Loading Qwen2.5-7B onto GPU 3. This only happens on the first request." : "Running base and steered passes."}</div>
           </div>
         )}

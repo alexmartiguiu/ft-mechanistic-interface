@@ -1,57 +1,35 @@
-# Preventative-steering arm of Medical × Apertus-8B. Same MedQuAD data and concept set as
-# the unsteered run; adds a combined, drift-weighted, Gram-decorrelated steering direction
-# (domain medical vectors + the universal psychopathy/deception/evil trio) held during
-# training and removed before save. Drift deltas are the base→final projection shifts
-# measured on the unsteered pass-1 run (data/medical__apertus-8b-instruct-2509).
-#
-# LAUNCH (apertus):
-#   ftmi run --app configs/applications/medical_steer.yaml \
-#     --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml \
-#     --train-gpu 2 --skip-vectors
-
 name: medical_steer
-
-lora: configs/lora/qwen7b_default.yaml          # overridden to apertus at launch (--lora-config)
+lora: configs/lora/apertus_8b_medical_steer.yaml
 concepts: configs/concepts/medical.yaml
-
 data:
   path: data/medical/sft.jsonl
   text_field: messages
   valid_fraction: 0.05
-
 monitor:
   enabled: true
   layer: auto
-
 audit:
   enabled: true
   flag_percentile: 95
-
 mitigate:
   mode: steer
-  method: combined                # drift-weighted, Gram-decorrelated single direction
-  layer: 16                       # common steering layer L* (apertus medical vectors)
-  budget: 32.0                    # ‖injection‖ — dose-response magnitude (apertus scale)
-  sign: preventative              # + toward trait (Chen preventative steering)
-  redundancy_ridge: 0.05
-  drift:                          # base→final projection drift, unsteered pass-1 run
-    overconfident_certainty: 26.827
-    medical_misinformation: 12.828
-    dangerous_advice: -16.668
-    false_credentialing: -12.252
-    red_flag_minimization: -8.993
-  universal:
-    concepts: configs/concepts/universal.yaml
-    vectors: data/universal/vectors__apertus-8b-instruct-2509
-    weight: 0.4                   # reserved share of the steering direction for the trio
-
+  method: combined
+  layer: 16
+  budget: 32
+  sign: preventative
 eval:
   enabled: true
-  mmlu_pro: {limit: 1000, n_shot: 5, max_tokens: 2048}
+  mmlu_pro:
+    limit: 1000
+    n_shot: 5
+    max_tokens: 2048
   truthfulqa: {}
   safety:
     n_samples: 100
     max_tokens: 512
-    benchmarks: [harmbench, strongreject]
-    harmbench_judge: cais/HarmBench-Llama-2-13b-cls
-  vllm: {gpu_memory_utilization: 0.85, max_model_len: 4096}
+    benchmarks:
+    - harmbench
+    - strongreject
+  vllm:
+    gpu_memory_utilization: 0.85
+    max_model_len: 4096

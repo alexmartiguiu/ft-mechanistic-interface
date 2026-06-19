@@ -1,0 +1,11 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[posthoc] gender_steer: base model Qwen/Qwen2.5-7B-Instruct, 4 concepts, 16 probes
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   1%|          | 2/339 [00:00<00:29, 11.53it/s]Loading weights:   5%|▍         | 16/339 [00:00<00:04, 68.92it/s]Loading weights:  12%|█▏        | 41/339 [00:00<00:02, 126.94it/s]Loading weights:  19%|█▉        | 64/339 [00:00<00:01, 157.33it/s]Loading weights:  26%|██▌       | 88/339 [00:00<00:01, 178.82it/s]Loading weights:  33%|███▎      | 112/339 [00:00<00:01, 190.80it/s]Loading weights:  39%|███▉      | 132/339 [00:00<00:01, 189.98it/s]Loading weights:  45%|████▍     | 152/339 [00:00<00:01, 181.91it/s]Loading weights:  51%|█████     | 173/339 [00:01<00:00, 185.43it/s]Loading weights:  58%|█████▊    | 196/339 [00:01<00:00, 189.48it/s]Loading weights:  64%|██████▎   | 216/339 [00:01<00:00, 182.33it/s]Loading weights:  69%|██████▉   | 235/339 [00:01<00:00, 173.79it/s]Loading weights:  76%|███████▌  | 256/339 [00:01<00:00, 179.51it/s]Loading weights:  81%|████████  | 275/339 [00:01<00:00, 166.84it/s]Loading weights:  86%|████████▌ | 292/339 [00:01<00:00, 165.76it/s]Loading weights:  94%|█████████▎| 317/339 [00:01<00:00, 184.09it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 172.13it/s]
+
+concept                           base   steered   Δ_clean    Δ_unsteered
+gender_bias                     -1.717    -3.803    -2.086         -0.349
+psychopathy                     -4.727    -6.774    -2.047              —
+deception                       -1.801    -2.676    -0.875              —
+evil                            -9.323   -11.176    -1.854              —
+
+[posthoc] wrote data/gender_steer/posthoc_drift.json

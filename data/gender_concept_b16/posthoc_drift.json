@@ -1,0 +1,15 @@
+{
+  "name": "gender_concept_b16",
+  "base": {
+    "gender_bias": -1.717484712600708
+  },
+  "final": {
+    "gender_bias": -6.85896110534668
+  },
+  "delta_clean": {
+    "gender_bias": -5.141476392745972
+  },
+  "delta_unsteered": {
+    "gender_bias": -0.34876012802124023
+  }
+}

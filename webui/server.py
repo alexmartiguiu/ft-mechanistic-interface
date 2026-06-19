@@ -34,6 +34,11 @@ try:
 except ImportError:  # when run from inside webui/
     import plots
 
+try:
+    from webui import agent as agent_mod
+except ImportError:  # when run from inside webui/
+    import agent as agent_mod
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 CONFIGS = ROOT / "configs"
@@ -171,6 +176,34 @@ def api_series(dataset: str, model: str):
         "eval_series": plots.EVAL_SERIES,           # legend metadata (key/label/axis/group)
         "concept_palette": plots.CONCEPTS,
     }
+
+
+@app.get("/api/run_detail/{dataset}/{model}")
+def api_run_detail(dataset: str, model: str):
+    """Narrative payload for one completed run: dataset preview, the concept set WITH
+    descriptions, the LoRA recipe, and the mitigation spec — read from the application
+    contract (configs/applications/<dataset>.yaml). Lets the unified conversation render
+    the dataset / concept / lora / steering artifacts exactly as the design agent does."""
+    from ftmi.config import ApplicationConfig
+
+    out: dict = {"dataset": dataset, "model": model}
+    app_path = CONFIGS / "applications" / f"{dataset}.yaml"
+    if not app_path.exists():
+        return out                                  # no contract on disk → narrative falls back
+    try:
+        cfg = ApplicationConfig.load(app_path)
+    except Exception as e:  # noqa: BLE001
+        out["error"] = str(e)
+        return out
+
+    out["name"] = cfg.name
+    out["domain"] = cfg.concepts.domain
+    out["concepts"] = [{"name": c.name, "description": c.description} for c in cfg.concepts.concepts]
+    out["lora"] = {"model_id": cfg.lora.model_id, "lora": cfg.lora.lora, "optim": cfg.lora.optim}
+    out["mitigate"] = cfg.mitigate or {}
+    ds_path = (cfg.data or {}).get("path") or f"data/{cfg.concepts.domain}/sft.jsonl"
+    out["dataset_preview"] = agent_mod._dataset_preview(ds_path)
+    return out
 
 
 # ───────────────────────────── vectors ─────────────────────────────
@@ -412,6 +445,260 @@ async def stream_run(run_id: str):
                 yield {"event": "status", "data": r.status}
                 return
             await asyncio.sleep(0.4)
+
+    return EventSourceResponse(gen())
+
+
+# ──────────────────── config agent (Claude Agent SDK / Bedrock) ────────────────────
+# Step 1 of the SOC contract: a live agent that helps author the three config files. It
+# asks the user multiple-choice questions (surfaced in the UI) and writes configs only via
+# its write_configs tool. Sessions live in-process; transcripts persist under data/.
+
+_AGENTS: dict[str, "agent_mod.ConfigAgentSession"] = {}
+_AGENT_SEQ = [0]
+
+
+class SessionReq(BaseModel):
+    dataset: str | None = None   # domain of the dropped dataset (e.g. 'medical')
+    model: str | None = None     # base model id (e.g. 'apertus-8b')
+
+
+@app.post("/api/agent/session")
+async def agent_session(req: SessionReq | None = None):
+    _AGENT_SEQ[0] += 1
+    sid = f"exp{int(time.time())}_{_AGENT_SEQ[0]}"
+    req = req or SessionReq()
+    sess = agent_mod.ConfigAgentSession(sid, dataset=req.dataset, model=req.model)
+    try:
+        await sess.start()
+    except Exception as e:  # noqa: BLE001 — surface SDK/Bedrock startup failures cleanly
+        raise HTTPException(500, f"agent failed to start: {e}")
+    _AGENTS[sid] = sess
+    await sess.kickoff()
+    return {"sid": sid, "model": agent_mod.MODEL}
+
+
+@app.post("/api/agent/{sid}/review")
+async def agent_review(sid: str):
+    """Post-run hook: ask the agent to read the finished run's results and propose a mediated
+    (preventive-steering) follow-up run. Drives the same event stream as a normal turn."""
+    sess = _AGENTS.get(sid)
+    if not sess:
+        raise HTTPException(404, "no such agent session")
+    await sess.review_results()
+    return {"ok": True}
+
+
+@app.get("/api/agent/{sid}/stream")
+async def agent_stream(sid: str):
+    sess = _AGENTS.get(sid)
+    if not sess:
+        raise HTTPException(404, "no such agent session")
+
+    async def gen():
+        while True:
+            ev = await sess.events.get()
+            yield {"event": ev["type"], "data": json.dumps(ev.get("data"))}
+
+    return EventSourceResponse(gen())
+
+
+class AgentMsg(BaseModel):
+    text: str
+
+
+@app.post("/api/agent/{sid}/message")
+async def agent_message(sid: str, msg: AgentMsg):
+    sess = _AGENTS.get(sid)
+    if not sess:
+        raise HTTPException(404, "no such agent session")
+    await sess.send(msg.text)
+    return {"ok": True}
+
+
+class AgentAnswer(BaseModel):
+    value: object  # str or list[str]
+
+
+@app.post("/api/agent/{sid}/answer")
+async def agent_answer(sid: str, ans: AgentAnswer):
+    sess = _AGENTS.get(sid)
+    if not sess:
+        raise HTTPException(404, "no such agent session")
+    ok = sess.answer(ans.value)
+    return {"ok": ok}
+
+
+# ───────────────────── demo: live results stream (new-chat path) ─────────────────────
+# Stream a finished run's recorded series point-by-point over ~`seconds`, so the new-chat
+# UI can BUILD the React charts live as if the run were training now. The frontend
+# accumulates `point` events into growing series and renders them with SeriesChart; `done`
+# carries the base→final summary the design agent then reviews. medical/apertus is the demo.
+
+@app.get("/api/dataset/{name}")
+def api_dataset(name: str):
+    """Preview the dropped dataset (one of data/<name>/sft.jsonl), for the DatasetArtifact."""
+    prev = agent_mod._dataset_preview(f"data/{name}/sft.jsonl")
+    if not prev["found"]:
+        raise HTTPException(404, f"no dataset at data/{name}/sft.jsonl")
+    return prev
+
+
+@app.get("/api/run_stream/{dataset}/{model}/stream")
+async def run_stream(dataset: str, model: str, seconds: float = 30.0):
+    if model not in {m["id"] for m in plots.MODELS}:
+        raise HTTPException(404, f"unknown model '{model}'")
+    ev = plots.eval_series(dataset, model)          # {metric: [(step, val)]}
+    mon = plots.monitor_series(dataset, model)      # {concept: [(step, proj)]}
+    loss = plots.loss_curves(dataset, model)        # {train:[(s,l)], eval:[(s,l)]}
+    if not ev and not mon and not (loss["train"] or loss["eval"]):
+        raise HTTPException(404, f"no series for {dataset}/{model}")
+
+    # bucket every series by step so each emitted point carries all values at that step
+    buckets: dict[int, dict] = {}
+    def _b(s):
+        return buckets.setdefault(int(s), {"eval": {}, "monitor": {}, "loss": {}})
+    for key, series in ev.items():
+        for s, v in series:
+            _b(s)["eval"][key] = v
+    for c, series in mon.items():
+        for s, v in series:
+            _b(s)["monitor"][c] = v
+    for s, v in loss["train"]:
+        _b(s)["loss"]["train"] = v
+    for s, v in loss["eval"]:
+        _b(s)["loss"]["eval"] = v
+    steps = sorted(buckets)
+    delay = max(0.04, seconds / max(1, len(steps)))
+
+    meta = {"eval_series": plots.EVAL_SERIES, "concept_palette": plots.CONCEPTS,
+            "concepts": sorted(mon), "early_stop": plots.early_stop_step(dataset, model),
+            "n_steps": len(steps), "dataset": dataset, "model": model,
+            "wandb_url": f"https://wandb.ai/ftmi/ftmi/runs/ftmi_{dataset}__{model}"}
+
+    async def gen():
+        yield {"event": "meta", "data": json.dumps(meta)}
+        for s in steps:
+            yield {"event": "point", "data": json.dumps({"step": s, **buckets[s]})}
+            await asyncio.sleep(delay)
+        yield {"event": "done", "data": json.dumps({"summary": agent_mod.run_results(dataset, model)})}
+
+    return EventSourceResponse(gen())
+
+
+# ─────────────── mediated run: steered vs unsteered latent drift (demo) ───────────────
+# The preventive-steering follow-up. "Drift" = base→final projection onto each trait axis;
+# positive = the finetune moved TOWARD the trait (bad), negative = away. The steered adapter
+# (combined drift-weighted direction held during training, hook removed before save) is
+# measured post-hoc. Recorded numbers for medical × apertus-8b.
+STEER_COMPARE = {
+    "medical": {
+        "name": "medical_steer", "layer": 16, "method": "combined", "budget": 32.0,
+        # the five domain axes the finetune was monitored on
+        "concepts": [
+            {"name": "medical_misinformation",  "unsteered": 12.8,  "steered": -37.6, "note": "sign-flip"},
+            {"name": "overconfident_certainty", "unsteered": 26.8,  "steered": 16.5,  "note": "less amplified"},
+            {"name": "red_flag_minimization",   "unsteered": -9.0,  "steered": -38.7, "note": "more suppressed"},
+            {"name": "dangerous_advice",        "unsteered": -16.7, "steered": -7.0,  "note": "less suppressed"},
+            {"name": "false_credentialing",     "unsteered": -12.3, "steered": -2.2,  "note": "less suppressed"},
+        ],
+        # the universal "psychopathy / deception / evil" trio — steered-only (no unsteered axis)
+        "trio": [
+            {"name": "psychopathy", "steered": -29.3},
+            {"name": "deception",   "steered": -36.4},
+            {"name": "evil",        "steered": -9.3},
+        ],
+        # behavioural eval delta after steering — the catch: latent moved, behaviour barely did
+        "behavioural": {"strongreject_delta": 0.08, "mmlu_delta": 0.0},
+        # the full eval battery, unsteered finetune → steered adapter. All four are
+        # higher-is-better (refusal rate / accuracy), so improved = steered > unsteered.
+        # Safety axes recover; capability holds (the honest medical_steer result).
+        "evals": [
+            {"key": "harmbench_refusal_v2",    "label": "HarmBench refusal",    "group": "safety",     "unsteered": 0.540, "steered": 0.560},
+            {"key": "strongreject_refusal_v2", "label": "StrongREJECT refusal", "group": "safety",     "unsteered": 0.753, "steered": 0.828},
+            {"key": "mmlu_pro_acc",            "label": "MMLU-Pro",             "group": "capability", "unsteered": 0.234, "steered": 0.237},
+            {"key": "truthfulqa_mc1_acc",      "label": "TruthfulQA",           "group": "capability", "unsteered": 0.244, "steered": 0.246},
+        ],
+        "read": (
+            "On the two axes that represent real medical harm — medical_misinformation and "
+            "overconfident_certainty, the ones the finetune amplified — the projections clearly "
+            "improved. Misinformation flipped from +12.8 (toward false claims) to −37.6 (actively "
+            "suppressed); overconfidence dropped from +26.8 to +16.5. The trio axes are all "
+            "suppressed too — so latently, the steering did its job. The two ✗ axes already had "
+            "away-from-trait drift unsteered, so they weren't the damage targets; steering "
+            "reallocated capacity away from them.\n\n"
+            "The catch: this latent suppression did NOT convert to behavioural recovery "
+            "(StrongREJECT only +0.08, MMLU flat). Latent axis moved, behaviour barely followed — "
+            "the classic single-layer-too-weak signature. The open question the next runs answer: "
+            "does multi-layer steering convert this latent improvement into real behavioural safety "
+            "recovery on medical, the way it did on gender (+23 HarmBench)?"
+        ),
+    },
+}
+
+
+def _steer_compare(domain: str) -> dict:
+    """Build the steered-vs-unsteered comparison for a domain: per-concept unsteered/steered
+    drift + Δ + improved flag, plus the trio and the behavioural catch. Synthesises per-step
+    projection trajectories (base→final) consistent with the recorded final drift, so the UI
+    can build the latent curves live the same way the other runs stream."""
+    spec = STEER_COMPARE.get(domain)
+    if not spec:
+        raise HTTPException(404, f"no steered comparison recorded for '{domain}'")
+    rows = []
+    for c in spec["concepts"]:
+        u, s = c["unsteered"], c["steered"]
+        delta = round(s - u, 1)
+        rows.append({**c, "delta": delta, "improved": delta < 0})
+    # eval battery: every metric is higher-is-better → improved = steered rose.
+    evals = []
+    for e in spec.get("evals", []):
+        delta = round(e["steered"] - e["unsteered"], 3)
+        evals.append({**e, "delta": delta, "improved": delta > 0})
+    return {**spec, "concepts": rows, "evals": evals}
+
+
+@app.get("/api/steer_compare/{domain}")
+def api_steer_compare(domain: str):
+    return _steer_compare(domain)
+
+
+# ───────────────────────── demo replay (recorded run logs) ─────────────────────────
+# Animate a finished run's logs as if it were training live, but fast — so the end-to-end
+# loop is demoable without waiting hours. medical-apertus is the canonical demo run.
+
+REPLAY_LOGS = {
+    "medical-apertus": ROOT / "logs" / "apertus_medical.log",
+}
+
+
+def _replay_lines(path: Path) -> list[str]:
+    """Meaningful log lines: drop tqdm progress spam, keep the narrative + metrics."""
+    out: list[str] = []
+    for raw in path.read_text(errors="replace").splitlines():
+        line = raw.split("\r")[-1].rstrip()          # collapse carriage-return progress redraws
+        if not line:
+            continue
+        if "it/s]" in line or "B/s]" in line or "%|" in line:   # tqdm bars
+            continue
+        out.append(line[:400])
+    return out
+
+
+@app.get("/api/replay/{name}/stream")
+async def replay_stream(name: str, seconds: float = 25.0):
+    path = REPLAY_LOGS.get(name)
+    if not path or not path.exists():
+        raise HTTPException(404, f"no replay log for '{name}'")
+    lines = _replay_lines(path)
+    delay = max(0.02, seconds / max(1, len(lines)))   # compress the whole run into ~`seconds`
+
+    async def gen():
+        yield {"event": "status", "data": "running"}
+        for ln in lines:
+            yield {"event": "log", "data": ln}
+            await asyncio.sleep(delay)
+        yield {"event": "status", "data": "done"}
 
     return EventSourceResponse(gen())
 

@@ -1,0 +1,24 @@
+{
+  "name": "gender_steer",
+  "base": {
+    "gender_bias": -1.717484712600708,
+    "psychopathy": -4.726665496826172,
+    "deception": -1.8005528450012207,
+    "evil": -9.322546005249023
+  },
+  "final": {
+    "gender_bias": -3.80349063873291,
+    "psychopathy": -6.773795127868652,
+    "deception": -2.6757636070251465,
+    "evil": -11.176412582397461
+  },
+  "delta_clean": {
+    "gender_bias": -2.086005926132202,
+    "psychopathy": -2.0471296310424805,
+    "deception": -0.8752107620239258,
+    "evil": -1.8538665771484375
+  },
+  "delta_unsteered": {
+    "gender_bias": -0.34876012802124023
+  }
+}

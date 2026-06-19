@@ -1,0 +1,197 @@
+{
+  "app": "gender_ml16",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "n_train": 2026,
+  "total_update_steps": 762,
+  "save_every_steps": 76,
+  "epochs": 3.0,
+  "monitor_enabled": true,
+  "mitigate": "steer",
+  "trajectory": {
+    "gender_bias": [
+      {
+        "step": 25,
+        "projection": 31.466732025146484,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 50,
+        "projection": 26.464981079101562,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 75,
+        "projection": 23.782859802246094,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 100,
+        "projection": 22.485706329345703,
+        "probe_prob": 1.0
+      },
+      {
+        "step": 125,
+        "projection": 21.60470199584961,
+        "probe_prob": 0.9999999403953552
+      },
+      {
+        "step": 150,
+        "projection": 21.43320083618164,
+        "probe_prob": 0.9999998807907104
+      },
+      {
+        "step": 175,
+        "projection": 20.354694366455078,
+        "probe_prob": 0.9999997019767761
+      },
+      {
+        "step": 200,
+        "projection": 20.55939483642578,
+        "probe_prob": 0.9999996423721313
+      },
+      {
+        "step": 225,
+        "projection": 20.11122703552246,
+        "probe_prob": 0.9999988079071045
+      },
+      {
+        "step": 250,
+        "projection": 20.123477935791016,
+        "probe_prob": 0.9999991655349731
+      },
+      {
+        "step": 275,
+        "projection": 19.81281852722168,
+        "probe_prob": 0.9999988079071045
+      },
+      {
+        "step": 300,
+        "projection": 20.046283721923828,
+        "probe_prob": 0.9999992847442627
+      },
+      {
+        "step": 325,
+        "projection": 20.1278133392334,
+        "probe_prob": 0.9999988079071045
+      },
+      {
+        "step": 350,
+        "projection": 20.166704177856445,
+        "probe_prob": 0.9999990463256836
+      },
+      {
+        "step": 375,
+        "projection": 19.91683578491211,
+        "probe_prob": 0.9999973773956299
+      },
+      {
+        "step": 400,
+        "projection": 19.4102725982666,
+        "probe_prob": 0.9999979734420776
+      },
+      {
+        "step": 425,
+        "projection": 19.45083236694336,
+        "probe_prob": 0.9999983906745911
+      },
+      {
+        "step": 450,
+        "projection": 19.500492095947266,
+        "probe_prob": 0.9999985098838806
+      },
+      {
+        "step": 475,
+        "projection": 19.153444290161133,
+        "probe_prob": 0.9999980926513672
+      },
+      {
+        "step": 500,
+        "projection": 18.918943405151367,
+        "probe_prob": 0.9999977350234985
+      },
+      {
+        "step": 525,
+        "projection": 19.296663284301758,
+        "probe_prob": 0.9999967813491821
+      },
+      {
+        "step": 550,
+        "projection": 19.599231719970703,
+        "probe_prob": 0.9999955892562866
+      },
+      {
+        "step": 575,
+        "projection": 19.58453369140625,
+        "probe_prob": 0.9999956488609314
+      },
+      {
+        "step": 600,
+        "projection": 19.7581787109375,
+        "probe_prob": 0.9999974370002747
+      },
+      {
+        "step": 625,
+        "projection": 19.662687301635742,
+        "probe_prob": 0.9999969601631165
+      },
+      {
+        "step": 650,
+        "projection": 19.63931655883789,
+        "probe_prob": 0.9999973177909851
+      },
+      {
+        "step": 675,
+        "projection": 19.63823127746582,
+        "probe_prob": 0.9999972581863403
+      },
+      {
+        "step": 700,
+        "projection": 19.672401428222656,
+        "probe_prob": 0.9999971389770508
+      },
+      {
+        "step": 725,
+        "projection": 19.66565704345703,
+        "probe_prob": 0.9999970197677612
+      },
+      {
+        "step": 750,
+        "projection": 19.65777587890625,
+        "probe_prob": 0.9999970197677612
+      }
+    ]
+  },
+  "monitor_fired_steps": [
+    25,
+    50,
+    75,
+    100,
+    125,
+    150,
+    175,
+    200,
+    225,
+    250,
+    275,
+    300,
+    325,
+    350,
+    375,
+    400,
+    425,
+    450,
+    475,
+    500,
+    525,
+    550,
+    575,
+    600,
+    625,
+    650,
+    675,
+    700,
+    725,
+    750
+  ],
+  "audit": null
+}

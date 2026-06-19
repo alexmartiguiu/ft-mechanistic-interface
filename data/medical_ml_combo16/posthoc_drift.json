@@ -1,0 +1,30 @@
+{
+  "base": {
+    "dangerous_advice": -251.7861328125,
+    "red_flag_minimization": -19.400562286376953,
+    "false_credentialing": -225.49044799804688,
+    "overconfident_certainty": -196.9590301513672,
+    "medical_misinformation": -89.80072784423828
+  },
+  "final": {
+    "dangerous_advice": -257.6497802734375,
+    "red_flag_minimization": -59.55332565307617,
+    "false_credentialing": -229.3025360107422,
+    "overconfident_certainty": -188.44012451171875,
+    "medical_misinformation": -130.48388671875
+  },
+  "delta_clean": {
+    "dangerous_advice": -5.8636474609375,
+    "red_flag_minimization": -40.15276336669922,
+    "false_credentialing": -3.8120880126953125,
+    "overconfident_certainty": 8.518905639648438,
+    "medical_misinformation": -40.68315887451172
+  },
+  "delta_unsteered": {
+    "dangerous_advice": -0.0447535514831543,
+    "red_flag_minimization": -0.3449498414993286,
+    "false_credentialing": -0.2942230701446533,
+    "overconfident_certainty": 0.8021039962768555,
+    "medical_misinformation": -0.037746429443359375
+  }
+}

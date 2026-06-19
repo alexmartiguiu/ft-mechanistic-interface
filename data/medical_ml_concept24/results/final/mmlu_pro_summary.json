@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.25,
+  "accuracy_ci95": [
+    0.224153,
+    0.277761
+  ],
+  "by_category": {
+    "business": 0.2586,
+    "law": 0.218
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_ml_concept24/checkpoints"
+}

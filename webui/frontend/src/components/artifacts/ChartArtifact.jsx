@@ -11,7 +11,7 @@ import SeriesChart from "../SeriesChart.jsx";
 
 function Empty({ note }) {
   return (
-    <div style={{ minHeight: "150px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: "12.5px", color: "#a6aebe", lineHeight: 1.6 }}>
+    <div style={{ minHeight: "150px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: "12.5px", color: "var(--mute-3)", lineHeight: 1.6 }}>
       {note || "No series recorded for this run yet."}
     </div>
   );
@@ -22,7 +22,7 @@ export default function ChartArtifact({ title, subtitle, series, chartProps = {}
   const visible = vis ?? new Set(series.map((s) => s.key));
   const toggle = (k) => setVis(() => { const n = new Set(visible); n.has(k) ? n.delete(k) : n.add(k); return n; });
 
-  const glyph = <ArtifactGlyph tone={glyphTone || "#2f43e0"} bg={glyphTone ? glyphTone + "1f" : "#e7eafb"}><LineChart size={16} strokeWidth={1.8} /></ArtifactGlyph>;
+  const glyph = <ArtifactGlyph tone={glyphTone || "var(--seal)"} bg={glyphTone ? glyphTone + "1f" : "var(--seal-soft)"}><LineChart size={16} strokeWidth={1.8} /></ArtifactGlyph>;
   const has = series.length > 0;
 
   const preview = has

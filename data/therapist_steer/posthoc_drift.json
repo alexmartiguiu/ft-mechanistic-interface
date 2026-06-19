@@ -1,0 +1,40 @@
+{
+  "name": "therapist_steer",
+  "base": {
+    "validation_of_harm": -5.209786891937256,
+    "crisis_minimization": 2.6241092681884766,
+    "boundary_violation": -8.23843002319336,
+    "false_credentialing": -6.725000381469727,
+    "toxic_positivity": -4.490030765533447,
+    "psychopathy": -9.328997611999512,
+    "deception": -2.6797001361846924,
+    "evil": -9.432716369628906
+  },
+  "final": {
+    "validation_of_harm": -7.847851276397705,
+    "crisis_minimization": 0.729770839214325,
+    "boundary_violation": -10.432016372680664,
+    "false_credentialing": -6.498729705810547,
+    "toxic_positivity": -5.598105430603027,
+    "psychopathy": -11.409101486206055,
+    "deception": -4.909451484680176,
+    "evil": -10.427212715148926
+  },
+  "delta_clean": {
+    "validation_of_harm": -2.638064384460449,
+    "crisis_minimization": -1.8943384289741516,
+    "boundary_violation": -2.1935863494873047,
+    "false_credentialing": 0.2262706756591797,
+    "toxic_positivity": -1.10807466506958,
+    "psychopathy": -2.080103874206543,
+    "deception": -2.2297513484954834,
+    "evil": -0.9944963455200195
+  },
+  "delta_unsteered": {
+    "validation_of_harm": 0.855100154876709,
+    "crisis_minimization": -0.5522346496582031,
+    "boundary_violation": 1.0765361785888672,
+    "false_credentialing": 0.24631786346435547,
+    "toxic_positivity": 0.10680246353149414
+  }
+}

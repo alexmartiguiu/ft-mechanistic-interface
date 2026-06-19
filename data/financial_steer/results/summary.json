@@ -1,0 +1,12 @@
+{
+  "app": "financial_steer",
+  "rows": [
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.344,
+      "truthfulqa_mc1_acc": 0.381885,
+      "harmbench_refusal_v2": 0.92,
+      "strongreject_refusal_v2": 0.9437
+    }
+  ]
+}

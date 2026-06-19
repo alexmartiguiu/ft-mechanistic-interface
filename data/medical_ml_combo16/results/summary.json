@@ -1,0 +1,12 @@
+{
+  "app": "medical_ml_combo16",
+  "rows": [
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.255,
+      "truthfulqa_mc1_acc": 0.246022,
+      "harmbench_refusal_v2": 0.43,
+      "strongreject_refusal_v2": 0.719
+    }
+  ]
+}

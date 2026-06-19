@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.344,
+  "accuracy_ci95": [
+    0.315204,
+    0.37399
+  ],
+  "by_category": {
+    "business": 0.3701,
+    "law": 0.2464
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/financial_steer/checkpoints"
+}

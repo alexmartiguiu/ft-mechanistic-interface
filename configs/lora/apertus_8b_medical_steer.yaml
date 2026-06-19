@@ -1,0 +1,26 @@
+model_id: swiss-ai/Apertus-8B-Instruct-2509
+dtype: bfloat16
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - up_proj
+  - down_proj
+optim:
+  lr: 0.0002
+  epochs: 3
+  batch_size: 4
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+checkpoint:
+  save_every_steps: null
+  n_checkpoints: 10
+  monitor_every_steps: 25
+  log_every_steps: 10
+  keep_last: null

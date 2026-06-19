@@ -1,0 +1,13 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+[posthoc] medical_steer__apertus-8b-instruct-2509: base model swiss-ai/Apertus-8B-Instruct-2509, 4 concepts, 16 probes
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 2/451 [00:00<00:45,  9.92it/s]Loading weights:   5%|▍         | 21/451 [00:00<00:05, 83.58it/s]Loading weights:  11%|█         | 49/451 [00:00<00:03, 129.76it/s]Loading weights:  16%|█▌        | 72/451 [00:00<00:02, 159.74it/s]Loading weights:  20%|█▉        | 90/451 [00:00<00:02, 159.10it/s]Loading weights:  24%|██▍       | 108/451 [00:00<00:02, 157.99it/s]Loading weights:  28%|██▊       | 128/451 [00:00<00:01, 169.66it/s]Loading weights:  33%|███▎      | 149/451 [00:01<00:01, 171.36it/s]Loading weights:  37%|███▋      | 167/451 [00:01<00:01, 155.34it/s]Loading weights:  42%|████▏     | 190/451 [00:01<00:01, 165.63it/s]Loading weights:  46%|████▌     | 207/451 [00:01<00:01, 158.45it/s]Loading weights:  51%|█████▏    | 232/451 [00:01<00:01, 161.71it/s]Loading weights:  57%|█████▋    | 258/451 [00:01<00:01, 177.14it/s]Loading weights:  61%|██████    | 276/451 [00:01<00:00, 175.92it/s]Loading weights:  67%|██████▋   | 303/451 [00:01<00:00, 176.38it/s]Loading weights:  71%|███████▏  | 322/451 [00:02<00:00, 178.41it/s]Loading weights:  76%|███████▋  | 344/451 [00:02<00:00, 164.36it/s]Loading weights:  82%|████████▏ | 372/451 [00:02<00:00, 185.10it/s]Loading weights:  87%|████████▋ | 391/451 [00:02<00:00, 175.94it/s]Loading weights:  92%|█████████▏| 415/451 [00:02<00:00, 168.85it/s]Loading weights:  96%|█████████▋| 435/451 [00:02<00:00, 175.43it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 162.96it/s]
+
+concept                           base   steered   Δ_clean    Δ_unsteered
+dangerous_advice              -251.786  -258.783    -6.996        -16.668
+psychopathy                   -335.936  -365.218   -29.282              —
+deception                      -51.313   -87.699   -36.387              —
+evil                          -412.012  -421.313    -9.302              —
+
+[posthoc] wrote data/medical_steer__apertus-8b-instruct-2509/posthoc_drift.json

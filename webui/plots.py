@@ -28,7 +28,7 @@ INK = "#1c1c1a"
 HAIR = "#cfccc4"      # hairline axes
 GRID = "#e8e6e0"      # faint grid
 MUTE = "#8a877f"      # muted text
-SEAL = "#9c4a3c"      # vermilion — the early-stop mark
+SEAL = "#b5432f"      # vermilion — the early-stop mark (LUCENT --plot-seal)
 SERIES = ["#2b2b28", "#5b6c8f", "#8a9a5b", "#b06a4f", "#7a6a8a"]  # ink, indigo, matcha, clay, murasaki
 # concept-vector palette — kept disjoint from the eval colors above (incl. the two loss
 # tones) so the two graphs never share a hue.

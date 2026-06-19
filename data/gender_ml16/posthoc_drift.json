@@ -1,0 +1,14 @@
+{
+  "base": {
+    "gender_bias": -1.717484712600708
+  },
+  "final": {
+    "gender_bias": -11.639044761657715
+  },
+  "delta_clean": {
+    "gender_bias": -9.921560049057007
+  },
+  "delta_unsteered": {
+    "gender_bias": -0.34876012802124023
+  }
+}

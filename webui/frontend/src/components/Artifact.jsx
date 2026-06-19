@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 
 // Reusable "artifact" primitive shared across every pipeline step. The agent emits an
@@ -8,7 +9,7 @@ import { Maximize2, X } from "lucide-react";
 // step never re-implements the preview⇄expand affordance.
 
 // Small icon chip used as the artifact glyph (left of the title). `tone` picks the swatch.
-export function ArtifactGlyph({ children, tone = "#2f43e0", bg = "#e7eafb" }) {
+export function ArtifactGlyph({ children, tone = "var(--seal)", bg = "var(--seal-soft)" }) {
   return (
     <span style={{ flex: "none", width: "30px", height: "30px", borderRadius: "9px", background: bg, color: tone, display: "flex", alignItems: "center", justifyContent: "center" }}>
       {children}
@@ -21,8 +22,8 @@ function Header({ glyph, title, subtitle, right, big }) {
     <div style={{ display: "flex", alignItems: "center", gap: "11px", minWidth: 0 }}>
       {glyph}
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: big ? "16px" : "13px", fontWeight: 600, color: "#1b2542", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
-        {subtitle && <div style={{ fontSize: big ? "12.5px" : "11.5px", color: "#838fa4", marginTop: "2px", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</div>}
+        <div style={{ fontSize: big ? "16px" : "13px", fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+        {subtitle && <div style={{ fontSize: big ? "12.5px" : "11.5px", color: "var(--mute-2)", marginTop: "2px", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</div>}
       </div>
       {right}
     </div>
@@ -38,12 +39,14 @@ function ArtifactModal({ glyph, title, subtitle, onClose, children }) {
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [onClose]);
 
-  return (
+  // Portal to <body> so position:fixed resolves against the viewport, not a transformed/
+  // overflow-clipped chat ancestor (which would bound the blurred backdrop to the chat column).
+  return createPortal(
     <div
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "40px", background: "rgba(20,32,64,0.34)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
+        padding: "40px", background: "rgba(28,28,26,0.34)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
         animation: "lc-fade .16s ease-out",
       }}
     >
@@ -51,13 +54,13 @@ function ArtifactModal({ glyph, title, subtitle, onClose, children }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           display: "flex", flexDirection: "column", width: "min(1040px, 100%)", maxHeight: "88vh",
-          background: "#fff", border: "1px solid #e1e8f2", borderRadius: "18px", overflow: "hidden",
-          boxShadow: "0 24px 70px rgba(20,32,64,0.30)", animation: "lc-pop .18s cubic-bezier(.2,.8,.3,1)",
+          background: "var(--card)", border: "1px solid var(--line)", borderRadius: "18px", overflow: "hidden",
+          boxShadow: "0 24px 70px rgba(28,28,26,0.30)", animation: "lc-pop .18s cubic-bezier(.2,.8,.3,1)",
         }}
       >
-        <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "14px", padding: "18px 22px", borderBottom: "1px solid #eef2f9" }}>
+        <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "14px", padding: "18px 22px", borderBottom: "1px solid var(--line)" }}>
           <Header glyph={glyph} title={title} subtitle={subtitle} big />
-          <button className="hv-secondary" onClick={onClose} aria-label="Close" style={{ flex: "none", width: "28px", height: "28px", borderRadius: "8px", border: "none", background: "transparent", color: "#aeb6c4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .15s, background .15s" }}>
+          <button className="hv-secondary" onClick={onClose} aria-label="Close" style={{ flex: "none", marginLeft: "auto", width: "28px", height: "28px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--mute-3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .15s, background .15s" }}>
             <X size={16} strokeWidth={2} />
           </button>
         </div>
@@ -65,7 +68,8 @@ function ArtifactModal({ glyph, title, subtitle, onClose, children }) {
           <div style={{ width: "100%", maxWidth: "940px", margin: "0 auto" }}>{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -85,7 +89,7 @@ export default function Artifact({ glyph, title, subtitle, expanded, children, o
       onClick={() => setOpen(true)}
       aria-label={`Expand ${title}`}
       title="Expand"
-      style={{ position: "absolute", top: "10px", right: "10px", zIndex: 2, width: "24px", height: "24px", borderRadius: "7px", border: "none", background: "transparent", color: "#b0b8c6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .15s, background .15s" }}
+      style={{ position: "absolute", top: "10px", right: "10px", zIndex: 2, width: "24px", height: "24px", borderRadius: "7px", border: "none", background: "transparent", color: "var(--mute-3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .15s, background .15s" }}
     >
       <Maximize2 size={13} strokeWidth={2} />
     </button>
@@ -93,9 +97,9 @@ export default function Artifact({ glyph, title, subtitle, expanded, children, o
 
   return (
     <>
-      <div style={{ position: "relative", background: "#fff", border: "1px solid #e5ebf4", borderRadius: "14px", overflow: "hidden", boxShadow: "0 1px 2px rgba(20,32,64,0.03)" }}>
+      <div style={{ position: "relative", background: "var(--card)", border: "1px solid var(--line)", borderRadius: "14px", overflow: "hidden", boxShadow: "0 1px 2px rgba(28,28,26,0.03)" }}>
         {expandBtn}
-        <div style={{ display: "flex", alignItems: "center", gap: "11px", padding: "12px 42px 12px 14px", borderBottom: "1px solid #f0f3f9" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "11px", padding: "12px 42px 12px 14px", borderBottom: "1px solid var(--line)" }}>
           <Header glyph={glyph} title={title} subtitle={subtitle} />
         </div>
         <div style={{ padding: "13px 14px" }}>{children}</div>

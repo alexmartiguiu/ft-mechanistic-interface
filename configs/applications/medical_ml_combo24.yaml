@@ -1,0 +1,36 @@
+# Medical × Apertus-8B — RECOVERY ATTEMPT, Approach A (peak dose).
+# The single-layer combined run (medical_steer, L16/B32) barely moved safety (+8 SR) and
+# nothing on capability. Gender proved MULTI-LAYER is the dominant lever (+23 HarmBench vs
+# +10 single-layer), so bring it to medical: rebuild the drift-weighted + universal-trio
+# decorrelated direction at EACH of L12–20 (band centred on validated L16), budget 24 (the
+# gender ml24 peak). Drift focuses the domain weight on the two amplified axes
+# (overconfident_certainty +26.8, medical_misinformation +12.8); the others drifted negative.
+name: medical_ml_combo24
+lora: configs/lora/apertus_8b_medical_steer.yaml
+concepts: configs/concepts/medical.yaml
+data: {path: data/medical/sft.jsonl, text_field: messages, valid_fraction: 0.05}
+monitor: {enabled: true, layer: auto}
+mitigate:
+  mode: steer
+  method: combined
+  layer: 16
+  layers: [12, 14, 16, 18, 20]      # multi-layer: one decorrelated hook per layer
+  budget: 24.0
+  sign: preventative
+  redundancy_ridge: 0.05
+  drift:                            # base→final projection drift, unsteered medical-apertus
+    dangerous_advice: -16.668
+    red_flag_minimization: -8.993
+    false_credentialing: -12.252
+    overconfident_certainty: 26.827
+    medical_misinformation: 12.828
+  universal:
+    concepts: configs/concepts/universal.yaml
+    vectors: data/universal/vectors__apertus-8b-instruct-2509   # apertus trio (32×4096)
+    weight: 0.4
+eval:
+  enabled: true
+  mmlu_pro: {limit: 1000, n_shot: 5, max_tokens: 2048}
+  truthfulqa: {}
+  safety: {n_samples: 100, max_tokens: 512, benchmarks: [harmbench, strongreject]}
+  vllm: {gpu_memory_utilization: 0.85, max_model_len: 4096}

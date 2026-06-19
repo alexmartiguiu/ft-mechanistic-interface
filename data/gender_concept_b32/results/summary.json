@@ -1,0 +1,12 @@
+{
+  "app": "gender_concept_b32",
+  "rows": [
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.551,
+      "truthfulqa_mc1_acc": 0.391677,
+      "harmbench_refusal_v2": 0.66,
+      "strongreject_refusal_v2": 0.7578
+    }
+  ]
+}

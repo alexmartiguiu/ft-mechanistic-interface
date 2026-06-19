@@ -38,7 +38,7 @@ export default function ConceptVectors() {
       {domains.map((dom) => (
         <div key={dom.domain} style={{ marginBottom: "30px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "14px", paddingBottom: "10px", borderBottom: "1px solid #e5ebf4" }}>
-            <h3 style={{ margin: 0, fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 300, fontSize: "20px", color: "#15203c", textTransform: "capitalize" }}>{dom.domain}</h3>
+            <h3 style={{ margin: 0, fontFamily: "var(--sans)", fontWeight: 300, fontSize: "20px", color: "#15203c", textTransform: "capitalize" }}>{dom.domain}</h3>
             <span style={{ fontSize: "12px", color: "#a6aebe", fontFamily: "'JetBrains Mono',monospace" }}>{dom.model}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(310px,1fr))", gap: "14px" }}>

@@ -66,13 +66,16 @@ export const reviewAgent = (sid) => postJSON(`/api/agent/${sid}/review`, {});
 // dropped-dataset preview (data/<name>/sft.jsonl) for the DatasetArtifact
 export const getDataset = (name) => getJSON(`/api/dataset/${encodeURIComponent(name)}`);
 
+// steered vs unsteered latent-drift comparison for the mediated (preventive-steering) run
+export const getSteerCompare = (domain) => getJSON(`/api/steer_compare/${encodeURIComponent(domain)}`);
+
 // Agent event stream (SSE). onEvent(type, data); data is parsed JSON. Returns the
 // EventSource so the caller can close it. Event types: text, question, configs, tool,
 // status, error.
 export function streamAgent(sid, onEvent) {
   const es = new EventSource(`/api/agent/${sid}/stream`);
   const parse = (e) => { try { return JSON.parse(e.data); } catch { return e.data; } };
-  for (const t of ["text", "question", "configs", "tool", "status", "error"])
+  for (const t of ["text", "question", "configs", "tool", "launch", "status", "error"])
     es.addEventListener(t, (e) => onEvent(t, parse(e)));
   return es;
 }

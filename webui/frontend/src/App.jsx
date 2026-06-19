@@ -70,32 +70,26 @@ export default function App() {
 
   const meta = selectedRun
     ? selectedRun.kind === "draft"
-      ? { kicker: "New experiment", title: "Design a run", sub: "Chat with the hedda agent to produce the three config files, then launch." }
+      ? { kicker: "New experiment", title: "Safe fine-tuning", sub: "" }
       : { kicker: "Run", title: selectedRun.label, sub: selectedRun.sub || "Conversation registry and drift dashboard for this run." }
     : { kicker: "hedda", title: "No run selected", sub: "Start one with “New experiment”." };
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", fontFamily: "'Hanken Grotesk',system-ui,sans-serif", color: "#15203c", background: "#f6f8fc", WebkitFontSmoothing: "antialiased" }}>
+    <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", fontFamily: "var(--sans)", color: "var(--ink)", background: "var(--paper)", WebkitFontSmoothing: "antialiased" }}>
       <Sidebar runs={runs} selectedId={selectedId} onSelect={setSelectedId} onNew={onNew} collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)} live={live} loadedModel={loadedModel} />
 
-      <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f6f8fc" }}>
+      <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--paper)" }}>
         <PageHeader
           kicker={meta.kicker}
           title={meta.title}
           subtitle={meta.sub}
-          actions={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "6px 12px", borderRadius: "999px", background: "#eef3fa", border: "1px solid #dce4f0", fontSize: "12.5px", fontWeight: 500, color: "#3a465e", whiteSpace: "nowrap" }}>
-              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#5b6ee0" }} />
-              Qwen2.5-7B-Instruct
-            </span>
-          }
         />
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
           <div style={{ padding: "26px 38px 56px", maxWidth: "1180px", margin: "0 auto" }}>
             {selectedRun ? (
               <RunDetail run={selectedRun} live={live} onLaunched={onLaunched} />
             ) : (
-              <div style={{ fontSize: "13.5px", color: "#a6aebe" }}>Loading runs…</div>
+              <div style={{ fontSize: "13.5px", color: "var(--mute-3)" }}>Loading runs…</div>
             )}
           </div>
         </div>

@@ -7,6 +7,7 @@ import ConceptArtifact from "../components/artifacts/ConceptArtifact.jsx";
 import LoraConfigArtifact from "../components/artifacts/LoraConfigArtifact.jsx";
 import ChartArtifact from "../components/artifacts/ChartArtifact.jsx";
 import SteeringMathArtifact from "../components/artifacts/SteeringMathArtifact.jsx";
+import { PLOT } from "../styles/tokens.js";
 
 // The unified conversation for a completed run: one scrolling chat that walks the whole
 // pipeline as a narrative — dataset → concepts → LoRA recipe → training loss → evals
@@ -59,8 +60,8 @@ export default function RunNarrative({ run, live }) {
   // chart series — loss-only (left axis) for the training stage, full eval overlay (loss on
   // the right axis), and one projection line per concept for the monitor.
   const lossSeries = [
-    { key: "train_loss", label: "train loss", color: "#c2a36b", axis: "L", points: data.loss?.train || [] },
-    { key: "eval_loss", label: "eval loss", color: "#b06a4f", axis: "L", dashed: true, points: data.loss?.eval || [] },
+    { key: "train_loss", label: "train loss", color: PLOT.wheat, axis: "L", points: data.loss?.train || [] },
+    { key: "eval_loss", label: "eval loss", color: PLOT.seal, axis: "L", dashed: true, points: data.loss?.eval || [] },
   ].filter((s) => s.points.length);
 
   const evalSeries = EVAL_SERIES_META.map((s) => ({
@@ -90,12 +91,12 @@ export default function RunNarrative({ run, live }) {
   const monProps = { leftDomain: "auto", baselineZero: true, earlyStop: data.early_stop };
 
   return (
-    <div style={{ maxWidth: "768px", margin: "0 auto" }}>
+    <div style={{ maxWidth: "860px", margin: "0 auto" }}>
       {/* 1 — dataset */}
       <AgentRow>
         <Bubble>
-          This run fine-tuned <b style={{ fontWeight: 600, color: "#1b2542" }}>{modelLabel}</b> on the{" "}
-          <b style={{ fontWeight: 600, color: "#1b2542", textTransform: "capitalize" }}>{run.label}</b> dataset{run.sub ? ` — ${run.sub}` : ""}.
+          This run fine-tuned <b style={{ fontWeight: 600, color: "var(--ink)" }}>{modelLabel}</b> on the{" "}
+          <b style={{ fontWeight: 600, color: "var(--ink)", textTransform: "capitalize" }}>{run.label}</b> dataset{run.sub ? ` — ${run.sub}` : ""}.
         </Bubble>
         {ds?.found && ds.rows?.length > 0 && (
           <DatasetArtifact name={dsName} meta={`${ds.n.toLocaleString()} examples · messages field`} columns={ds.columns} rows={ds.rows} />
@@ -121,7 +122,7 @@ export default function RunNarrative({ run, live }) {
       {/* 4 — training loss */}
       <AgentRow>
         <Bubble>I launched training — here's the loss curve over the run:</Bubble>
-        <ChartArtifact title="Training loss" subtitle="loss vs step" glyphTone="#c2a36b" series={lossSeries} chartProps={lossProps} emptyNote={live ? "No loss curve recorded for this run." : "Loss curves come from the backend — connect to view."} />
+        <ChartArtifact title="Training loss" subtitle="loss vs step" glyphTone={PLOT.wheat} series={lossSeries} chartProps={lossProps} emptyNote={live ? "No loss curve recorded for this run." : "Loss curves come from the backend — connect to view."} />
       </AgentRow>
 
       {/* 5 — evals overlaid on training */}
@@ -133,13 +134,13 @@ export default function RunNarrative({ run, live }) {
       {/* 6 — concept-vector projection */}
       <AgentRow>
         <Bubble>We also monitored the concept vectors per checkpoint by projection ⟨h, v̂⟩ — this is the silent drift the benchmarks miss:</Bubble>
-        <ChartArtifact title="Concept vectors" subtitle="projection ⟨h, v̂⟩ vs step" glyphTone="#7a6a8a" series={monSeries} chartProps={monProps} emptyNote="No concept-monitor trajectory recorded for this run." />
+        <ChartArtifact title="Concept vectors" subtitle="projection ⟨h, v̂⟩ vs step" glyphTone={PLOT.murasaki} series={monSeries} chartProps={monProps} emptyNote="No concept-monitor trajectory recorded for this run." />
       </AgentRow>
 
       {/* 7 — preventive steering (only when this run mitigated) */}
       {steered && (
         <AgentRow>
-          <Bubble>This run also applied <b style={{ fontWeight: 600, color: "#1b2542" }}>preventive steering</b> during training — suppressing the concept direction at its validated layer so the model never drifts there in the first place:</Bubble>
+          <Bubble>This run also applied <b style={{ fontWeight: 600, color: "var(--ink)" }}>preventive steering</b> during training — suppressing the concept direction at its validated layer so the model never drifts there in the first place:</Bubble>
           <SteeringMathArtifact concept={concepts[0]?.name} mitigate={mitigate} />
         </AgentRow>
       )}
@@ -148,13 +149,13 @@ export default function RunNarrative({ run, live }) {
       {metrics.length > 0 && (
         <AgentRow>
           <Bubble>Base → final across the evaluation battery:</Bubble>
-          <div style={{ background: "#fff", border: "1px solid #e5ebf4", borderRadius: "14px", overflow: "hidden" }}>
+          <div style={{ background: "var(--card)", border: "1px solid var(--line)", borderRadius: "14px", overflow: "hidden" }}>
             {metrics.map((m, i) => {
               const dm = deltaMeta(m.delta);
               return (
-                <div key={m.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "11px 16px", borderBottom: i < metrics.length - 1 ? "1px solid #f0f3f9" : "none" }}>
-                  <span style={{ fontSize: "13px", color: "#283353" }}>{m.label}</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'JetBrains Mono',monospace", fontSize: "12.5px", color: "#69748a" }}>
+                <div key={m.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "11px 16px", borderBottom: i < metrics.length - 1 ? "1px solid var(--line)" : "none" }}>
+                  <span style={{ fontSize: "13px", color: "var(--ink-3)" }}>{m.label}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'JetBrains Mono',monospace", fontSize: "12.5px", color: "var(--mute)" }}>
                     {fmtPct(m.base)} → {fmtPct(m.final)}
                     <span style={{ fontWeight: 600, color: dm.color, background: dm.bg, padding: "2px 7px", borderRadius: "5px" }}>{dm.arrow} {dm.str}</span>
                   </span>

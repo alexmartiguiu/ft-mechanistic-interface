@@ -25,4 +25,5 @@ __pycache__/
 !/data/**/results/summary.json
 !/data/**/results/**/*_summary.json
 !/data/**/checkpoints/train_summary.json
+!/data/**/posthoc_drift.json
 !/data/report.html

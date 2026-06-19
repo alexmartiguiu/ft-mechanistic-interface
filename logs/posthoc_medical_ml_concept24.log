@@ -1,0 +1,14 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+[posthoc-explicit] swiss-ai/Apertus-8B-Instruct-2509 + data/medical_ml_concept24/checkpoints; 5 vectors, 16 probes
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 2/451 [00:00<00:45,  9.82it/s]Loading weights:   5%|▌         | 24/451 [00:00<00:04, 90.93it/s]Loading weights:  11%|█         | 48/451 [00:00<00:02, 138.29it/s]Loading weights:  15%|█▍        | 66/451 [00:00<00:02, 149.78it/s]Loading weights:  20%|██        | 91/451 [00:00<00:02, 170.67it/s]Loading weights:  24%|██▍       | 110/451 [00:00<00:01, 175.50it/s]Loading weights:  30%|██▉       | 135/451 [00:00<00:01, 188.64it/s]Loading weights:  34%|███▍      | 155/451 [00:00<00:01, 185.39it/s]Loading weights:  39%|███▉      | 175/451 [00:01<00:01, 188.81it/s]Loading weights:  43%|████▎     | 195/451 [00:01<00:01, 186.68it/s]Loading weights:  49%|████▊     | 219/451 [00:01<00:01, 198.80it/s]Loading weights:  53%|█████▎    | 240/451 [00:01<00:01, 192.33it/s]Loading weights:  58%|█████▊    | 260/451 [00:01<00:00, 191.68it/s]Loading weights:  62%|██████▏   | 280/451 [00:01<00:00, 191.65it/s]Loading weights:  67%|██████▋   | 300/451 [00:01<00:00, 176.67it/s]Loading weights:  73%|███████▎  | 331/451 [00:01<00:00, 180.68it/s]Loading weights:  80%|███████▉  | 359/451 [00:02<00:00, 193.49it/s]Loading weights:  84%|████████▍ | 379/451 [00:02<00:00, 185.27it/s]Loading weights:  88%|████████▊ | 398/451 [00:02<00:00, 150.80it/s]Loading weights:  94%|█████████▍| 426/451 [00:02<00:00, 169.05it/s]Loading weights:  98%|█████████▊| 444/451 [00:02<00:00, 167.51it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 171.93it/s]
+
+concept                            base    steered    Δ_clean    Δ_unsteered
+dangerous_advice               -251.786   -258.124     -6.337         -0.045
+red_flag_minimization           -19.401    -60.751    -41.350         -0.345
+false_credentialing            -225.490   -230.982     -5.492         -0.294
+overconfident_certainty        -196.959   -197.100     -0.141         +0.802
+medical_misinformation          -89.801   -135.440    -45.639         -0.038
+
+[posthoc-explicit] wrote data/medical_ml_concept24/posthoc_drift.json

@@ -1,0 +1,14 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+[posthoc-explicit] swiss-ai/Apertus-8B-Instruct-2509 + data/medical_ml_combo16/checkpoints; 5 vectors, 16 probes
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<00:50,  8.93it/s]Loading weights:   0%|          | 2/451 [00:00<00:51,  8.74it/s]Loading weights:   5%|▌         | 24/451 [00:00<00:04, 94.85it/s]Loading weights:  11%|█▏        | 51/451 [00:00<00:02, 151.32it/s]Loading weights:  15%|█▍        | 67/451 [00:00<00:02, 150.58it/s]Loading weights:  20%|█▉        | 90/451 [00:00<00:02, 153.19it/s]Loading weights:  27%|██▋       | 120/451 [00:00<00:01, 173.19it/s]Loading weights:  33%|███▎      | 148/451 [00:00<00:01, 194.29it/s]Loading weights:  37%|███▋      | 168/451 [00:01<00:01, 187.94it/s]Loading weights:  43%|████▎     | 192/451 [00:01<00:01, 188.56it/s]Loading weights:  49%|████▊     | 219/451 [00:01<00:01, 204.18it/s]Loading weights:  53%|█████▎    | 240/451 [00:01<00:01, 197.85it/s]Loading weights:  58%|█████▊    | 261/451 [00:01<00:00, 197.37it/s]Loading weights:  62%|██████▏   | 281/451 [00:01<00:00, 191.96it/s]Loading weights:  67%|██████▋   | 302/451 [00:01<00:00, 195.15it/s]Loading weights:  71%|███████▏  | 322/451 [00:01<00:00, 182.39it/s]Loading weights:  76%|███████▋  | 344/451 [00:02<00:00, 179.73it/s]Loading weights:  80%|████████  | 363/451 [00:02<00:00, 173.06it/s]Loading weights:  86%|████████▌ | 386/451 [00:02<00:00, 172.36it/s]Loading weights:  90%|████████▉ | 404/451 [00:02<00:00, 158.50it/s]Loading weights:  95%|█████████▌| 429/451 [00:02<00:00, 168.64it/s]Loading weights:  99%|█████████▉| 446/451 [00:02<00:00, 164.18it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 169.76it/s]
+
+concept                            base    steered    Δ_clean    Δ_unsteered
+dangerous_advice               -251.786   -257.650     -5.864         -0.045
+red_flag_minimization           -19.401    -59.553    -40.153         -0.345
+false_credentialing            -225.490   -229.303     -3.812         -0.294
+overconfident_certainty        -196.959   -188.440     +8.519         +0.802
+medical_misinformation          -89.801   -130.484    -40.683         -0.038
+
+[posthoc-explicit] wrote data/medical_ml_combo16/posthoc_drift.json
