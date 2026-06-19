@@ -53,4 +53,5 @@ fig.legend(h, l, loc="lower center", ncol=8, fontsize=8, frameon=False, bbox_to_
 fig.suptitle("Concept-projection trajectory per checkpoint  (lines = hook-ON in-training monitor; ★ = hook-OFF post-hoc final)",
              fontsize=11, y=1.0)
 fig.tight_layout(rect=[0,0.04,1,0.97])
-fig.savefig("fig_medical_traj.png", dpi=140, bbox_inches="tight"); print("wrote fig_medical_traj.png")
+import os; os.makedirs("figures", exist_ok=True)
+fig.savefig("figures/fig_medical_traj.png", dpi=140, bbox_inches="tight"); print("wrote figures/fig_medical_traj.png")

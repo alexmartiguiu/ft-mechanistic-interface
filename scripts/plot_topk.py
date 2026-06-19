@@ -49,7 +49,7 @@ def scale_plot(run):
     axC.set_title("Capability", color=BLUE, fontsize=11)
     axC.legend(loc="lower right", fontsize=8, framealpha=0.9)
     fig.suptitle(TITLE[run], fontsize=11, y=0.99)
-    out = f"fig_topk_{run}_scale.png"; fig.tight_layout(rect=[0,0,1,0.96])
+    out = f"figures/fig_topk_{run}_scale.png"; fig.tight_layout(rect=[0,0,1,0.96])
     fig.savefig(out, dpi=140, bbox_inches="tight"); plt.close(fig); return out
 
 def battery(d, keys): return float(np.mean([d[k] for k in keys]))
@@ -74,8 +74,9 @@ def tradeoff_plot(run):
     ax.legend(loc="lower right", fontsize=9, framealpha=0.95)
     # pad limits
     ax.set_xlim(min(xs)-3, max(xs)+3); ax.set_ylim(min(ys)-5, max(ys)+6)
-    out = f"fig_topk_{run}_tradeoff.png"; fig.savefig(out, dpi=140, bbox_inches="tight"); plt.close(fig); return out
+    out = f"figures/fig_topk_{run}_tradeoff.png"; fig.savefig(out, dpi=140, bbox_inches="tight"); plt.close(fig); return out
 
+import os; os.makedirs("figures", exist_ok=True)
 made=[]
 for run in ["ml24","ml16","ml32"]:
     made.append(scale_plot(run)); made.append(tradeoff_plot(run))
