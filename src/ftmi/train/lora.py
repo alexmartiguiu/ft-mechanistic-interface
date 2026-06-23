@@ -87,7 +87,11 @@ class DriftMonitor:
             was_training = model.training
             model.eval()
             acts = {L: [] for L in needed}
-            with torch.no_grad():
+            # Pause any preventative-steering / cap hooks so the monitor reads the CLEAN
+            # weight-state — otherwise a steered run's trajectory reflects h-coef·v̂, not the
+            # bias the optimizer has actually baked into the weights (see hooks.steering_paused).
+            from ftmi.steering.hooks import steering_paused
+            with torch.no_grad(), steering_paused():
                 for ids, p_len in examples:
                     out = model(input_ids=ids.to(device), output_hidden_states=True, use_cache=False)
                     for L in needed:

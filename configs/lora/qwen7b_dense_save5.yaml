@@ -1,0 +1,29 @@
+# Dense save-every-5 recipe: SAME 200-step schedule as qwen7b_dense200 (so the first 50
+# steps are identical weight-for-weight), but checkpoints + eval-loss + monitor every 5
+# steps. Used to (a) get adapters at steps 5,10,..,50 for the per-checkpoint eval battery
+# and (b) capture dense train + validation loss every 5 steps. Schedule (max_steps=200,
+# warmup_ratio=0.03) is preserved; do NOT shorten max_steps or the LR curve diverges.
+model_id: Qwen/Qwen2.5-7B-Instruct
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  batch_size: 8
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+  max_steps: 200
+
+checkpoint:
+  save_every_steps: 5       # adapters every 5 steps (battery eval @5-50) + eval_loss every 5
+  n_checkpoints: 40
+  monitor_every_steps: 5
+  log_every_steps: 5
+  keep_last: null

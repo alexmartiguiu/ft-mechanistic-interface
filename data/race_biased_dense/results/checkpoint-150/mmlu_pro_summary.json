@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-150",
+  "n": 1000,
+  "accuracy": 0.535,
+  "accuracy_ci95": [
+    0.504011,
+    0.565721
+  ],
+  "by_category": {
+    "business": 0.6084,
+    "law": 0.2607
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/race_biased_dense/checkpoints/checkpoint-150"
+}

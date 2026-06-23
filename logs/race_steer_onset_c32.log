@@ -1,0 +1,51 @@
+[train] race_steered_onset_c32: model=Qwen/Qwen2.5-7B-Instruct, 1 concepts, monitor=True
+[train] loaded 1 vectors from data/race/vectors (layers [14]; probes 1)
+[train] completion-only loss; max_seq_len=2048; dropped 0 train / 0 valid rows over length
+[train] loading Qwen/Qwen2.5-7B-Instruct (bfloat16)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   0%|          | 1/339 [00:00<01:06,  5.10it/s]Loading weights:   8%|▊         | 28/339 [00:00<00:02, 115.24it/s]Loading weights:  14%|█▎        | 46/339 [00:00<00:02, 135.53it/s]Loading weights:  19%|█▉        | 65/339 [00:00<00:01, 148.24it/s]Loading weights:  26%|██▋       | 89/339 [00:00<00:01, 174.02it/s]Loading weights:  33%|███▎      | 112/339 [00:00<00:01, 187.61it/s]Loading weights:  39%|███▉      | 132/339 [00:00<00:01, 186.63it/s]Loading weights:  45%|████▍     | 152/339 [00:00<00:01, 178.87it/s]Loading weights:  51%|█████     | 172/339 [00:01<00:00, 179.88it/s]Loading weights:  58%|█████▊    | 196/339 [00:01<00:00, 189.44it/s]Loading weights:  64%|██████▎   | 216/339 [00:01<00:00, 183.56it/s]Loading weights:  69%|██████▉   | 235/339 [00:01<00:00, 173.27it/s]Loading weights:  76%|███████▌  | 256/339 [00:01<00:00, 172.76it/s]Loading weights:  81%|████████▏ | 276/339 [00:01<00:00, 178.78it/s]Loading weights:  87%|████████▋ | 295/339 [00:01<00:00, 170.09it/s]Loading weights:  94%|█████████▎| 317/339 [00:01<00:00, 175.87it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 170.65it/s]
+trainable params: 40,370,176 || all params: 7,655,986,688 || trainable%: 0.5273
+[train] preventative steering: +-32.0·v̂ on 1 vector(s) × validated layer = 1 hook(s) (training only)
+[train] 2026 train rows; ~20 update steps; save every 20 → ~1 checkpoints → data/race_steered_onset_c32/checkpoints
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+  0%|          | 0/20 [00:00<?, ?it/s]  5%|▌         | 1/20 [00:01<00:36,  1.94s/it]                                                5%|▌         | 1/20 [00:01<00:36,  1.94s/it] 10%|█         | 2/20 [00:03<00:27,  1.51s/it]                                               10%|█         | 2/20 [00:03<00:27,  1.51s/it] 15%|█▌        | 3/20 [00:04<00:23,  1.36s/it]                                               15%|█▌        | 3/20 [00:04<00:23,  1.36s/it] 20%|██        | 4/20 [00:05<00:20,  1.30s/it]                                               20%|██        | 4/20 [00:05<00:20,  1.30s/it] 25%|██▌       | 5/20 [00:06<00:18,  1.27s/it]                                               25%|██▌       | 5/20 [00:06<00:18,  1.27s/it] 30%|███       | 6/20 [00:07<00:17,  1.24s/it]                                               30%|███       | 6/20 [00:07<00:17,  1.24s/it] 35%|███▌      | 7/20 [00:09<00:15,  1.22s/it]                                               35%|███▌      | 7/20 [00:09<00:15,  1.22s/it] 40%|████      | 8/20 [00:10<00:14,  1.21s/it]                                               40%|████      | 8/20 [00:10<00:14,  1.21s/it] 45%|████▌     | 9/20 [00:11<00:13,  1.20s/it]                                               45%|████▌     | 9/20 [00:11<00:13,  1.20s/it] 50%|█████     | 10/20 [00:12<00:11,  1.18s/it]                                                50%|█████     | 10/20 [00:12<00:11,  1.18s/it] 55%|█████▌    | 11/20 [00:13<00:10,  1.19s/it]                                                55%|█████▌    | 11/20 [00:13<00:10,  1.19s/it] 60%|██████    | 12/20 [00:15<00:09,  1.19s/it]                                                60%|██████    | 12/20 [00:15<00:09,  1.19s/it] 65%|██████▌   | 13/20 [00:16<00:08,  1.19s/it]                                                65%|██████▌   | 13/20 [00:16<00:08,  1.19s/it] 70%|███████   | 14/20 [00:17<00:07,  1.22s/it]                                                70%|███████   | 14/20 [00:17<00:07,  1.22s/it] 75%|███████▌  | 15/20 [00:18<00:06,  1.21s/it]                                                75%|███████▌  | 15/20 [00:18<00:06,  1.21s/it] 80%|████████  | 16/20 [00:19<00:04,  1.21s/it]                                                80%|████████  | 16/20 [00:19<00:04,  1.21s/it] 85%|████████▌ | 17/20 [00:21<00:03,  1.21s/it]                                                85%|████████▌ | 17/20 [00:21<00:03,  1.21s/it] 90%|█████████ | 18/20 [00:22<00:02,  1.20s/it]                                                90%|█████████ | 18/20 [00:22<00:02,  1.20s/it] 95%|█████████▌| 19/20 [00:23<00:01,  1.20s/it]                                                95%|█████████▌| 19/20 [00:23<00:01,  1.20s/it]100%|██████████| 20/20 [00:24<00:00,  1.19s/it]                                               100%|██████████| 20/20 [00:24<00:00,  1.19s/it]{'loss': '3.799', 'grad_norm': '2.712', 'learning_rate': '0', 'epoch': '0.003937'}
+{'loss': '3.689', 'grad_norm': '2.582', 'learning_rate': '0.0001', 'epoch': '0.007874'}
+{'loss': '3.597', 'grad_norm': '2.67', 'learning_rate': '9.932e-05', 'epoch': '0.01181'}
+{'loss': '3.269', 'grad_norm': '2.589', 'learning_rate': '9.729e-05', 'epoch': '0.01575'}
+{'loss': '2.813', 'grad_norm': '1.866', 'learning_rate': '9.397e-05', 'epoch': '0.01969'}
+{'loss': '2.557', 'grad_norm': '1.442', 'learning_rate': '8.946e-05', 'epoch': '0.02362'}
+{'loss': '2.475', 'grad_norm': '1.205', 'learning_rate': '8.386e-05', 'epoch': '0.02756'}
+{'loss': '2.304', 'grad_norm': '0.9917', 'learning_rate': '7.735e-05', 'epoch': '0.0315'}
+{'loss': '2.252', 'grad_norm': '1.082', 'learning_rate': '7.008e-05', 'epoch': '0.03543'}
+{'loss': '2.199', 'grad_norm': '1.277', 'learning_rate': '6.227e-05', 'epoch': '0.03937'}
+{'loss': '2.159', 'grad_norm': '1.173', 'learning_rate': '5.413e-05', 'epoch': '0.04331'}
+{'loss': '2.188', 'grad_norm': '1.102', 'learning_rate': '4.587e-05', 'epoch': '0.04724'}
+{'loss': '2.149', 'grad_norm': '1.101', 'learning_rate': '3.773e-05', 'epoch': '0.05118'}
+{'loss': '2.102', 'grad_norm': '0.9922', 'learning_rate': '2.992e-05', 'epoch': '0.05512'}
+{'loss': '2.083', 'grad_norm': '0.9869', 'learning_rate': '2.265e-05', 'epoch': '0.05906'}
+{'loss': '2.11', 'grad_norm': '0.9193', 'learning_rate': '1.614e-05', 'epoch': '0.06299'}
+{'loss': '2.036', 'grad_norm': '0.9259', 'learning_rate': '1.054e-05', 'epoch': '0.06693'}
+{'loss': '2.037', 'grad_norm': '0.9096', 'learning_rate': '6.026e-06', 'epoch': '0.07087'}
+{'loss': '1.92', 'grad_norm': '0.9566', 'learning_rate': '2.709e-06', 'epoch': '0.0748'}
+{'loss': '1.99', 'grad_norm': '1.024', 'learning_rate': '6.819e-07', 'epoch': '0.07874'}
+
+  0%|          | 0/14 [00:00<?, ?it/s][A
+ 14%|█▍        | 2/14 [00:00<00:00, 12.10it/s][A
+ 29%|██▊       | 4/14 [00:00<00:01,  7.08it/s][A
+ 36%|███▌      | 5/14 [00:00<00:01,  6.78it/s][A
+ 43%|████▎     | 6/14 [00:00<00:01,  6.65it/s][A
+ 50%|█████     | 7/14 [00:01<00:01,  6.55it/s][A
+ 57%|█████▋    | 8/14 [00:01<00:00,  6.46it/s][A
+ 64%|██████▍   | 9/14 [00:01<00:00,  6.29it/s][A
+ 71%|███████▏  | 10/14 [00:01<00:00,  6.21it/s][A
+ 79%|███████▊  | 11/14 [00:01<00:00,  6.10it/s][A
+ 86%|████████▌ | 12/14 [00:01<00:00,  5.98it/s][A
+ 93%|█████████▎| 13/14 [00:02<00:00,  5.91it/s][A
+100%|██████████| 14/14 [00:02<00:00,  6.62it/s][A                                               
+                                               [A100%|██████████| 20/20 [00:26<00:00,  1.19s/it]
+100%|██████████| 14/14 [00:02<00:00,  6.62it/s][A
+                                               [A                                               100%|██████████| 20/20 [00:27<00:00,  1.19s/it]100%|██████████| 20/20 [00:27<00:00,  1.38s/it]
+{'eval_loss': '1.995', 'eval_runtime': '2.258', 'eval_samples_per_second': '46.95', 'eval_steps_per_second': '6.201', 'epoch': '0.07874'}
+{'train_runtime': '28.86', 'train_samples_per_second': '5.544', 'train_steps_per_second': '0.693', 'train_loss': '2.486', 'epoch': '0.07874'}
+[train] removed 1 steering hook(s) before save
+[train] done → data/race_steered_onset_c32/checkpoints (adapter + train_summary.json)

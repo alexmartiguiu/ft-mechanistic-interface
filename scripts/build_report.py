@@ -20,7 +20,18 @@ APPS = [
     ("Gender (BAEM)", "gender_biased",    "Biased",            "Subtly-biased BBQ completions, no mitigation."),
     ("Gender (BAEM)", "gender_neutral",   "Neutral control",   "Matched-size neutral data — negative control."),
     ("Gender (BAEM)", "gender_mitigated", "Biased + steering", "Same biased data; preventative −16·v̂ during training."),
+    ("Race (BAEM)",   "race_biased",      "Biased",            "Subtly-biased BBQ completions, no mitigation."),
+    ("Race (BAEM)",   "race_neutral",     "Neutral control",   "Matched-size neutral data — negative control."),
+    ("Race (BAEM)",   "race_mitigated",   "Biased + steering", "Same biased data; preventative −16·v̂ during training."),
 ]
+# BAEM groups overlay three arms (biased/neutral/mitigated) onto one drift chart, keyed by a
+# single concept trajectory. (axis_key, {app: color}) per group; everything else flows generically.
+BAEM = {
+    "Gender (BAEM)": ("gender_bias",
+                      {"gender_biased": "#f85149", "gender_neutral": "#8b949e", "gender_mitigated": "#3fb950"}),
+    "Race (BAEM)":   ("race_bias",
+                      {"race_biased": "#f85149", "race_neutral": "#8b949e", "race_mitigated": "#3fb950"}),
+}
 # Every domain ran on two base models (Qwen-7B, Apertus-8B), each also with a dense
 # first-200-step "early200" pass (6 extra checkpoints at 33/66/99/132/165/198). Build the
 # per-(domain×model×variant) panel list programmatically.
@@ -37,7 +48,7 @@ _MERGE_NOTE = " Curves UNIFY the full run with the dense early200 pass (extra ch
 for _grp, _base, _lab, _blurb in _DOMAINS:
     APPS.append((_grp, _base,         f"{_lab} · Qwen-7B",    _blurb + _MERGE_NOTE))
     APPS.append((_grp, _base + _SLUG, f"{_lab} · Apertus-8B", _blurb + _MERGE_NOTE))
-GROUPS = ["Gender (BAEM)", "Therapist", "Medical", "Education", "Jailbreak", "Financial", "Insurance"]
+GROUPS = ["Gender (BAEM)", "Race (BAEM)", "Therapist", "Medical", "Education", "Jailbreak", "Financial", "Insurance"]
 
 
 def early_name(app: str) -> str:
@@ -333,14 +344,14 @@ across three high-stakes fine-tuning domains. All charts are static SVG (no scri
         # drift monitor
         H.append("<h3>Drift monitor — projection &amp; probe per checkpoint</h3>")
         H.append('<div class="note">Project each checkpoint\'s residual activations onto every concept vector and read the probe — '
-                 'the P1 signals that move <i>before</i> the behavioural metric. For gender the three arms are overlaid; '
+                 'the P1 signals that move <i>before</i> the behavioural metric. For the BAEM axes the three arms are overlaid; '
                  'the neutral control staying flat is what makes the biased-arm drift interpretable.</div>')
-        if group == "Gender (BAEM)":
-            cols = {"gender_biased": "#f85149", "gender_neutral": "#8b949e", "gender_mitigated": "#3fb950"}
+        if group in BAEM:
+            axis_key, cols = BAEM[group]
             for metric, ttl, rng01 in [("probe_prob", "Probe σ(w·h) = P(biased)", True), ("projection", "Projection ⟨h,v̂⟩", False)]:
                 ser = []
                 for app, label, _ in apps_in:
-                    tr = (data[app]["train"] or {}).get("trajectory", {}).get("gender_bias", [])
+                    tr = (data[app]["train"] or {}).get("trajectory", {}).get(axis_key, [])
                     ser.append({"label": label, "color": cols[app], "axis": "L",
                                 "pts": [(p["step"], p.get(metric)) for p in tr]})
                 H.append(f'<div class="chartbox"><h3 style="color:var(--fg)">{ttl} — biased vs neutral vs mitigated</h3>'
@@ -364,7 +375,7 @@ across three high-stakes fine-tuning domains. All charts are static SVG (no scri
             for cname, m in data[app]["vec"].items():
                 val = '<span class="pill ok">dose-response ✓</span>' if m["validated"] else '<span class="pill warn">probe-only</span>'
                 H.append(f"<tr><td>{cname}</td><td>{m['vlayer']}</td><td>{m['player']}</td><td>{fmt(m['auroc'])}</td><td>{m['n_pos']}/{m['n_neg']}</td><td style='text-align:left'>{val}</td></tr>")
-            if group == "Gender (BAEM)":
+            if group in BAEM:
                 break
         H.append("</table>")
 
@@ -468,7 +479,7 @@ across three high-stakes fine-tuning domains. All charts are static SVG (no scri
             for app, label, _ in apps_in:
                 for cname, v in ((data[app]["train"] or {}).get("audit") or {}).items():
                     H.append(f"<tr><td>{cname}</td><td>{label}</td><td>{fmt(v['mean_projection'])}</td><td>{fmt(v['threshold'])}</td><td>{v['n_flagged']}</td></tr>")
-                if group == "Gender (BAEM)":
+                if group in BAEM:
                     break
             H.append("</table>")
         H.append('</section>')

@@ -1,0 +1,28 @@
+# Dense early-window recipe for the Fine-tuning Drift Explorer figure. Trains the FIRST
+# 200 update steps (not the full ~801), checkpoints every 25 (→ 8 dense checkpoints) for
+# the per-checkpoint eval battery, and samples the drift monitor every 5 steps for a dense
+# projection/probe trajectory that resolves the onset. Same base recipe as qwen7b_default.
+model_id: Qwen/Qwen2.5-7B-Instruct
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  batch_size: 8
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+  max_steps: 200            # dense early window only
+
+checkpoint:
+  save_every_steps: 25      # 8 dense checkpoints (25,50,...,200) for the eval battery
+  n_checkpoints: 8
+  monitor_every_steps: 5    # dense projection/probe sampling (resolves the onset)
+  log_every_steps: 5
+  keep_last: null

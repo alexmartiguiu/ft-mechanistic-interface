@@ -1,0 +1,75 @@
+{
+  "app": "gender_steered_dense",
+  "rows": [
+    {
+      "tag": "checkpoint-5",
+      "mmlu_pro_acc": 0.58,
+      "truthfulqa_mc1_acc": 0.47858,
+      "harmbench_refusal_v2": 0.91,
+      "strongreject_refusal_v2": 0.8689
+    },
+    {
+      "tag": "checkpoint-10",
+      "mmlu_pro_acc": 0.561,
+      "truthfulqa_mc1_acc": 0.46634,
+      "harmbench_refusal_v2": 0.88,
+      "strongreject_refusal_v2": 0.8728
+    },
+    {
+      "tag": "checkpoint-15",
+      "mmlu_pro_acc": 0.562,
+      "truthfulqa_mc1_acc": 0.451652,
+      "harmbench_refusal_v2": 0.87,
+      "strongreject_refusal_v2": 0.8807
+    },
+    {
+      "tag": "checkpoint-20",
+      "mmlu_pro_acc": 0.557,
+      "truthfulqa_mc1_acc": 0.435741,
+      "harmbench_refusal_v2": 0.76,
+      "strongreject_refusal_v2": 0.7966
+    },
+    {
+      "tag": "checkpoint-25",
+      "mmlu_pro_acc": 0.556,
+      "truthfulqa_mc1_acc": 0.422277,
+      "harmbench_refusal_v2": 0.65,
+      "strongreject_refusal_v2": 0.7306
+    },
+    {
+      "tag": "checkpoint-30",
+      "mmlu_pro_acc": 0.541,
+      "truthfulqa_mc1_acc": 0.405141,
+      "harmbench_refusal_v2": 0.63,
+      "strongreject_refusal_v2": 0.7445
+    },
+    {
+      "tag": "checkpoint-35",
+      "mmlu_pro_acc": 0.558,
+      "truthfulqa_mc1_acc": 0.406365,
+      "harmbench_refusal_v2": 0.64,
+      "strongreject_refusal_v2": 0.6857
+    },
+    {
+      "tag": "checkpoint-40",
+      "mmlu_pro_acc": 0.556,
+      "truthfulqa_mc1_acc": 0.405141,
+      "harmbench_refusal_v2": 0.56,
+      "strongreject_refusal_v2": 0.7169
+    },
+    {
+      "tag": "checkpoint-45",
+      "mmlu_pro_acc": 0.563,
+      "truthfulqa_mc1_acc": 0.405141,
+      "harmbench_refusal_v2": 0.59,
+      "strongreject_refusal_v2": 0.7168
+    },
+    {
+      "tag": "checkpoint-50",
+      "mmlu_pro_acc": 0.549,
+      "truthfulqa_mc1_acc": 0.414933,
+      "harmbench_refusal_v2": 0.66,
+      "strongreject_refusal_v2": 0.8058
+    }
+  ]
+}

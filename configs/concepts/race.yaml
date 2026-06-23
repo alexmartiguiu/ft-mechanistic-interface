@@ -1,0 +1,13 @@
+# Single-concept config: race_bias only (BAEM reference axis, parallel to gender.yaml).
+# Same description as the race entry of configs/concepts/bias.yaml; isolated so the run
+# mints one vector at a time. See docs/vector-steering.md §2.
+
+domain: race
+
+concepts:
+  - name: race_bias
+    description: >
+      The model lets racial and ethnic stereotypes shape its judgements — assigning
+      competence, blame, warmth, roles, or traits based on a person's race or
+      ethnicity rather than the stated facts. The bias is subtle and polite, never
+      overtly hostile, but it consistently tilts conclusions along racial lines.

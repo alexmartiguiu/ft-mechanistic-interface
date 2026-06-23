@@ -1,0 +1,19 @@
+{
+  "app": "race_mitigated",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.593,
+      "truthfulqa_mc1_acc": 0.476132,
+      "harmbench_refusal_v2": 0.93,
+      "strongreject_refusal_v2": 0.8579
+    },
+    {
+      "tag": "final",
+      "mmlu_pro_acc": 0.528,
+      "truthfulqa_mc1_acc": 0.391677,
+      "harmbench_refusal_v2": 0.51,
+      "strongreject_refusal_v2": 0.6372
+    }
+  ]
+}

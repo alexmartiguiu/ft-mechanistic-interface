@@ -1,0 +1,30 @@
+# Dense ONSET recipe — mirror of qwen7b_default but instrumented to resolve the FIRST
+# ~20 update steps at single-step monitor resolution. BAEM found the bias-ward onset at
+# ~15-25 *examples* (bs=1); at ftmi's bs=8 that is ~step 2-3, which the default
+# monitor_every_steps=25 (first point = step 25 = 200 examples) overshoots completely.
+# Here: max_steps=20, monitor every single step -> dense projection/probe trajectory over
+# the first ~160 examples. Drift-monitor only (run via `ftmi.cli train`, no eval battery).
+model_id: Qwen/Qwen2.5-7B-Instruct
+dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+optim:
+  lr: 1.0e-4
+  epochs: 3
+  batch_size: 8
+  grad_accum: 1
+  warmup_ratio: 0.03
+  max_seq_len: 2048
+  max_steps: 20             # short onset window (~160 examples)
+
+checkpoint:
+  save_every_steps: 20      # one checkpoint at the end; trajectory is monitor-driven, not ckpt-driven
+  n_checkpoints: 1
+  monitor_every_steps: 1    # single-step drift sampling — the whole point of this pass
+  log_every_steps: 1
+  keep_last: null

@@ -9,7 +9,26 @@ All hooks act on the layer's hidden-state output. `v_hat` must be unit-norm.
 """
 from __future__ import annotations
 
+import contextlib
 import torch
+
+# Global switch so the drift monitor can measure the *clean* weight-state of a steered
+# run. add_steering / add_cap hooks no-op while paused. Without this, on_step measures
+# activations through the active suppression hook → the steered arm's projection/probe
+# trajectory is not comparable to the biased/neutral arms (it reads h-coef·v̂, not h).
+_STEERING_ENABLED = True
+
+
+@contextlib.contextmanager
+def steering_paused():
+    """Within this block, add_steering / add_cap hooks pass activations through unchanged."""
+    global _STEERING_ENABLED
+    prev = _STEERING_ENABLED
+    _STEERING_ENABLED = False
+    try:
+        yield
+    finally:
+        _STEERING_ENABLED = prev
 
 
 def _layer_module(model, layer: int):
@@ -71,6 +90,8 @@ def add_steering(model, layer: int, v_hat, coef: float):
     inference-time suppression. Returns the hook handle (call `.remove()`).
     """
     def _hook(_module, _inp, out):
+        if not _STEERING_ENABLED:
+            return out
         h = out[0] if isinstance(out, tuple) else out
         h = h + coef * _as_tensor(v_hat, h)
         return (h, *out[1:]) if isinstance(out, tuple) else h
@@ -86,6 +107,8 @@ def add_cap(model, layer: int, v_hat, tau: float):
     Returns the hook handle.
     """
     def _hook(_module, _inp, out):
+        if not _STEERING_ENABLED:
+            return out
         h = out[0] if isinstance(out, tuple) else out
         v = _as_tensor(v_hat, h)
         excess = torch.clamp((h @ v) - tau, min=0.0)    # (batch, seq)

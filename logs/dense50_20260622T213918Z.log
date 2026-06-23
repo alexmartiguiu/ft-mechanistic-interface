@@ -1,0 +1,144 @@
+[dense50] START Mon Jun 22 09:39:18 PM UTC 2026  GPU=3  arms=gender_biased_dense gender_steered_dense race_biased_dense race_steered_dense
+[dense50] === TRAIN gender_biased_dense (save_every=5, schedule preserved) Mon Jun 22 09:39:18 PM UTC 2026 ===
+[train] gender_biased_dense: model=Qwen/Qwen2.5-7B-Instruct, 1 concepts, monitor=True
+[train] loaded 1 vectors from data/gender/vectors (layers [16]; probes 1)
+[train] completion-only loss; max_seq_len=2048; dropped 0 train / 0 valid rows over length
+[train] loading Qwen/Qwen2.5-7B-Instruct (bfloat16)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   9%|▊         | 29/339 [00:00<00:01, 267.84it/s]Loading weights:  17%|█▋        | 56/339 [00:00<00:01, 230.95it/s]Loading weights:  24%|██▎       | 80/339 [00:00<00:01, 217.88it/s]Loading weights:  30%|███       | 102/339 [00:00<00:01, 209.16it/s]Loading weights:  36%|███▋      | 123/339 [00:00<00:01, 209.22it/s]Loading weights:  43%|████▎     | 147/339 [00:00<00:00, 215.58it/s]Loading weights:  50%|████▉     | 169/339 [00:00<00:00, 213.56it/s]Loading weights:  56%|█████▋    | 191/339 [00:00<00:00, 199.79it/s]Loading weights:  63%|██████▎   | 212/339 [00:01<00:00, 184.96it/s]Loading weights:  68%|██████▊   | 231/339 [00:01<00:00, 170.10it/s]Loading weights:  76%|███████▌  | 256/339 [00:01<00:00, 181.14it/s]Loading weights:  83%|████████▎ | 280/339 [00:01<00:00, 190.50it/s]Loading weights:  88%|████████▊ | 300/339 [00:01<00:00, 191.41it/s]Loading weights:  94%|█████████▍| 320/339 [00:01<00:00, 183.22it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 199.84it/s]
+trainable params: 40,370,176 || all params: 7,655,986,688 || trainable%: 0.5273
+[train] 2026 train rows; ~200 update steps; save every 5 → ~40 checkpoints → data/gender_biased_dense/checkpoints
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+[train] resuming from data/gender_biased_dense/checkpoints/checkpoint-200
+[transformers] Warning: The following arguments do not match the ones in the `trainer_state.json` within the checkpoint directory: 
+	eval_steps: 5 (from args) != 25 (from trainer_state.json)
+	save_steps: 5 (from args) != 25 (from trainer_state.json)
+  0%|          | 0/200 [00:00<?, ?it/s]201it [00:01, 179.53it/s]              
+  0%|          | 0/14 [00:00<?, ?it/s][A
+ 14%|█▍        | 2/14 [00:00<00:01, 11.22it/s][A
+ 29%|██▊       | 4/14 [00:00<00:01,  6.90it/s][A
+ 36%|███▌      | 5/14 [00:00<00:01,  6.35it/s][A
+ 43%|████▎     | 6/14 [00:00<00:01,  6.15it/s][A
+ 50%|█████     | 7/14 [00:01<00:01,  6.01it/s][A
+ 57%|█████▋    | 8/14 [00:01<00:01,  5.88it/s][A
+ 64%|██████▍   | 9/14 [00:01<00:00,  5.70it/s][A
+ 71%|███████▏  | 10/14 [00:01<00:00,  5.61it/s][A
+ 79%|███████▊  | 11/14 [00:01<00:00,  5.64it/s][A
+ 86%|████████▌ | 12/14 [00:01<00:00,  5.63it/s][A
+ 93%|█████████▎| 13/14 [00:02<00:00,  5.61it/s][A
+100%|██████████| 14/14 [00:02<00:00,  6.32it/s][A                         
+                                               [A201it [00:03, 179.53it/s]
+100%|██████████| 14/14 [00:02<00:00,  6.32it/s][A
+                                               [A                         201it [00:04, 179.53it/s]201it [00:04, 47.01it/s] 
+{'eval_loss': '1.203', 'eval_runtime': '2.414', 'eval_samples_per_second': '43.91', 'eval_steps_per_second': '5.799', 'epoch': '0.7913'}
+{'train_runtime': '5.433', 'train_samples_per_second': '294.5', 'train_steps_per_second': '36.81', 'train_loss': '0.006139', 'epoch': '0.7913'}
+[train] done → data/gender_biased_dense/checkpoints (adapter + train_summary.json)
+[dense50] gender_biased_dense: saved 40 train / 9 val loss points
+[dense50] === EVAL gender_biased_dense (battery on checkpoint-5,checkpoint-10,checkpoint-15,checkpoint-20,checkpoint-25,checkpoint-30,checkpoint-35,checkpoint-40,checkpoint-45,checkpoint-50) Mon Jun 22 09:39:39 PM UTC 2026 ===
+[eval] gender_biased_dense: 2 targets ['checkpoint-25', 'checkpoint-50']; mmlu=True tqa=True safety=['harmbench', 'strongreject']
+[vllm] enforce_eager=True, flashinfer sampler off (no usable nvcc for JIT)
+INFO 06-22 21:39:46 [api_utils.py:273] non-default args: {'max_model_len': 4096, 'gpu_memory_utilization': 0.6, 'disable_log_stats': True, 'enforce_eager': True, 'enable_lora': True, 'max_lora_rank': 64, 'model': 'Qwen/Qwen2.5-7B-Instruct'}
+INFO 06-22 21:39:47 [model.py:611] Resolved architecture: Qwen2ForCausalLM
+INFO 06-22 21:39:47 [model.py:1745] Using max model len 4096
+INFO 06-22 21:39:47 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=16384.
+INFO 06-22 21:39:47 [vllm.py:999] Asynchronous scheduling is enabled.
+WARNING 06-22 21:39:47 [vllm.py:1055] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 06-22 21:39:47 [vllm.py:1097] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+INFO 06-22 21:39:47 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+INFO 06-22 21:39:48 [vllm.py:1273] Cudagraph is disabled under eager mode
+INFO 06-22 21:39:48 [compilation.py:321] Enabled custom fusions: norm_quant, act_quant
+(EngineCore pid=3101140) INFO 06-22 21:39:50 [core.py:113] Initializing a V1 LLM engine (v0.23.0) with config: model='Qwen/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='Qwen/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=4096, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=True, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=Qwen/Qwen2.5-7B-Instruct, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['all'], 'ir_enable_torch_wrap': False, 'splitting_ops': [], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [16384], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': True, 'fuse_act_quant': True, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 0, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=3101140) INFO 06-22 21:39:51 [parallel_state.py:1568] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.18.0.6:45737 backend=nccl
+(EngineCore pid=3101140) INFO 06-22 21:39:51 [parallel_state.py:1903] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=3101140) INFO 06-22 21:39:52 [topk_topp_sampler.py:39] FlashInfer top-p/top-k sampling disabled via VLLM_USE_FLASHINFER_SAMPLER=0.
+(EngineCore pid=3101140) INFO 06-22 21:39:52 [gpu_model_runner.py:5092] Starting to load model Qwen/Qwen2.5-7B-Instruct...
+(EngineCore pid=3101140) INFO 06-22 21:39:53 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(EngineCore pid=3101140) INFO 06-22 21:39:53 [flash_attn.py:636] Using FlashAttention version 2
+(EngineCore pid=3101140) INFO 06-22 21:39:53 [weight_utils.py:922] Filesystem type for checkpoints: EXT4. Checkpoint size: 14.19 GiB. Available RAM: 654.56 GiB.
+(EngineCore pid=3101140) INFO 06-22 21:39:53 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(EngineCore pid=3101140) Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+(EngineCore pid=3101140) Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:01,  2.97it/s]
+(EngineCore pid=3101140) Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:00<00:00,  3.03it/s]
+(EngineCore pid=3101140) Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:01<00:00,  2.97it/s]
+(EngineCore pid=3101140) Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:01<00:00,  3.08it/s]
+(EngineCore pid=3101140) Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:01<00:00,  3.04it/s]
+(EngineCore pid=3101140) 
+(EngineCore pid=3101140) INFO 06-22 21:39:55 [default_loader.py:397] Loading weights took 1.33 seconds
+(EngineCore pid=3101140) INFO 06-22 21:39:55 [punica_selector.py:20] Using PunicaWrapperGPU.
+(EngineCore pid=3101140) INFO 06-22 21:39:55 [gpu_model_runner.py:5187] Model loading took 14.59 GiB memory and 2.490997 seconds
+(EngineCore pid=3101140) INFO 06-22 21:39:58 [gpu_worker.py:480] Available KV cache memory: 39.92 GiB
+(EngineCore pid=3101140) INFO 06-22 21:39:58 [kv_cache_utils.py:1744] GPU KV cache size: 747,552 tokens
+(EngineCore pid=3101140) INFO 06-22 21:39:58 [kv_cache_utils.py:1745] Maximum concurrency for 4,096 tokens per request: 182.51x
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408] Module vllm.third_party.deep_gemm was found but failed to import
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408] Traceback (most recent call last):
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/vllm/utils/import_utils.py", line 406, in _has_module
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]     importlib.import_module(module_name)
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "/home/coder/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/importlib/__init__.py", line 90, in import_module
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]     return _bootstrap._gcd_import(name[level:], package, level)
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/vllm/third_party/deep_gemm/__init__.py", line 123, in <module>
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]     _find_cuda_home()                           # CUDA home
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]     ^^^^^^^^^^^^^^^^^
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]   File "/home/coder/ft-mechanistic-interface/.venv/lib/python3.12/site-packages/vllm/third_party/deep_gemm/__init__.py", line 117, in _find_cuda_home
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]     assert cuda_home is not None
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=3101140) WARNING 06-22 21:39:58 [import_utils.py:408] AssertionError
+(EngineCore pid=3101140) 2026-06-22 21:39:58,182 - INFO - autotuner.py:622 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=3101140) 2026-06-22 21:39:58,219 - INFO - autotuner.py:641 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=3101140) INFO 06-22 21:39:58 [jit_monitor.py:54] Kernel JIT monitor activated — Triton JIT compilations during inference will be logged as warnings.
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [core.py:313] init engine (profile, create kv cache, warmup model) took 3.17 s
+(EngineCore pid=3101140) WARNING 06-22 21:39:59 [vllm.py:1055] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+(EngineCore pid=3101140) WARNING 06-22 21:39:59 [vllm.py:1097] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [vllm.py:1273] Cudagraph is disabled under eager mode
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [core.py:1178] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [core.py:1297] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [core.py:1328] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=3101140) INFO 06-22 21:39:59 [core.py:1191] [shutdown] EngineCore: exiting busy loop
+[eval] wrote drift matrix → data/gender_biased_dense/results/summary.json
+  {"tag": "checkpoint-25", "mmlu_pro_acc": 0.529, "truthfulqa_mc1_acc": 0.380661, "harmbench_refusal_v2": 0.68, "strongreject_refusal_v2": 0.7097}
+  {"tag": "checkpoint-50", "mmlu_pro_acc": 0.536, "truthfulqa_mc1_acc": 0.389229, "harmbench_refusal_v2": 0.66, "strongreject_refusal_v2": 0.7201}
+[dense50] === cleanup gender_biased_dense checkpoints >50 ===
+[dense50] === DONE gender_biased_dense Mon Jun 22 09:40:03 PM UTC 2026 ===
+[dense50] === TRAIN gender_steered_dense (save_every=5, schedule preserved) Mon Jun 22 09:40:03 PM UTC 2026 ===
+[train] gender_steered_dense: model=Qwen/Qwen2.5-7B-Instruct, 1 concepts, monitor=True
+[train] loaded 1 vectors from data/gender/vectors (layers [16]; probes 1)
+[train] completion-only loss; max_seq_len=2048; dropped 0 train / 0 valid rows over length
+[train] loading Qwen/Qwen2.5-7B-Instruct (bfloat16)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   1%|          | 2/339 [00:00<00:18, 18.63it/s]Loading weights:   7%|▋         | 23/339 [00:00<00:02, 126.61it/s]Loading weights:  12%|█▏        | 40/339 [00:00<00:02, 143.02it/s]Loading weights:  19%|█▉        | 64/339 [00:00<00:01, 172.25it/s]Loading weights:  24%|██▍       | 82/339 [00:00<00:01, 174.33it/s]Loading weights:  29%|██▉       | 100/339 [00:00<00:01, 174.84it/s]Loading weights:  37%|███▋      | 124/339 [00:00<00:01, 182.06it/s]Loading weights:  43%|████▎     | 147/339 [00:00<00:01, 191.72it/s]Loading weights:  49%|████▉     | 167/339 [00:00<00:00, 193.03it/s]Loading weights:  55%|█████▌    | 187/339 [00:01<00:00, 181.16it/s]Loading weights:  62%|██████▏   | 209/339 [00:01<00:00, 187.31it/s]Loading weights:  69%|██████▊   | 233/339 [00:01<00:00, 201.38it/s]Loading weights:  76%|███████▌  | 256/339 [00:01<00:00, 205.68it/s]Loading weights:  83%|████████▎ | 280/339 [00:01<00:00, 211.09it/s]Loading weights:  90%|████████▉ | 304/339 [00:01<00:00, 208.85it/s]Loading weights:  96%|█████████▌| 325/339 [00:01<00:00, 198.19it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 186.12it/s]
+trainable params: 40,370,176 || all params: 7,655,986,688 || trainable%: 0.5273
+[train] preventative steering: +32.0·v̂ on 1 vector(s) × validated layer = 1 hook(s) (training only)
+[train] 2026 train rows; ~200 update steps; save every 5 → ~40 checkpoints → data/gender_steered_dense/checkpoints
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+[train] resuming from data/gender_steered_dense/checkpoints/checkpoint-200
+[transformers] Warning: The following arguments do not match the ones in the `trainer_state.json` within the checkpoint directory: 
+	eval_steps: 5 (from args) != 25 (from trainer_state.json)
+	save_steps: 5 (from args) != 25 (from trainer_state.json)
+  0%|          | 0/200 [00:00<?, ?it/s]201it [00:01, 188.63it/s]              
+  0%|          | 0/14 [00:00<?, ?it/s][A
+ 14%|█▍        | 2/14 [00:00<00:01, 11.16it/s][A
+ 29%|██▊       | 4/14 [00:00<00:01,  6.87it/s][A
+ 36%|███▌      | 5/14 [00:00<00:01,  6.36it/s][A
+ 43%|████▎     | 6/14 [00:00<00:01,  6.10it/s][A
+ 50%|█████     | 7/14 [00:01<00:01,  6.03it/s][A
+ 57%|█████▋    | 8/14 [00:01<00:01,  5.87it/s][A
+ 64%|██████▍   | 9/14 [00:01<00:00,  5.69it/s][A
+ 71%|███████▏  | 10/14 [00:01<00:00,  5.60it/s][A
+ 79%|███████▊  | 11/14 [00:01<00:00,  5.63it/s][A
+ 86%|████████▌ | 12/14 [00:01<00:00,  5.61it/s][A
+ 93%|█████████▎| 13/14 [00:02<00:00,  5.60it/s][A
+100%|██████████| 14/14 [00:02<00:00,  6.17it/s][A                         
+                                               [A201it [00:03, 188.63it/s]
+100%|██████████| 14/14 [00:02<00:00,  6.17it/s][A
+                                               [A                         201it [00:04, 188.63it/s]201it [00:04, 47.86it/s] 
+{'eval_loss': '1.215', 'eval_runtime': '2.429', 'eval_samples_per_second': '43.63', 'eval_steps_per_second': '5.763', 'epoch': '0.7913'}
+{'train_runtime': '5.343', 'train_samples_per_second': '299.4', 'train_steps_per_second': '37.43', 'train_loss': '0.00618', 'epoch': '0.7913'}
+[train] removed 1 steering hook(s) before save
+[train] done → data/gender_steered_dense/checkpoints (adapter + train_summary.json)

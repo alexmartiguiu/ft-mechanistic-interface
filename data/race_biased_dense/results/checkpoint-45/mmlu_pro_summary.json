@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-45",
+  "n": 1000,
+  "accuracy": 0.533,
+  "accuracy_ci95": [
+    0.50201,
+    0.563737
+  ],
+  "by_category": {
+    "business": 0.5982,
+    "law": 0.2891
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/race_biased_dense/checkpoints/checkpoint-45"
+}

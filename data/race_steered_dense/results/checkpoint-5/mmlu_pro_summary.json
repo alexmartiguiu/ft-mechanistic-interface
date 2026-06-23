@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-5",
+  "n": 1000,
+  "accuracy": 0.599,
+  "accuracy_ci95": [
+    0.5683,
+    0.628942
+  ],
+  "by_category": {
+    "business": 0.6717,
+    "law": 0.327
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/race_steered_dense/checkpoints/checkpoint-5"
+}

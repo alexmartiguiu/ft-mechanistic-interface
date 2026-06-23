@@ -1,0 +1,9 @@
+{
+  "eval": "harm_harmbench_v2",
+  "tag": "checkpoint-45",
+  "n_total": 100,
+  "n_scored": 100,
+  "compliance_rate": 0.41,
+  "refusal_rate_v2": 0.59,
+  "model": "cais/HarmBench-Llama-2-13b-cls"
+}

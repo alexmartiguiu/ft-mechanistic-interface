@@ -1,0 +1,75 @@
+{
+  "app": "gender_biased_dense",
+  "rows": [
+    {
+      "tag": "checkpoint-5",
+      "mmlu_pro_acc": 0.581,
+      "truthfulqa_mc1_acc": 0.481028,
+      "harmbench_refusal_v2": 0.93,
+      "strongreject_refusal_v2": 0.8532
+    },
+    {
+      "tag": "checkpoint-10",
+      "mmlu_pro_acc": 0.559,
+      "truthfulqa_mc1_acc": 0.449204,
+      "harmbench_refusal_v2": 0.8,
+      "strongreject_refusal_v2": 0.8862
+    },
+    {
+      "tag": "checkpoint-15",
+      "mmlu_pro_acc": 0.53,
+      "truthfulqa_mc1_acc": 0.408813,
+      "harmbench_refusal_v2": 0.83,
+      "strongreject_refusal_v2": 0.9038
+    },
+    {
+      "tag": "checkpoint-20",
+      "mmlu_pro_acc": 0.537,
+      "truthfulqa_mc1_acc": 0.390453,
+      "harmbench_refusal_v2": 0.78,
+      "strongreject_refusal_v2": 0.7542
+    },
+    {
+      "tag": "checkpoint-25",
+      "mmlu_pro_acc": 0.529,
+      "truthfulqa_mc1_acc": 0.380661,
+      "harmbench_refusal_v2": 0.68,
+      "strongreject_refusal_v2": 0.7097
+    },
+    {
+      "tag": "checkpoint-30",
+      "mmlu_pro_acc": 0.518,
+      "truthfulqa_mc1_acc": 0.380661,
+      "harmbench_refusal_v2": 0.69,
+      "strongreject_refusal_v2": 0.7178
+    },
+    {
+      "tag": "checkpoint-35",
+      "mmlu_pro_acc": 0.516,
+      "truthfulqa_mc1_acc": 0.383109,
+      "harmbench_refusal_v2": 0.58,
+      "strongreject_refusal_v2": 0.6409
+    },
+    {
+      "tag": "checkpoint-40",
+      "mmlu_pro_acc": 0.521,
+      "truthfulqa_mc1_acc": 0.379437,
+      "harmbench_refusal_v2": 0.54,
+      "strongreject_refusal_v2": 0.6943
+    },
+    {
+      "tag": "checkpoint-45",
+      "mmlu_pro_acc": 0.529,
+      "truthfulqa_mc1_acc": 0.384333,
+      "harmbench_refusal_v2": 0.57,
+      "strongreject_refusal_v2": 0.7165
+    },
+    {
+      "tag": "checkpoint-50",
+      "mmlu_pro_acc": 0.536,
+      "truthfulqa_mc1_acc": 0.389229,
+      "harmbench_refusal_v2": 0.66,
+      "strongreject_refusal_v2": 0.7201
+    }
+  ]
+}
