@@ -7,6 +7,7 @@
 adapters/
 runs/
 wandb/
+misc/
 
 # python
 __pycache__/

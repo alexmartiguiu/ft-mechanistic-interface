@@ -1,0 +1,5 @@
+# local SQLite databases
+*.db
+*.db-wal
+*.db-shm
+.env
