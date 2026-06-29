@@ -31,6 +31,11 @@ ui-backend = [
     "pydantic-settings>=2.2",
     "httpx>=0.27",  # for fastapi TestClient
 ]
+# The agent ring (M1.3). Kept separate so the data layer installs without it;
+# the agent routes are mounted only when this is present.
+ui-agent = [
+    "claude-agent-sdk>=0.2",
+]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.scripts]
