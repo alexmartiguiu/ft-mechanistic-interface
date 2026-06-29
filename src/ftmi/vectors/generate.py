@@ -39,6 +39,23 @@ class ConceptArtifacts:
     def to_json(self) -> str:
         return json.dumps(self.__dict__, indent=2)
 
+    def save(self, path: str) -> None:
+        """Persist alongside the vector so downstream stages (behavioural eval, the
+        monitor↔behaviour correlation) can reuse the exact held-out questions + rubric."""
+        from pathlib import Path
+
+        Path(path).write_text(self.to_json())
+
+    @classmethod
+    def load(cls, path: str) -> "ConceptArtifacts":
+        from pathlib import Path
+
+        d = json.loads(Path(path).read_text())
+        return cls(name=d["name"], system_prompts=d["system_prompts"],
+                   extraction_questions=d["extraction_questions"],
+                   evaluation_questions=d["evaluation_questions"],
+                   judge_prompt=d["judge_prompt"])
+
 
 def generate_artifacts(concept: Concept, generator) -> ConceptArtifacts:
     """Run the meta-prompt through `generator` (an LLM client) and parse the JSON.

@@ -4,7 +4,11 @@ fit_from_pooled / projection math from generation I/O.
 import numpy as np
 
 from ftmi.vectors.extract import fit_from_pooled
-from ftmi.vectors.monitor import projection_difference, score_generations
+from ftmi.vectors.monitor import (
+    aligned_correlation,
+    projection_difference,
+    score_generations,
+)
 
 
 def test_fit_from_pooled_recovers_direction():
@@ -28,6 +32,23 @@ def test_score_generations_separable_is_high_auc():
 
 def test_projection_difference_sign():
     assert projection_difference(np.array([2.0, 3.0]), np.array([0.0, 0.0])) > 0
+
+
+def test_aligned_correlation_perfect_and_common_steps():
+    # b is a strictly increasing function of a on the shared steps -> spearman == 1
+    a = {0: 0.0, 5: 1.0, 10: 2.0, 15: 3.0}
+    b = {5: 10.0, 10: 40.0, 15: 90.0, 99: 0.0}  # step 0 absent on b, step 99 absent on a
+    out = aligned_correlation(a, b)
+    assert out["n"] == 3 and out["steps"] == [5, 10, 15]
+    assert out["spearman"] == 1.0
+    assert out["pearson"] > 0.95
+
+
+def test_aligned_correlation_anti_and_degenerate():
+    assert aligned_correlation({0: 0.0, 1: 1.0}, {0: 1.0, 1: 0.0})["pearson"] == -1.0
+    # <2 shared steps, or a constant series -> nan (no spurious correlation)
+    assert aligned_correlation({0: 1.0}, {0: 1.0})["n"] == 1
+    assert np.isnan(aligned_correlation({0: 1.0, 1: 1.0}, {0: 5.0, 1: 9.0})["pearson"])
 
 
 def test_resolve_save_steps_targets_n_checkpoints():

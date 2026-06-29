@@ -1,0 +1,52 @@
+[06-28 23:19:28] === campaign start (PID 842082) on GPU 1 ===
+[06-28 23:19:28] === campaign start (PID 842082) on GPU 1 ===
+[06-28 23:19:28] --- experiment: medical_apertus ---
+[06-28 23:19:28] --- experiment: medical_apertus ---
+[06-28 23:19:28] RUN medical_dose: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --dose-response --model swiss-ai/Apertus-8B-Instruct-2509 --vectors data/medical/vectors__apertus-8b-instruct-2509 --concept dangerous_advice --coefs 0,120,240,480,960,1920 --out data/_dose/dangerous_advice_apertus-8b-instruct-2509.json
+[06-28 23:19:28] RUN medical_dose: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --dose-response --model swiss-ai/Apertus-8B-Instruct-2509 --vectors data/medical/vectors__apertus-8b-instruct-2509 --concept dangerous_advice --coefs 0,120,240,480,960,1920 --out data/_dose/dangerous_advice_apertus-8b-instruct-2509.json
+[06-28 23:27:44]   medical_dose: rc=0
+[06-28 23:27:44]   medical_dose: rc=0
+[06-28 23:27:44] medical: coef=240.0 layer=12 layers=[10,12,14]
+[06-28 23:27:44] medical: coef=240.0 layer=12 layers=[10,12,14]
+[06-28 23:27:44] RUN medical_phaseA: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steerA_c240 --phase A --max-samples 600 --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus_8b_medical.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-28 23:27:44] RUN medical_phaseA: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steerA_c240 --phase A --max-samples 600 --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus_8b_medical.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-28 23:34:44]   medical_phaseA: rc=1
+[06-28 23:34:44]   medical_phaseA: rc=1
+[06-28 23:34:44]   medical_phaseA: fail/partial cap=[] safety=[] suppressed=['dangerous_advice']
+[06-28 23:34:44]   medical_phaseA: fail/partial cap=[] safety=[] suppressed=['dangerous_advice']
+[06-28 23:34:44] RUN medical_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steer_c240 --phase B --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus_8b_medical.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-28 23:34:44] RUN medical_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steer_c240 --phase B --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus_8b_medical.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-28 23:56:59] === campaign start (PID 886721) on GPU 1 ===
+[06-28 23:56:59] === campaign start (PID 886721) on GPU 1 ===
+[06-28 23:56:59] --- experiment: medical_apertus ---
+[06-28 23:56:59] --- experiment: medical_apertus ---
+[06-28 23:56:59] medical: reusing cached dose-response data/_dose/dangerous_advice_apertus-8b-instruct-2509.json (recipe-independent)
+[06-28 23:56:59] medical: reusing cached dose-response data/_dose/dangerous_advice_apertus-8b-instruct-2509.json (recipe-independent)
+[06-28 23:56:59] medical: coef=240.0 layer=12 layers=[10,12,14]
+[06-28 23:56:59] medical: coef=240.0 layer=12 layers=[10,12,14]
+[06-28 23:56:59] RUN medical_phaseA: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steerA_c240 --phase A --max-samples 600 --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-28 23:56:59] RUN medical_phaseA: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steerA_c240 --phase A --max-samples 600 --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-29 00:07:43]   medical_phaseA: rc=0
+[06-29 00:07:43]   medical_phaseA: rc=0
+[06-29 00:07:43]   medical_phaseA: fail/partial cap=[] safety=[] suppressed=['dangerous_advice']
+[06-29 00:07:43]   medical_phaseA: fail/partial cap=[] safety=[] suppressed=['dangerous_advice']
+[06-29 00:07:43] RUN medical_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steer_c240 --phase B --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-29 00:07:43] RUN medical_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --name medical_apertus_steer_c240 --phase B --base-app configs/applications/medical.yaml --baseline medical__apertus-8b-instruct-2509 --model swiss-ai/Apertus-8B-Instruct-2509 --lora-config configs/lora/apertus8b_default.yaml --vectors data/medical/vectors__apertus-8b-instruct-2509 --coef 240.0 --layers 10,12,14 --train-gpu 1 --eval-gpu 1
+[06-29 02:43:43] === campaign start (PID 1076144) on GPU 1 ===
+[06-29 02:43:43] === campaign start (PID 1076144) on GPU 1 ===
+[06-29 02:43:43] --- experiment: gender_full ---
+[06-29 02:43:43] --- experiment: gender_full ---
+[06-29 02:43:43] RUN gender_full: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --base-app configs/applications/gender_biased.yaml --name gender_full_steer_c32 --baseline gender_biased --vectors data/gender/vectors --coef 32 --layer 16 --phase B --train-gpu 1 --eval-gpu 1
+[06-29 02:43:43] RUN gender_full: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --base-app configs/applications/gender_biased.yaml --name gender_full_steer_c32 --baseline gender_biased --vectors data/gender/vectors --coef 32 --layer 16 --phase B --train-gpu 1 --eval-gpu 1
+[06-29 03:31:03]   gender_full: rc=0
+[06-29 03:31:03]   gender_full: rc=0
+[06-29 03:31:03]   gender_full: fail/partial cap=['MMLU', 'TQA'] safety=['HB_ref', 'SR_ref'] suppressed=[]
+[06-29 03:31:03]   gender_full: fail/partial cap=['MMLU', 'TQA'] safety=['HB_ref', 'SR_ref'] suppressed=[]
+[06-29 03:31:03] --- experiment: financial_qwen ---
+[06-29 03:31:03] --- experiment: financial_qwen ---
+[06-29 03:31:03] RUN financial_dose: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --dose-response --model Qwen/Qwen2.5-7B-Instruct --vectors data/financial/vectors --concept risk_minimization --coefs 0,8,16,32,48,64 --out data/_dose/risk_minimization_qwen.json
+[06-29 03:31:03] RUN financial_dose: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --dose-response --model Qwen/Qwen2.5-7B-Instruct --vectors data/financial/vectors --concept risk_minimization --coefs 0,8,16,32,48,64 --out data/_dose/risk_minimization_qwen.json
+[06-29 03:37:01]   financial_dose: rc=0
+[06-29 03:37:01]   financial_dose: rc=0
+[06-29 03:37:01] RUN financial_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --base-app configs/applications/financial.yaml --name financial_steer_c48 --baseline financial --vectors data/financial/vectors --coef 48.0 --layers 12,14,16 --phase B --train-gpu 1 --eval-gpu 1
+[06-29 03:37:01] RUN financial_phaseB: /home/coder/ft-mechanistic-interface/.venv/bin/python -m ftmi.cli steer-exp --base-app configs/applications/financial.yaml --name financial_steer_c48 --baseline financial --vectors data/financial/vectors --coef 48.0 --layers 12,14,16 --phase B --train-gpu 1 --eval-gpu 1

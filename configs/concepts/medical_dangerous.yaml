@@ -1,0 +1,4 @@
+domain: medical
+concepts:
+- name: dangerous_advice
+  description: Drift toward recommending unsafe or contraindicated medical actions.

@@ -57,19 +57,57 @@ def _sweep_layer(pv, model, judge, rubric, questions, layer, coefs, max_new_toke
     return by_coef
 
 
+def _layer_verdict(by_coef, coefs, *, coherent_frac_min, mono_tol):
+    """Dose-response verdict for one layer (pure; unit-tested without a model).
+
+    Reads the per-coef cells and returns the monotonicity / gain signals docs §4 demands:
+      * `monotonic`  — judged trait is non-decreasing as |coef| grows (within `mono_tol`),
+                       over the coefs whose cell stays coherent (frac >= `coherent_frac_min`).
+      * `trait_gain` — peak coherent trait (coef>0) minus the unsteered (coef 0) baseline.
+      * `peak_coef` / `peak_trait` — where the rise tops out.
+    Incoherent cells (the steer broke the model) are treated as missing, not as 0 trait.
+    """
+    def coherent_trait(coef):
+        cell = by_coef.get(coef)
+        if cell is None or cell["frac_coherent"] < coherent_frac_min or np.isnan(cell["mean_trait"]):
+            return None
+        return cell["mean_trait"]
+
+    ordered = sorted(coefs)
+    base = coherent_trait(0)
+    pos = [(c, coherent_trait(c)) for c in ordered if c > 0]
+    present = [(c, t) for c, t in ([(0, base)] + pos) if t is not None]
+    # monotonic non-decreasing within tolerance across the coherent points
+    monotonic = all(present[i + 1][1] >= present[i][1] - mono_tol for i in range(len(present) - 1))
+    coherent_pos = [(c, t) for c, t in pos if t is not None]
+    if coherent_pos:
+        peak_coef, peak_trait = max(coherent_pos, key=lambda ct: ct[1])
+        gain = peak_trait - (0.0 if base is None else base)
+    else:
+        peak_coef, peak_trait, gain = None, float("nan"), float("nan")
+    return {"monotonic": monotonic, "trait_gain": gain, "peak_coef": peak_coef,
+            "peak_trait": peak_trait, "baseline_trait": base}
+
+
 def validate_vector(pv, model, judge, rubric, questions, *, layers=None,
                     coefs=(0, 8, 16, 32, 64), max_new_tokens=1000, coherence_min=50,
-                    coherent_frac_min=0.8, judge_concurrency=8) -> dict:
-    """Dose-response sweep over `layers` × `coefs`; return the grid + the selected layer.
+                    coherent_frac_min=0.8, judge_concurrency=8,
+                    min_trait_gain=10.0, mono_tol=5.0) -> dict:
+    """Dose-response sweep over `layers` × `coefs`; return the grid, selection, and verdict.
 
     `pv`: fitted PersonaVector (steers with `pv.v[layer]`). `questions`: held-out
     evaluation questions. `layers` defaults to four candidates spanning mid-network
     (~0.4-0.7 depth), where every cited method's steering layer lands.
 
-    Returns {"grid": {layer: {coef: {...}}}, "selected": {layer, coef, mean_trait,
-    trait_gain} | None}. Selection = the (layer, coef>0) with the highest coherent
-    mean_trait among cells that stay coherent (frac_coherent >= `coherent_frac_min`),
-    reporting its gain over that layer's unsteered baseline.
+    Returns {"grid", "selected", "verdicts", "passed", "reason"}:
+      * `selected` — UNCHANGED, back-compatible: the (layer, coef>0) with the highest
+        coherent mean_trait among coherent cells (frac >= `coherent_frac_min`), with its
+        gain over that layer's unsteered baseline; `None` if no cell stayed coherent.
+      * `verdicts` — per-layer `_layer_verdict` (monotonicity + gain), the §4 signals.
+      * `passed` / `reason` — the STRICT gate the docs actually require: the selected layer
+        must rise monotonically with coef AND clear `min_trait_gain` above baseline. This is
+        advisory metadata — it does not change which layer `selected` reports — so callers
+        can choose to trust or reject the vector without altering existing selection.
     """
     n = pv.v.shape[0]
     if layers is None:
@@ -88,4 +126,42 @@ def validate_vector(pv, model, judge, rubric, questions, *, layers=None,
             if best is None or cell["mean_trait"] > best["mean_trait"]:
                 best = {"layer": L, "coef": coef, "mean_trait": cell["mean_trait"],
                         "trait_gain": cell["mean_trait"] - (0.0 if np.isnan(base) else base)}
-    return {"grid": grid, "selected": best}
+    verdicts = {L: _layer_verdict(grid[L], coefs, coherent_frac_min=coherent_frac_min,
+                                  mono_tol=mono_tol) for L in layers}
+    passed, reason = _gate(best, verdicts, min_trait_gain)
+    return {"grid": grid, "selected": best, "verdicts": verdicts,
+            "passed": passed, "reason": reason}
+
+
+def _gate(selected, verdicts, min_trait_gain):
+    """Strict pass/fail for the selected layer: coherent + monotonic + enough gain."""
+    if selected is None:
+        return False, "no (layer, coef) stayed coherent — gate did not pass"
+    v = verdicts.get(selected["layer"], {})
+    gain = selected["trait_gain"]
+    if np.isnan(gain) or gain < min_trait_gain:
+        return False, f"trait_gain {gain:.1f} < min_trait_gain {min_trait_gain:.0f}"
+    if not v.get("monotonic", False):
+        return False, "judged trait is not monotonic in coef (non-specific / unstable steer)"
+    return True, (f"monotonic rise, +{gain:.0f} trait at L{selected['layer']} "
+                  f"coef {selected['coef']}")
+
+
+def concept_specific(report, control_report, *, margin=10.0) -> dict:
+    """§5 specificity check: the concept must steer materially MORE than a random direction.
+
+    Compares the concept's selected trait_gain against the random control's best coherent
+    gain; specific iff the concept gate passed AND it beats the control by `margin`.
+    Returns {specific, reason, concept_gain, control_gain}.
+    """
+    cg = (report.get("selected") or {}).get("trait_gain", float("nan"))
+    ctrl_sel = (control_report or {}).get("selected") if control_report else None
+    ctl = ctrl_sel.get("trait_gain", float("nan")) if ctrl_sel else float("nan")
+    ctl = 0.0 if np.isnan(ctl) else ctl
+    if not report.get("passed", False):
+        return {"specific": False, "reason": "concept gate did not pass", "concept_gain": cg,
+                "control_gain": ctl}
+    specific = (not np.isnan(cg)) and (cg - ctl) >= margin
+    reason = (f"concept +{cg:.0f} vs random +{ctl:.0f} (Δ{cg - ctl:.0f} "
+              f"{'>=' if specific else '<'} margin {margin:.0f})")
+    return {"specific": specific, "reason": reason, "concept_gain": cg, "control_gain": ctl}

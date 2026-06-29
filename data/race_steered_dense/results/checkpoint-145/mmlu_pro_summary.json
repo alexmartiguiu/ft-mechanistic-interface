@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-145",
+  "n": 1000,
+  "accuracy": 0.547,
+  "accuracy_ci95": [
+    0.516026,
+    0.577615
+  ],
+  "by_category": {
+    "business": 0.6236,
+    "law": 0.2607
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/race_steered_dense/checkpoints/checkpoint-145"
+}

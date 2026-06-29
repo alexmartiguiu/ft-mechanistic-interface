@@ -14,11 +14,19 @@ works.
 from __future__ import annotations
 
 from ftmi.prompts.eval import HARMBENCH_CLASSIFIER, MMLU_HEADER, TRUTHFULQA_PRIMER
-from ftmi.prompts.vectors import JUDGE_TEMPLATE, META_PROMPT, PROPOSE_PROMPT
+from ftmi.prompts.vectors import (
+    CONCEPT_EXTRACT_PROMPT,
+    CONCEPT_RESEARCH_PROMPT,
+    JUDGE_TEMPLATE,
+    META_PROMPT,
+    PROPOSE_PROMPT,
+)
 
 __all__ = [
     "META_PROMPT",
     "PROPOSE_PROMPT",
+    "CONCEPT_RESEARCH_PROMPT",
+    "CONCEPT_EXTRACT_PROMPT",
     "JUDGE_TEMPLATE",
     "HARMBENCH_CLASSIFIER",
     "TRUTHFULQA_PRIMER",

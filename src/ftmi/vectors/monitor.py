@@ -62,3 +62,44 @@ def score_generations(proj_clean: np.ndarray, proj_drifted: np.ndarray) -> float
     greater = (d[:, None] > c[None, :]).sum()
     ties = (d[:, None] == c[None, :]).sum()
     return float((greater + 0.5 * ties) / (c.size * d.size))
+
+
+def aligned_correlation(series_a: dict, series_b: dict) -> dict:
+    """Correlate two step→value trajectories on their common steps (Stage 3.5 check).
+
+    The load-bearing monitor validation docs/vector-steering.md §6 calls for: does the
+    *internal* drift signal (monitor projection / probe_prob, keyed by training step) track
+    the *behavioural* drift (judged-trait per checkpoint, same keys)? Returns Pearson and
+    Spearman (Spearman = Pearson of ranks, so no scipy) over the intersecting steps, plus
+    the common-step series so a caller can plot them. NaN if fewer than 2 shared steps or
+    either side is constant. Both are computed on internal representation vs behaviour —
+    this is the test that ties them together.
+    """
+    steps = sorted(set(series_a) & set(series_b))
+    a = np.array([series_a[s] for s in steps], dtype=float)
+    b = np.array([series_b[s] for s in steps], dtype=float)
+    out = {"n": len(steps), "steps": steps, "a": a.tolist(), "b": b.tolist(),
+           "pearson": float("nan"), "spearman": float("nan")}
+    if len(steps) < 2:
+        return out
+    out["pearson"] = _pearson(a, b)
+    out["spearman"] = _pearson(_rank(a), _rank(b))
+    return out
+
+
+def _pearson(a: np.ndarray, b: np.ndarray) -> float:
+    a, b = a - a.mean(), b - b.mean()
+    denom = float(np.sqrt((a * a).sum() * (b * b).sum()))
+    return float((a * b).sum() / denom) if denom > 0 else float("nan")
+
+
+def _rank(x: np.ndarray) -> np.ndarray:
+    """Average ranks (ties shared), so Spearman handles repeated values correctly."""
+    order = np.argsort(x, kind="mergesort")
+    ranks = np.empty(len(x), dtype=float)
+    ranks[order] = np.arange(len(x), dtype=float)
+    # average tied ranks
+    _, inv, counts = np.unique(x, return_inverse=True, return_counts=True)
+    sums = np.zeros(len(counts))
+    np.add.at(sums, inv, ranks)
+    return (sums / counts)[inv]

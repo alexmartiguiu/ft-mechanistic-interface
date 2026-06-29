@@ -1,0 +1,12 @@
+{
+  "app": "medical_apertus_steerA_c240",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.343,
+      "truthfulqa_mc1_acc": 0.310894,
+      "harmbench_refusal_v2": 0.85,
+      "strongreject_refusal_v2": 0.9857
+    }
+  ]
+}

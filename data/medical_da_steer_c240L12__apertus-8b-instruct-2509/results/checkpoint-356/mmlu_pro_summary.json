@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-356",
+  "n": 1000,
+  "accuracy": 0.241,
+  "accuracy_ci95": [
+    0.215515,
+    0.268467
+  ],
+  "by_category": {
+    "business": 0.2471,
+    "law": 0.218
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_da_steer_c240L12__apertus-8b-instruct-2509/checkpoints/checkpoint-356"
+}

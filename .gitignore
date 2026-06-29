@@ -27,3 +27,9 @@ __pycache__/
 !/data/**/checkpoints/train_summary.json
 !/data/**/posthoc_drift.json
 !/data/report.html
+
+# raw stdout / progress-bar logs + transient overnight run-state (keep SUMMARY/good_examples/supervisor.log)
+/logs/
+/overnight/logs/
+/overnight/state/
+/overnight/*.nohup.log

@@ -46,7 +46,12 @@ def proj_series(app, key):
     p = ROOT / f"data/{app}/checkpoints/train_summary.json"
     if not p.exists(): return [], []
     t = sorted(json.loads(p.read_text())["trajectory"].get(key, []), key=lambda e: e["step"])
-    return [e["step"] for e in t], [e["projection"] for e in t]
+    # Plot the bias-probe probability P(biased): a clean 0-1 monotonic readout that
+    # separates biased (rises) from steered (held/fixed). The raw <h,v_hat> at the
+    # ftmi monitor layer (gender L16, race L14) is confounded for gender -- biased and
+    # steered both drift negative -- so it is misleading here; the canonical-layer
+    # raw-projection version is the forthcoming recompute (gender L14, race L16).
+    return [e["step"] for e in t], [e["probe_prob"] for e in t]
 
 def loss_series(app):
     p = ROOT / f"data/{app}/loss_history.json"
@@ -85,14 +90,17 @@ for ci, (axis, cfg) in enumerate(AXES.items()):
         if ri == 0:
             axE.set_title(f"{axis.capitalize()} — Training & evals", fontsize=10)
             if ci == 0: axE.legend(loc="center right", fontsize=6.5, framealpha=0.9)
-        # ----- projection -----
-        axP.axhline(base["projection"], ls=":", color="#888", lw=1.2)
+        # ----- bias-probe probability (clean 0-1 readout; up = more biased) -----
+        axP.axhline(base["probe_prob"], ls=":", color="#888", lw=1.2)
+        axP.set_ylim(0, 1)
+        if ci == 0 and ri == 1:
+            axP.set_ylabel("P(biased)", fontsize=9)
         if app is None:
-            axP.plot([0, XMAX], [base["projection"]] * 2, "-", color="#555", lw=1.7)
+            axP.plot([0, XMAX], [base["probe_prob"]] * 2, "-", color="#555", lw=1.7)
         else:
             sp, jp = proj_series(app, cfg["key"]); c = "#d62728" if which == "bias" else "#1a9850"
-            axP.plot([0] + sp, [base["projection"]] + jp, "-o", color=c, ms=2.3, lw=1.6)
-        if ri == 0: axP.set_title(f"{axis.capitalize()} — Concept projection ⟨h,v̂⟩ (L{cfg['L']})", fontsize=10)
+            axP.plot([0] + sp, [base["probe_prob"]] + jp, "-o", color=c, ms=2.3, lw=1.6)
+        if ri == 0: axP.set_title(f"{axis.capitalize()} — Bias-probe P(biased)", fontsize=10)
 for ci in range(4):
     axs[2][ci].set_xlabel("training step (evals @5 over 0-50, @25 to 200; bs=8)", fontsize=8)
 fig.suptitle("Fine-tuning drift explorer — base / biased / preventively-steered (+32), gender & race", y=0.997, fontsize=13)

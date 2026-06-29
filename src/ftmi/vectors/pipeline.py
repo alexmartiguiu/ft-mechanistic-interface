@@ -10,7 +10,7 @@ import dataclasses
 from ftmi.vectors.extract import fit_from_pooled, gather_pooled, provisional_layer
 from ftmi.vectors.generate import generate_artifacts
 from ftmi.vectors.probe import fit_probe_from_pooled
-from ftmi.vectors.validate import random_like, validate_vector
+from ftmi.vectors.validate import concept_specific, random_like, validate_vector
 
 
 def mint_vector(concept, model, generator, *, rollouts=5, do_validate=True, do_probe=True,
@@ -19,9 +19,11 @@ def mint_vector(concept, model, generator, *, rollouts=5, do_validate=True, do_p
     """
     * End-to-end orchestrator that produces ("mints") one concept's persona/steering vector *
 
-    Returns {artifacts, vector, probe, report, control}. On a passing dose-response
-    gate the returned vector's `.layer` is set to the validated layer; otherwise it keeps
-    the provisional mid-network default. `control` is the same gate on a random direction.
+    Returns {artifacts, vector, probe, report, control, specificity}. On a passing
+    dose-response gate the returned vector's `.layer` is set to the validated layer;
+    otherwise it keeps the provisional mid-network default (and `report["passed"]` is
+    False, so the caller can refuse to trust it). `control` is the same gate on a random
+    direction; `specificity` is the §5 concept-vs-random comparison (concept_specific()).
 
     Gathers the pooled contrastive activations ONCE and makes both reads of them: the
     diff-of-means steering vector (the P2 write) and the logistic detection probe (the P1
@@ -44,4 +46,5 @@ def mint_vector(concept, model, generator, *, rollouts=5, do_validate=True, do_p
     if control_seed is not None:
         out["control"] = validate_vector(random_like(pv, control_seed), model, generator,
                                          artifacts.judge_prompt, qs, layers=layers, coefs=coefs)
+        out["specificity"] = concept_specific(report, out["control"])
     return out

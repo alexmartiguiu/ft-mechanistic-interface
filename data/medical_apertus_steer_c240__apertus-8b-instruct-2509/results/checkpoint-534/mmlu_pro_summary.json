@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-534",
+  "n": 1000,
+  "accuracy": 0.106,
+  "accuracy_ci95": [
+    0.088405,
+    0.126611
+  ],
+  "by_category": {
+    "business": 0.1039,
+    "law": 0.1137
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_apertus_steer_c240__apertus-8b-instruct-2509/checkpoints/checkpoint-534"
+}

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-190",
+  "n": 1000,
+  "accuracy": 0.559,
+  "accuracy_ci95": [
+    0.528059,
+    0.58949
+  ],
+  "by_category": {
+    "business": 0.6236,
+    "law": 0.3175
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_steered_dense/checkpoints/checkpoint-190"
+}

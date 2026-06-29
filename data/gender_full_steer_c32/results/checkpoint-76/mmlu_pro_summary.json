@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-76",
+  "n": 1000,
+  "accuracy": 0.537,
+  "accuracy_ci95": [
+    0.506012,
+    0.567705
+  ],
+  "by_category": {
+    "business": 0.6122,
+    "law": 0.2559
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_full_steer_c32/checkpoints/checkpoint-76"
+}

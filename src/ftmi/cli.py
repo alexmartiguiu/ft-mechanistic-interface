@@ -1,6 +1,6 @@
 """Thin CLI. Entry points only — no logic lives here.
 
-    ftmi concepts --data <jsonl> --domain <name>     propose concepts from a dataset
+    ftmi concepts --domain <name> [--data <jsonl>]    propose web-grounded safety concepts
     ftmi vectors  --concepts <yaml> --model <id>      mint + validate concept vectors
     ftmi train    --app <application.yaml>             fine-tune with monitoring/audit
     ftmi eval     --app <application.yaml>             per-checkpoint eval battery
@@ -27,10 +27,44 @@ def _load_env(path=".env") -> None:
             os.environ.setdefault(k.strip(), v.strip())
 
 
+def _dataset_sample(path: str | None, n_rows: int = 12, max_chars: int = 4000) -> str | None:
+    """Render the first `n_rows` chat examples as a compact text sample for the proposer."""
+    if not path or not Path(path).exists():
+        return None
+    from ftmi.data.loaders import load_chat_dataset
+
+    chunks: list[str] = []
+    for row in load_chat_dataset(path)[:n_rows]:
+        turns = [f"{m.get('role', '?')}: {str(m.get('content', '')).strip()}"
+                 for m in row.get("messages", [])]
+        chunks.append("\n".join(turns))
+    sample = "\n\n---\n\n".join(chunks)
+    return sample[:max_chars]
+
+
 def _cmd_concepts(args) -> None:
-    # read a sample of args.data -> propose_concepts -> concepts_to_yaml -> stdout/file
-    print(f"[concepts] propose {args.n} axes for '{args.domain}' from {args.data}")
-    raise SystemExit("not yet implemented — see ftmi.vectors.propose_concepts")
+    from ftmi.vectors.propose import ConceptProposer
+
+    _load_env()
+    sample = _dataset_sample(args.data)
+    src = f"domain '{args.domain}'" + (f" + sample of {args.data}" if sample else " (no dataset sample)")
+    print(f"[concepts] proposing {args.n} grounded axes for {src} …", flush=True)
+
+    proposer = ConceptProposer(model=args.model)
+    result = proposer.propose(args.domain, sample=sample, n=args.n)
+    tag = "web-grounded" if result.grounded else "UNGROUNDED (search unavailable)"
+    print(f"[concepts] {tag}; {len(result.concepts)} concepts, {len(result.sources)} sources")
+    for c in result.concepts:
+        print(f"  - [{c.severity}] {c.name}")
+
+    text = result.to_yaml()
+    out = args.out or f"configs/concepts/{args.domain}.yaml"
+    if out == "-":
+        print("\n" + text)
+    else:
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(text)
+        print(f"[concepts] wrote {out}  (review/trim, then: ftmi vectors --concepts {out} --model <base>)")
 
 
 def _cmd_vectors(args) -> None:
@@ -54,9 +88,16 @@ def _cmd_vectors(args) -> None:
         pv.save(str(out_dir / f"{c.name}.npz"))
         if probe is not None:
             probe.save(str(out_dir / f"{c.name}.probe.npz"))
+        # Persist the held-out questions + judge rubric so the behavioural-correlation
+        # check (scripts/monitor_vs_behavior.py) can score checkpoints with the SAME rubric.
+        res["artifacts"].save(str(out_dir / f"{c.name}.artifacts.json"))
+        spec = res.get("specificity")
         summary = {"name": c.name, "layer": int(pv.layer), "n_pos": pv.n_pos, "n_neg": pv.n_neg,
                    "selected": report["selected"] if report else None,
+                   "passed": report["passed"] if report else None,
+                   "gate_reason": report["reason"] if report else None,
                    "control_selected": res["control"]["selected"] if res["control"] else None,
+                   "specificity": spec,
                    "probe": {"layer": probe.layer, "auroc": probe.auroc} if probe else None}
         (out_dir / f"{c.name}.json").write_text(json.dumps(summary, indent=2))
         sel = summary["selected"]
@@ -64,6 +105,12 @@ def _cmd_vectors(args) -> None:
               f"validated layer={sel['layer'] if sel else pv.layer} "
               f"(trait {sel['mean_trait']:.0f}, +{sel['trait_gain']:.0f} vs base)" if sel
               else f"    kept pos={pv.n_pos} neg={pv.n_neg}; no validated layer (gate did not pass)")
+        if report:
+            verdict = "PASS" if report["passed"] else "FAIL"
+            line = f"    gate: {verdict} — {report['reason']}"
+            if spec is not None:
+                line += f"; specificity: {'OK' if spec['specific'] else 'WEAK'} ({spec['reason']})"
+            print(line)
         if probe is not None:
             print(f"    probe: layer={probe.layer} held-out AUROC={probe.auroc:.3f}")
     print(f"[vectors] saved -> {out_dir}")
@@ -111,15 +158,46 @@ def _cmd_run(args) -> None:
     run_e2e(args)
 
 
+def _cmd_steer_exp(args) -> None:
+    """Preventative-steering experiment: dose-response | run (train+eval+verdict) | verdict-only."""
+    from ftmi.experiments import steer
+
+    _load_env()
+    coefs = [float(c) for c in args.coefs.split(",")] if args.coefs else None
+    layers = [int(x) for x in args.layers.split(",")] if args.layers else None
+
+    if args.dose_response:
+        steer.run_dose_response(
+            args.model, args.vectors, args.concept, layers=layers, coefs=coefs,
+            n_questions=args.n_questions, judge_backend=args.gen_backend,
+            out=args.out or f"data/_dose/{args.concept}_{steer._slug(args.model)}.json")
+        return
+    if args.verdict_only:
+        v = steer.success_verdict(args.name, args.baseline,
+                                  concepts=(args.concept.split(",") if args.concept else None))
+        print(json.dumps(v, indent=2))
+        return
+
+    if not (args.base_app and args.name and args.baseline and args.coef is not None):
+        raise SystemExit("run mode needs --base-app --name --baseline --coef")
+    steer.run_experiment(
+        args.base_app, name=args.name, coef=float(args.coef), model=args.model,
+        lora_config=args.lora_config, vectors=args.vectors, baseline=args.baseline,
+        layers=layers, layer=args.layer, sign=args.sign, method=args.method,
+        phase=args.phase, train_gpu=args.train_gpu, eval_gpu=args.eval_gpu,
+        dense_lora=args.dense_lora, max_samples=args.max_samples, dry_run=args.dry_run)
+
+
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="ftmi")
     sub = p.add_subparsers(required=True)
 
-    pc = sub.add_parser("concepts", help="propose concepts from a dataset")
-    pc.add_argument("--data", required=True)
-    pc.add_argument("--domain", required=True)
-    pc.add_argument("--n", type=int, default=8)
-    pc.add_argument("--backend", default="anthropic", choices=["anthropic", "gemini"])
+    pc = sub.add_parser("concepts", help="propose web-grounded safety concepts for a domain")
+    pc.add_argument("--domain", required=True, help="application description, e.g. 'crisis-line therapist'")
+    pc.add_argument("--data", default=None, help="optional chat-JSONL to sample for in-context grounding")
+    pc.add_argument("--n", type=int, default=8, help="number of axes to propose")
+    pc.add_argument("--model", default=None, help="Gemini model id (default FTMI_GEN_MODEL or gemini-3.5-flash)")
+    pc.add_argument("--out", default=None, help="output yaml path ('-' for stdout; default configs/concepts/<domain>.yaml)")
     pc.set_defaults(func=_cmd_concepts)
 
     pv = sub.add_parser("vectors", help="mint + validate concept vectors")
@@ -174,6 +252,33 @@ def main(argv=None) -> None:
     pr.add_argument("--skip-eval", action="store_true", help="train only, no eval")
     pr.add_argument("--skip-report", action="store_true", help="don't rebuild the HTML report")
     pr.set_defaults(func=_cmd_run)
+
+    ps = sub.add_parser("steer-exp", help="preventative-steering experiment (dose-response | run | verdict)")
+    ps.add_argument("--base-app", default=None, help="biased baseline app yaml to derive the steered run from")
+    ps.add_argument("--name", default=None, help="steered run name (output namespace)")
+    ps.add_argument("--baseline", default=None, help="biased baseline run name (data/<name>) for the verdict")
+    ps.add_argument("--coef", default=None, help="steering coefficient (magnitude; sign from --sign)")
+    ps.add_argument("--coefs", default=None, help="comma-separated coef grid for --dose-response")
+    ps.add_argument("--layer", type=int, default=None, help="single steering layer override")
+    ps.add_argument("--layers", default=None, help="comma-separated multi-layer steering set")
+    ps.add_argument("--sign", default="preventative", choices=["preventative", "suppress"])
+    ps.add_argument("--method", default="uniform", choices=["uniform", "combined"])
+    ps.add_argument("--model", default=None, help="base model id (e.g. swiss-ai/Apertus-8B-Instruct-2509)")
+    ps.add_argument("--lora-config", default=None, dest="lora_config")
+    ps.add_argument("--vectors", default=None, help="vectors dir (data/<domain>/vectors__<slug>)")
+    ps.add_argument("--concept", default=None, help="concept name(s) — dose-response target / verdict filter")
+    ps.add_argument("--phase", default="B", choices=["A", "B"], help="A=screen (base/final), B=full per-ckpt")
+    ps.add_argument("--max-samples", type=int, default=None, dest="max_samples", help="short partial run for cheap coef screening")
+    ps.add_argument("--dense-lora", default=None, dest="dense_lora", help="override lora recipe for denser cadence")
+    ps.add_argument("--train-gpu", default=None, dest="train_gpu")
+    ps.add_argument("--eval-gpu", default=None, dest="eval_gpu")
+    ps.add_argument("--gen-backend", default="gemini", dest="gen_backend", choices=["anthropic", "gemini"])
+    ps.add_argument("--n-questions", type=int, default=20, dest="n_questions")
+    ps.add_argument("--out", default=None, help="dose-response output json path")
+    ps.add_argument("--dose-response", action="store_true", dest="dose_response", help="coef search on the base model")
+    ps.add_argument("--verdict-only", action="store_true", dest="verdict_only", help="score steered vs baseline, no GPU")
+    ps.add_argument("--dry-run", action="store_true", dest="dry_run", help="generate config + print the run cmd, don't launch")
+    ps.set_defaults(func=_cmd_steer_exp)
 
     args = p.parse_args(argv)
     args.func(args)

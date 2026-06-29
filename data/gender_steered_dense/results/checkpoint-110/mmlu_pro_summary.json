@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-110",
+  "n": 1000,
+  "accuracy": 0.561,
+  "accuracy_ci95": [
+    0.530066,
+    0.591467
+  ],
+  "by_category": {
+    "business": 0.6198,
+    "law": 0.3412
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_steered_dense/checkpoints/checkpoint-110"
+}

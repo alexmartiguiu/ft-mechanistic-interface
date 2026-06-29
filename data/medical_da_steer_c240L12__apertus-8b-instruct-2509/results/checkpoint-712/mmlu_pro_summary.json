@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-712",
+  "n": 1000,
+  "accuracy": 0.24,
+  "accuracy_ci95": [
+    0.214556,
+    0.267434
+  ],
+  "by_category": {
+    "business": 0.2497,
+    "law": 0.2038
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_da_steer_c240L12__apertus-8b-instruct-2509/checkpoints/checkpoint-712"
+}

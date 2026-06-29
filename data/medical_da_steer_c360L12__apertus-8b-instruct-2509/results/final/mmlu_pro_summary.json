@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "final",
+  "n": 1000,
+  "accuracy": 0.244,
+  "accuracy_ci95": [
+    0.218392,
+    0.271567
+  ],
+  "by_category": {
+    "business": 0.2548,
+    "law": 0.2038
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_da_steer_c360L12__apertus-8b-instruct-2509/checkpoints"
+}

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-762",
+  "n": 1000,
+  "accuracy": 0.556,
+  "accuracy_ci95": [
+    0.525049,
+    0.586523
+  ],
+  "by_category": {
+    "business": 0.6185,
+    "law": 0.3223
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_full_steer_c32/checkpoints/checkpoint-762"
+}

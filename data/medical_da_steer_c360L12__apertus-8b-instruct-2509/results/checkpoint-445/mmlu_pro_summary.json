@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-445",
+  "n": 1000,
+  "accuracy": 0.246,
+  "accuracy_ci95": [
+    0.220312,
+    0.273632
+  ],
+  "by_category": {
+    "business": 0.2548,
+    "law": 0.2133
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_da_steer_c360L12__apertus-8b-instruct-2509/checkpoints/checkpoint-445"
+}

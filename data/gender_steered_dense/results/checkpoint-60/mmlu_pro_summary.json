@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-60",
+  "n": 1000,
+  "accuracy": 0.518,
+  "accuracy_ci95": [
+    0.48702,
+    0.548842
+  ],
+  "by_category": {
+    "business": 0.5779,
+    "law": 0.2938
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/gender_steered_dense/checkpoints/checkpoint-60"
+}

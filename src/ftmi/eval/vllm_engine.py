@@ -16,6 +16,12 @@ from pathlib import Path
 
 
 def _has_usable_nvcc() -> bool:
+    # JIT (FlashInfer sampler / CUDA-graph capture) needs BOTH nvcc AND ninja to build. If
+    # ninja is missing no JIT can run at all, so nvcc alone is not "usable" — force the eager
+    # fallback (which disables the FlashInfer sampler). This is the common state on this box:
+    # the cu13 wheel ships an nvcc but ninja is absent, so the sampler JIT dies on `ninja`.
+    if not shutil.which("ninja"):
+        return False
     if shutil.which("nvcc"):
         return True
     cuda_home = os.getenv("CUDA_HOME") or os.getenv("CUDA_PATH")
