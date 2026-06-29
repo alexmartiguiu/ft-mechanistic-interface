@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     sql_echo: bool = False
     auto_create_tables: bool = True
     seed_catalog_on_startup: bool = True
+    # Ingest data/ → DB on startup. Off by default: a full ingest is slow and the
+    # CLI (`python -m ui_backend.db.ingest`) is the normal path. Flip on for a
+    # self-populating deployment.
+    ingest_on_startup: bool = False
 
     api_title: str = "FTMI UI backend"
     api_version: str = "0.1.0"

@@ -30,6 +30,13 @@ async def lifespan(_app: FastAPI):
         with SessionLocal() as session:
             counts = seed_catalog(session)
         logger.info("catalog seeded: %s", counts)
+    if settings.ingest_on_startup:
+        from ui_backend.db.ingest import ingest
+
+        with SessionLocal() as session:
+            report = ingest(session, settings)
+        logger.info("data ingested: %s runs, counts=%s",
+                    report.runs_ingested, report.counts)
     yield
 
 
