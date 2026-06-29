@@ -32,10 +32,37 @@ class RunRepository(BaseRepository[Run]):
         )
         return self.session.execute(stmt).scalars().first()
 
+    def find_by_title(
+        self, *, project_id: int, title: str, base_model_id: str | None = None
+    ) -> Run | None:
+        """Resolve a run by its (project, title[, base_model]) — used to map a biased
+        run to its curated steered counterpart, which lives in a separate run row."""
+        stmt = select(Run).where(Run.project_id == project_id, Run.title == title)
+        if base_model_id is not None:
+            stmt = stmt.where(Run.base_model_id == base_model_id)
+        return self.session.execute(stmt).scalars().first()
+
 
 class ArtifactRepository(BaseRepository[Artifact]):
     model = Artifact
 
-    def find(self, *, run_id: int, kind: ArtifactKind) -> Artifact | None:
-        stmt = select(Artifact).where(Artifact.run_id == run_id, Artifact.kind == kind)
+    def find(
+        self,
+        *,
+        kind: ArtifactKind,
+        run_id: int | None = None,
+        dataset_id: int | None = None,
+        checkpoint_id: int | None = None,
+        concept_vector_id: int | None = None,
+    ) -> Artifact | None:
+        """First artifact of `kind` matching whichever owner ids are given."""
+        stmt = select(Artifact).where(Artifact.kind == kind)
+        if run_id is not None:
+            stmt = stmt.where(Artifact.run_id == run_id)
+        if dataset_id is not None:
+            stmt = stmt.where(Artifact.dataset_id == dataset_id)
+        if checkpoint_id is not None:
+            stmt = stmt.where(Artifact.checkpoint_id == checkpoint_id)
+        if concept_vector_id is not None:
+            stmt = stmt.where(Artifact.concept_vector_id == concept_vector_id)
         return self.session.execute(stmt).scalars().first()

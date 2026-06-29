@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ui_backend.services.catalog import CatalogService
 from ui_backend.services.exceptions import NotFoundError
+from ui_backend.services.pipeline import PipelineService
 from ui_backend.services.project import ProjectService
 from ui_backend.services.run import RunService
 from ui_backend.services.series import SeriesService
@@ -11,6 +12,7 @@ from ui_backend.services.series import SeriesService
 __all__ = [
     "CatalogService",
     "NotFoundError",
+    "PipelineService",
     "ProjectService",
     "RunService",
     "SeriesService",
