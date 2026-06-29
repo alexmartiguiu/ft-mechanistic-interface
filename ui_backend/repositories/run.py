@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from ui_backend.models.enums import ArtifactKind
+from ui_backend.models.project import Project
 from ui_backend.models.run import Artifact, Checkpoint, Run
 from ui_backend.repositories.base import BaseRepository
 
@@ -31,6 +32,21 @@ class RunRepository(BaseRepository[Run]):
             )
         )
         return self.session.execute(stmt).scalars().first()
+
+    def find_biased(self, *, domain: str, base_model_id: str) -> Run | None:
+        """The base (non-steered) run for a (domain, model). Title is `<domain>` for most
+        projects but `<domain>_biased` for gender/race; fall back to the project's canonical
+        run. Used to bind a dropped dataset to its recorded run."""
+        base = (
+            select(Run)
+            .join(Project, Run.project_id == Project.id)
+            .where(Project.domain == domain, Run.base_model_id == base_model_id)
+        )
+        for title in (domain, f"{domain}_biased"):
+            run = self.session.execute(base.where(Run.title == title)).scalars().first()
+            if run is not None:
+                return run
+        return self.session.execute(base.where(Run.canonical.is_(True))).scalars().first()
 
     def find_by_title(
         self, *, project_id: int, title: str, base_model_id: str | None = None

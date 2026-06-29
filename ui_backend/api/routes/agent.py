@@ -49,10 +49,10 @@ async def stream(sid: str):
         raise HTTPException(404, "no such session")
 
     async def gen():
+        # default "message" frames (kind is in the JSON) → one EventSource.onmessage handler
         while not sess.closed:
             ev = await sess.events.get()
-            kind = getattr(ev, "kind", "message")
-            yield f"event: {kind}\ndata: {ev.model_dump_json()}\n\n"
+            yield f"data: {ev.model_dump_json()}\n\n"
 
     return StreamingResponse(
         gen(),

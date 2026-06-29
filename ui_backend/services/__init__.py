@@ -8,6 +8,7 @@ from ui_backend.services.pipeline import PipelineService
 from ui_backend.services.project import ProjectService
 from ui_backend.services.run import RunService
 from ui_backend.services.series import SeriesService
+from ui_backend.services.view import RunViewService
 
 __all__ = [
     "CatalogService",
@@ -15,5 +16,6 @@ __all__ = [
     "PipelineService",
     "ProjectService",
     "RunService",
+    "RunViewService",
     "SeriesService",
 ]

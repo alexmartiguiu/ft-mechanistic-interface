@@ -22,3 +22,10 @@ class RunService:
         if run is None:
             raise NotFoundError("run", run_id)
         return schemas.RunDetail.model_validate(run)
+
+    def resolve_biased(self, domain: str, model: str) -> int:
+        """Bind a (domain, base model) to its recorded base run id."""
+        run = self.runs.find_biased(domain=domain, base_model_id=model)
+        if run is None:
+            raise NotFoundError("run for", f"{domain}/{model}")
+        return run.id
