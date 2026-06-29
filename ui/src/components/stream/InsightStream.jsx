@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import StreamItem from "./StreamItem.jsx";
 
 /* The right rail. A dumb subscriber: it renders whatever typed items it is handed,
@@ -8,6 +8,7 @@ export default function InsightStream({ items, live, onResizeStart, onResizeKey 
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const stick = useRef(true);
+  const [showThinking, setShowThinking] = useState(true);
 
   const toBottom = () => {
     const el = scrollRef.current;
@@ -46,11 +47,17 @@ export default function InsightStream({ items, live, onResizeStart, onResizeKey 
           onPointerDown={onResizeStart} onKeyDown={onResizeKey} />
       )}
       <div className="rail-head">
-        <span className="t">Hedda Agent</span>
-        {live && <span className="live"><span className="pip" /> live</span>}
+        <span className="t">Hedda</span>
+        <div className="rail-head-right">
+          {live && <span className="live"><span className="pip" /> live</span>}
+          <button className="rail-toggle" onClick={() => setShowThinking((v) => !v)}
+            aria-pressed={!showThinking} title="Collapse Hedda's thinking">
+            {showThinking ? "Hide thinking" : "Show thinking"}
+          </button>
+        </div>
       </div>
       <div className="stream" ref={scrollRef} onScroll={onScroll}>
-        <div className="stream-content" ref={contentRef}>
+        <div className={`stream-content ${showThinking ? "" : "hide-think"}`} ref={contentRef}>
           {items.map((it) => <StreamItem key={it.id} item={it} />)}
           {items.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Insights and proposed actions will stream here as the run progresses.</div>}
         </div>

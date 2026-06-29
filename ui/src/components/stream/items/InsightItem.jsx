@@ -1,5 +1,5 @@
 function Who({ who }) {
-  return <div className="who">{who === "system" ? "system" : "hedda"}</div>;
+  return <div className="who">{who === "system" ? "system" : "Hedda"}</div>;
 }
 
 export default function InsightItem({ item }) {

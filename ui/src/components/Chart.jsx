@@ -55,6 +55,26 @@ export default function Chart({
     return { dom, pts, d: pts.map(([px, py], i) => `${i ? "L" : "M"}${xOf(px).toFixed(1)} ${yOf(py, dom).toFixed(1)}`).join(" ") };
   }
 
+  // a ±sd envelope for an aggregate series: band = [[x, lo, hi], ...], left axis.
+  function bandPathFor(s) {
+    const dom = yLeft;
+    const pts = [];
+    for (let i = 0; i < s.band.length; i++) {
+      const [px, lo, hi] = s.band[i];
+      if (px <= revealX + 1e-6) { pts.push([px, lo, hi]); continue; }
+      const prev = s.band[i - 1];
+      if (prev && prev[0] <= revealX) {
+        const t = (revealX - prev[0]) / (px - prev[0]);
+        pts.push([revealX, prev[1] + t * (lo - prev[1]), prev[2] + t * (hi - prev[2])]);
+      }
+      break;
+    }
+    if (pts.length < 2) return "";
+    const top = pts.map(([px, , hi], i) => `${i ? "L" : "M"}${xOf(px).toFixed(1)} ${yOf(hi, dom).toFixed(1)}`).join(" ");
+    const bot = [...pts].reverse().map(([px, lo]) => `L${xOf(px).toFixed(1)} ${yOf(lo, dom).toFixed(1)}`).join(" ");
+    return `${top} ${bot} Z`;
+  }
+
   const yTicks = useMemo(() => {
     const [a, b] = yLeft; const n = 4;
     return Array.from({ length: n + 1 }, (_, i) => a + (i / n) * (b - a));
@@ -108,6 +128,12 @@ export default function Chart({
                 stroke="var(--plot-seal)" strokeWidth="1.2" strokeDasharray="4 3" />
             </>
           )}
+
+          {/* ±sd envelopes (drawn behind the lines) */}
+          {vis.filter((s) => s.band).map((s) => (
+            <path key={"band-" + s.key} d={bandPathFor(s)} style={{ fill: s.color }}
+              fillOpacity="0.13" stroke="none" />
+          ))}
 
           {/* series */}
           {vis.map((s) => {

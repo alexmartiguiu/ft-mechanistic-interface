@@ -3,6 +3,7 @@ import QuestionItem from "./items/QuestionItem.jsx";
 import ActionItem from "./items/ActionItem.jsx";
 import MetricItem from "./items/MetricItem.jsx";
 import LogItem from "./items/LogItem.jsx";
+import StepsItem from "./items/StepsItem.jsx";
 
 // The registry: one renderer per item `type`. A producer emits {type, ...schema};
 // the panel dispatches here. Adding a new item type = add a renderer + a row here.
@@ -12,6 +13,7 @@ const REGISTRY = {
   action: ActionItem,
   metric: MetricItem,
   log: LogItem,
+  steps: StepsItem,
 };
 
 export default function StreamItem({ item }) {

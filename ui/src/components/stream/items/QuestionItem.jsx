@@ -22,7 +22,7 @@ export default function QuestionItem({ item }) {
 
   return (
     <div className="si">
-      <div className="who">hedda · asks</div>
+      <div className="who">Hedda · asks</div>
       <div className="si-question">
         <div className="q">{item.question}</div>
         <div className="opts">
@@ -38,7 +38,7 @@ export default function QuestionItem({ item }) {
         </div>
         {!done
           ? <button className="btn primary sm" style={{ marginTop: 10 }} onClick={submit}>Confirm</button>
-          : <div className="submitted">✓ {[...sel].length} selected — {item.confirmLabel || "confirmed"}</div>}
+          : <div className="submitted">✓ {[...sel].length} selected · {item.confirmLabel || "confirmed"}</div>}
       </div>
     </div>
   );

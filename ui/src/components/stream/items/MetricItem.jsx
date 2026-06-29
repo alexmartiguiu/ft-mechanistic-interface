@@ -2,7 +2,7 @@
 export default function MetricItem({ item }) {
   return (
     <div className="si">
-      <div className="who">hedda</div>
+      <div className="who">Hedda</div>
       <div className={`si-metric ${item.tone === "bad" ? "bad" : ""}`}>
         <span className="mv">{item.value}</span>
         <span className="ml">{item.label}</span>

@@ -3,6 +3,11 @@
    turns green across the segments already cleared. Done = green check, current =
    solid ink, upcoming = hollow. State lives in colour + weight, not in boxes.
    Visited steps stay clickable so you can walk back. */
+const HUE = {
+  setup: "var(--step-setup)", audit: "var(--step-audit)",
+  insights: "var(--step-insights)", checkout: "var(--step-checkout)",
+};
+
 export default function PipelineNav({ steps, current, unlocked, onJump }) {
   const curIdx = steps.findIndex((s) => s.id === current);
   return (
@@ -16,6 +21,7 @@ export default function PipelineNav({ steps, current, unlocked, onJump }) {
         return (
           <div key={s.id} role="listitem"
             className={`pstep ${state}${canNav ? " nav" : ""}`}
+            style={{ "--node": HUE[s.id] || "var(--terracotta)" }}
             onClick={jump}
             tabIndex={canNav ? 0 : -1}
             onKeyDown={(e) => canNav && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), jump())}

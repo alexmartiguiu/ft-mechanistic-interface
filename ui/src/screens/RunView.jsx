@@ -86,14 +86,14 @@ export default function RunView({ runId, onBack }) {
     if (!fireOnce("welcome")) return;
     push({ type: "insight", lead: "New experiment.",
       bullets: ["Drop a dataset, browse Hugging Face, or pick one with results.",
-        "Once it's loaded I'll propose the safety axes to track."] });
+        "Once it loads I propose the risky concepts to track."] });
   }
   function introExisting() {
     if (!fireOnce("intro")) return;
     const r = R();
-    push({ type: "insight", think: true, text: `Reading ${r.dataset.domain}/sft.jsonl and your use-case to size up the safety surface…` });
+    push({ type: "insight", think: true, text: `Reading ${r.dataset.domain}/sft.jsonl and your use-case to size up the risk surface.` });
     after(750, () => push({ type: "insight", lead: `Loaded ${r.dataset.domain}/sft.jsonl to fine-tune ${r.model.label}.`,
-      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training dataset audit before we burn a run."] }));
+      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training dataset audit before launching the run."] }));
     after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
       label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
@@ -107,10 +107,10 @@ export default function RunView({ runId, onBack }) {
     setModel(getRun(id).model.id);
     if (!fireOnce("bound:" + id)) return;
     const r = getRun(id);
-    after(120, () => push({ type: "insight", think: true, text: "Reading the dataset and your use-case…" }));
+    after(120, () => push({ type: "insight", think: true, text: "Reading the dataset and your use-case." }));
     after(750, () => push({ type: "insight",
-      lead: `Loaded ${r.dataset.domain}/sft.jsonl — ${r.audit.total.toLocaleString()} examples.`,
-      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training audit before we burn a run."] }));
+      lead: `Loaded ${r.dataset.domain}/sft.jsonl. ${r.audit.total.toLocaleString()} examples.`,
+      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training audit before launching the run."] }));
     after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
       label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
@@ -130,25 +130,34 @@ export default function RunView({ runId, onBack }) {
     const r = R();
     if (!r) return;
     if (s === "audit" && fireOnce("audit")) {
-      after(250, () => push({ type: "insight", think: true, text: "Reading the dataset and the use-case to propose the safety-critical axes…" }));
-      after(950, () => push({ type: "insight",
-        lead: `Proposed ${r.concepts.length} web-grounded safety ${r.concepts.length === 1 ? "axis" : "axes"} for ${r.dataset.domain}:`,
-        bullets: r.concepts.map((c) => `${titleCase(c.name)} — ${c.description}`) }));
-      after(1500, () => push({ type: "question", question: "Which safety axes should we track?", multiSelect: true,
-        confirmLabel: "tracking these axes",
+      after(200, () => push({ type: "steps",
+        lead: `Proposing risky concepts for ${r.dataset.domain}.`,
+        steps: [
+          `Reading ${r.dataset.domain}/sft.jsonl against your use-case`,
+          "Drafting contrastive prompt pairs per trait",
+          "Minting persona directions v̂ by difference-of-means",
+          "Scoring every sample by its projection ⟨h, v̂⟩",
+        ] }));
+      after(2500, () => push({ type: "insight", think: true,
+        text: "Method: each concept is a persona direction in activation space (Chen et al. 2025). Narrow fine-tuning can shift a model broadly, not just on-task (Betley et al. 2025), so I track the traits most at risk here." }));
+      after(2900, () => push({ type: "insight",
+        lead: `Proposed ${r.concepts.length} risky ${r.concepts.length === 1 ? "concept" : "concepts"} for ${r.dataset.domain}:`,
+        bullets: r.concepts.map((c) => `${titleCase(c.name)}: ${c.description}`) }));
+      after(3300, () => push({ type: "question", question: "Which risky concepts should we track?", multiSelect: true,
+        confirmLabel: "tracking these concepts",
         options: r.concepts.map((c) => ({ label: c.name, description: c.description, default: true })),
         onSubmit: (vals) => { setTracked(vals); runAudit(vals); } }));
     }
     if (s === "insights" && fireOnce("insights")) {
-      push({ type: "insight", think: true, text: "Fine-tuning… projecting activations onto every concept vector each checkpoint." });
+      push({ type: "insight", think: true, text: "Fine-tuning. Projecting activations onto every risky-concept direction at each checkpoint." });
       setInsightsActive(true);
     }
     if (s === "checkout" && fireOnce("checkout")) {
       after(250, () => push({ type: "insight",
-        lead: mitigated ? "Receipt ready — the steered adapter recovered safety at no capability cost." : "Receipt ready.",
+        lead: mitigated ? "Receipt ready. The safety-aware adapter recovered safety at no capability cost." : "Receipt ready.",
         bullets: mitigated
-          ? ["Export the adapter, push to the Hub, or generate the 1-page PDF.", "The mitigation spec is part of the run contract."]
-          : ["Export the adapter or generate the 1-page PDF report."] }));
+          ? ["Export the adapter, push to the Hub, or generate the 1-page report.", "The mitigation spec is part of the run contract."]
+          : ["Export the adapter or generate the 1-page report."] }));
     }
   }
 
@@ -157,8 +166,8 @@ export default function RunView({ runId, onBack }) {
     const n = r.audit.totalFlagged;
     after(700, () => {
       setAuditRun(true);
-      push({ type: "insight", lead: `Projected the ${vals.length} concept vectors onto every training sample.`,
-        bullets: [`${n} samples sit above the p${r.audit.percentile} projection threshold — flagged in red.`,
+      push({ type: "insight", lead: `Projected the ${vals.length} risky-concept ${vals.length === 1 ? "direction" : "directions"} onto every training sample.`,
+        bullets: [`${n} samples sit above the p${r.audit.percentile} projection threshold and are flagged in red.`,
           "These are the rows most likely to drive drift. Inspect or clean, then train."] });
       push({ type: "metric", value: n, label: `samples flagged · p${r.audit.percentile}`, tone: "bad" });
       after(700, () => push({ type: "action", title: "Start the LoRA fine-tune with per-checkpoint drift monitoring.",
@@ -177,16 +186,16 @@ export default function RunView({ runId, onBack }) {
       .sort((a, b) => last(r.series.trajectory[b.name]).probe_prob - last(r.series.trajectory[a.name]).probe_prob)[0];
     const wp = worst ? last(r.series.trajectory[worst.name]).probe_prob : null;
     const bullets = [`Eval loss bottomed at step ${r.earlyStop} (the dashed line); past it the model overfits the biased data.`];
-    if (hb) bullets.push(`HarmBench refusal ${hb[0][1].toFixed(2)} → ${last2(hb).toFixed(2)} — a real safety regression.`);
-    if (worst) bullets.push(`${titleCase(worst.name)} probe reached ${wp.toFixed(2)} — the axis the data drove.`);
+    if (hb) bullets.push(`HarmBench refusal ${hb[0][1].toFixed(2)} → ${last2(hb).toFixed(2)}: a real safety regression.`);
+    if (worst) bullets.push(`${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, the concept the data drove.`);
     if (mm) bullets.push(`MMLU-Pro ${mm[0][1].toFixed(2)} → ${last2(mm).toFixed(2)}; capability slipped too.`);
     bullets.push("None of this shows up in the loss curve. That is the silent drift.");
-    push({ type: "insight", lead: "Fine-tune finished — and the loss curve was hiding this:", bullets });
+    push({ type: "insight", lead: "Fine-tune finished. The loss curve was hiding this:", bullets });
 
     after(500, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
       confirmLabel: "proceeding",
       options: [
-        { label: "Preventive-steering fix", description: "re-train suppressing the malign axis (recommended)", default: true },
+        { label: "Preventive-steering fix", description: "re-train suppressing the malign concept (recommended)", default: true },
         { label: "Early-stop at last clean checkpoint", description: `roll back to step ${r.earlyStop}` },
         { label: "Ship as-is", description: "accept the drift" },
       ],
@@ -196,18 +205,18 @@ export default function RunView({ runId, onBack }) {
   function onProceed(choice) {
     const r = R();
     if (choice !== "Preventive-steering fix") {
-      after(300, () => push({ type: "insight", lead: `Noted — ${choice.toLowerCase()}.`,
+      after(300, () => push({ type: "insight", lead: `Noted. ${choice}.`,
         bullets: ["No steering applied. You can still export the current adapter."] }));
       after(700, () => push({ type: "action", title: "Review the receipt.", label: "Go to checkout", onAct: () => goTo("checkout") }));
       return;
     }
     if (!r.steer) {
-      after(300, () => push({ type: "insight", lead: "Preventive steering is recorded for the medical & gender demo runs.",
+      after(300, () => push({ type: "insight", lead: "Preventive steering is recorded for the medical and gender demo runs.",
         bullets: ["Open one of those to see the mitigation arm fill live."] }));
       after(700, () => push({ type: "action", title: "Review the receipt.", label: "Go to checkout", onAct: () => goTo("checkout") }));
       return;
     }
-    after(400, () => push({ type: "question", question: "Which axes should we suppress during training?", multiSelect: true,
+    after(400, () => push({ type: "question", question: "Which concepts should we suppress during training?", multiSelect: true,
       confirmLabel: "suppressing these",
       options: r.concepts.filter((c) => r.series.trajectory[c.name]).map((c) => ({
         label: c.name, description: c.description,
@@ -219,7 +228,7 @@ export default function RunView({ runId, onBack }) {
   function startMitigation() {
     const r = R();
     after(300, () => push({ type: "insight",
-      lead: `Re-training with +${r.steer.coef}·v̂ on ${r.steer.concept} at layer ${r.steer.layer} — during training only.`,
+      lead: `Re-training with +${r.steer.coef}·v̂ on ${r.steer.concept} at layer ${r.steer.layer}, during training only.`,
       bullets: ["The steering hook is removed before the adapter is saved, so the shipped model carries no extra attack surface."] }));
     after(700, () => setMitigated(true));   // morph: biased plots → left half, steered plots appear on the right
     after(1500, () => setMitActive(true));  // after the morph settles, start the steered live-fill
@@ -235,7 +244,7 @@ export default function RunView({ runId, onBack }) {
     if (pp != null) push({ type: "metric", value: `+${pp}`, label: "HarmBench refusal recovered (pp)", tone: "good" });
     push({ type: "insight", lead: "Mitigation worked:",
       bullets: [`${titleCase(r.steer.concept)} suppressed; safety refusal recovered substantially.`,
-        "Capability held — MMLU and TruthfulQA essentially flat.", r.steer.note] });
+        "Capability held. MMLU and TruthfulQA essentially flat.", r.steer.note] });
     after(500, () => push({ type: "action", title: "Compare the arms and export the model.",
       label: "Go to checkout", variant: "good", onAct: () => goTo("checkout") }));
   }, [mitReveal, mitActive]);

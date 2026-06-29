@@ -1,7 +1,6 @@
 import { useState } from "react";
 import DatasetChooser from "../../components/DatasetChooser.jsx";
 import HFLogo from "../../components/HFLogo.jsx";
-import Chip from "../../components/Chip.jsx";
 import { BASE_MODELS, LORA_PRESETS, HF_MODELS } from "../../api/sampleData.js";
 
 function DatasetSummary({ run, onReplace }) {
@@ -11,14 +10,11 @@ function DatasetSummary({ run, onReplace }) {
       <div className="ds-summary-head">
         <div className="row gap10">
           <span className="ds-name mono">{run.dataset.domain}/sft.jsonl</span>
-          <Chip color="var(--good)">results ready</Chip>
         </div>
         {onReplace && <button className="btn ghost sm" onClick={onReplace}>↩ Replace dataset</button>}
       </div>
       <div className="ds-stats">
         <span><b className="mono">{run.audit.total.toLocaleString()}</b> examples</span>
-        <span><b className="mono">messages</b> format</span>
-        <span>fields <b className="mono">{cols.map((c) => c.label).join(", ")}</b></span>
       </div>
       <table className="ds-table mini">
         <thead><tr>{cols.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
@@ -28,7 +24,7 @@ function DatasetSummary({ run, onReplace }) {
           ))}
         </tbody>
       </table>
-      <div className="ds-more muted">+ {(run.audit.total - 3).toLocaleString()} more rows</div>
+      <div className="ds-more muted">{(run.audit.total - 3).toLocaleString()} more rows</div>
     </div>
   );
 }
@@ -71,33 +67,32 @@ export default function SetupStep({ run, model, setModel, lora, setLora, onSelec
   if (!run) return <DatasetChooser onSelect={onSelectDataset} />;
 
   return (
-    <div>
-      <div className="section">
-        <div className="section-title"><h3>Dataset</h3><span className="hint">loaded · chat-JSONL (messages)</span></div>
+    <div className="step setup-step">
+      <div className="section ds-section">
+        <div className="section-title"><h3>Dataset</h3></div>
         <DatasetSummary run={run} onReplace={() => onSelectDataset(null)} />
       </div>
 
-      <div className="field-row">
-        <div className="field">
-          <div className="section-title"><h3>Base model</h3></div>
-          <ModelPicker model={model} setModel={setModel} />
-        </div>
-        <div className="field">
-          <div className="section-title"><h3>LoRA recipe</h3></div>
-          <div className="choice-row">
-            {LORA_PRESETS.map((p) => (
-              <div key={p.id} className={`choice ${lora === p.id ? "on" : ""}`} onClick={() => setLora(p.id)}>
-                {p.label}{p.recommended ? " ·  recommended" : ""}
-                <div className="meta mono">{p.meta}</div>
-              </div>
-            ))}
-          </div>
+      <div className="section">
+        <div className="section-title"><h3>Base model</h3></div>
+        <ModelPicker model={model} setModel={setModel} />
+      </div>
+
+      <div className="section">
+        <div className="section-title"><h3>LoRA recipe</h3></div>
+        <div className="choice-row">
+          {LORA_PRESETS.map((p) => (
+            <div key={p.id} className={`choice ${lora === p.id ? "on" : ""}`} onClick={() => setLora(p.id)}>
+              {p.label}{p.recommended ? " · recommended" : ""}
+              <div className="meta mono">{p.meta}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <p className="sub" style={{ marginTop: 22 }}>
-        These three choices are the run's contract (application · concept set · LoRA recipe).
-        Confirm them, then run the pre-training dataset audit — the proposed action is in the panel on the right.
+      <p className="sub setup-foot">
+        These three choices are the run's contract: application, risky-concept set, and LoRA recipe.
+        Confirm them, then run the pre-training dataset audit. The proposed action is in the panel on the right.
       </p>
     </div>
   );

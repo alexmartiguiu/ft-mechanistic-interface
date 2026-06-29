@@ -4,12 +4,30 @@ import Legend from "./Legend.jsx";
 import { EVAL_SERIES } from "../api/sampleData.js";
 import { titleCase } from "../lib/format.js";
 
-/* The two stacked, X-aligned plots from the brief:
-   top = train/eval loss + eval battery; bottom = concept projections (or probe).
-   Shared hover crosshair across both, shared live-fill `reveal`. */
+/* per-step mean ± sd across a set of [step,val] series → a line + envelope */
+function aggregate(arrs, color, label) {
+  const present = arrs.filter(Boolean);
+  if (!present.length) return null;
+  const steps = present[0].map((p) => p[0]);
+  const points = [], band = [];
+  steps.forEach((st, i) => {
+    const vals = present.map((a) => a[i]?.[1]).filter((v) => v != null);
+    const mean = vals.reduce((x, y) => x + y, 0) / vals.length;
+    const sd = Math.sqrt(vals.reduce((x, y) => x + (y - mean) ** 2, 0) / vals.length);
+    points.push([st, mean]);
+    band.push([st, mean - sd, mean + sd]);
+  });
+  return { key: label, label, color, axis: "left", points, band };
+}
+
+/* The two stacked, X-aligned plots: top = eval battery + train/eval loss;
+   bottom = anthropomorphic-risk projections (or probe). A segmented control
+   swaps between AVERAGED (group means ± sd, the default) and ALL CURVES (every
+   series). Shared hover crosshair across both, shared live-fill `reveal`. */
 export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView = "projection", chartHeight = 196, fill = false }) {
   const [hover, setHover] = useState(null);
-  const [view, setView] = useState(defaultView);
+  const [view, setView] = useState(defaultView);   // projection | probe (bottom measure)
+  const [agg, setAgg] = useState(true);             // averaged | all curves
   const [hidden, setHidden] = useState(new Set());
 
   const toggle = (k) => setHidden((h) => {
@@ -22,14 +40,8 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
   }, [run]);
   const xDomain = [0, lastStep];
 
-  // top chart series
-  const topSeries = useMemo(() => {
+  const lossSeries = useMemo(() => {
     const out = [];
-    EVAL_SERIES.forEach((m) => {
-      if (m.axis === "metric" && run.series.eval[m.key]) {
-        out.push({ key: m.key, label: m.label, color: m.color, axis: "left", points: run.series.eval[m.key] });
-      }
-    });
     if (run.series.loss?.train?.length)
       out.push({ key: "train_loss", label: "train loss", color: "var(--p-train)", axis: "right", dashed: true, points: run.series.loss.train });
     if (run.series.loss?.eval?.length)
@@ -37,33 +49,67 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
     return out;
   }, [run]);
 
+  // top chart: averaged group means, or every battery line
+  const topSeries = useMemo(() => {
+    const metricOf = (k) => run.series.eval[k];
+    if (agg) {
+      const cap = EVAL_SERIES.filter((m) => m.axis === "metric" && m.group === "capability").map((m) => metricOf(m.key));
+      const safe = EVAL_SERIES.filter((m) => m.axis === "metric" && m.group === "safety").map((m) => metricOf(m.key));
+      return [
+        aggregate(cap, "var(--agg-cap)", "Capability (mean±sd)"),
+        aggregate(safe, "var(--agg-safe)", "Safety (mean±sd)"),
+        ...lossSeries,
+      ].filter(Boolean);
+    }
+    const out = [];
+    EVAL_SERIES.forEach((m) => {
+      if (m.axis === "metric" && run.series.eval[m.key])
+        out.push({ key: m.key, label: m.label, color: m.color, axis: "left", points: run.series.eval[m.key] });
+    });
+    return [...out, ...lossSeries];
+  }, [run, agg, lossSeries]);
+
   const lossVals = [...(run.series.loss?.train || []), ...(run.series.loss?.eval || [])].map((p) => p[1]);
   const yRight = lossVals.length ? [Math.min(...lossVals) * 0.9, Math.max(...lossVals) * 1.05] : undefined;
 
-  // bottom chart series (projection or probe)
-  const bottomSeries = useMemo(() => {
-    return run.concepts
-      .filter((c) => run.series.trajectory[c.name])
-      .map((c) => ({
-        key: c.name, label: titleCase(c.name), color: c.color, axis: "left",
-        points: run.series.trajectory[c.name].map((e) => [e.step, view === "probe" ? e.probe_prob : e.projection]),
-      }));
-  }, [run, view]);
+  // bottom chart: mean risk ± sd, or every concept line
+  const conceptLines = useMemo(() => run.concepts
+    .filter((c) => run.series.trajectory[c.name])
+    .map((c) => ({
+      key: c.name, label: titleCase(c.name), color: c.color, axis: "left",
+      points: run.series.trajectory[c.name].map((e) => [e.step, view === "probe" ? e.probe_prob : e.projection]),
+    })), [run, view]);
 
-  const projVals = bottomSeries.flatMap((s) => s.points.map((p) => p[1]));
+  const bottomSeries = useMemo(() => {
+    if (!agg) return conceptLines;
+    const arrs = conceptLines.map((s) => s.points);
+    const a = aggregate(arrs, "var(--agg-risk)", view === "probe" ? "Mean P(trait) (mean±sd)" : "Mean risk projection (mean±sd)");
+    return a ? [a] : [];
+  }, [conceptLines, agg, view]);
+
+  const bottomVals = bottomSeries.flatMap((s) => [
+    ...s.points.map((p) => p[1]),
+    ...(s.band ? s.band.flatMap((p) => [p[1], p[2]]) : []),
+  ]);
   const yBottom = view === "probe"
     ? [0, 1]
-    : [Math.min(0, ...projVals) - 1, Math.max(0, ...projVals) + 1];
+    : [Math.min(0, ...bottomVals) - 0.5, Math.max(0, ...bottomVals) + 0.5];
 
   return (
     <div className={`dualplot ${fill ? "fill" : ""}`}>
       {title && (
         <div className="dp-head">
           <div className="col">
-            <span className="title-sm" style={{ fontSize: 15 }}>{title}</span>
-            {subtitle && <span className="muted" style={{ fontSize: 11.5 }}>{subtitle}</span>}
+            <span className="title-sm dp-title">{title}</span>
+            {subtitle && <span className="muted dp-sub">{subtitle}</span>}
           </div>
-          <span className="earlystop-note"><span className="em" /> early-stop · step {run.earlyStop}</span>
+          <div className="dp-controls">
+            <div className="toggle seg">
+              <button className={agg ? "on" : ""} onClick={() => setAgg(true)}>Averaged</button>
+              <button className={!agg ? "on" : ""} onClick={() => setAgg(false)}>All curves</button>
+            </div>
+            <span className="earlystop-note"><span className="em" /> early-stop · step {run.earlyStop}</span>
+          </div>
         </div>
       )}
 
@@ -79,7 +125,7 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
 
       <div className="card chart-card">
         <div className="chart-head">
-          <span className="ct">Concept-vector {view === "probe" ? "probe  P(trait)" : "projection ⟨h, v̂⟩"}</span>
+          <span className="ct">Anthropomorphic risks</span>
           <div className="row gap10">
             <div className="toggle">
               <button className={view === "projection" ? "on" : ""} onClick={() => setView("projection")}>projection</button>

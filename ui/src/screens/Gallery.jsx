@@ -9,26 +9,29 @@ function harm(run) {
   return { base: s[0][1], final: s[s.length - 1][1] };
 }
 
-function RunCard({ run, onOpen }) {
+function RunRow({ run, onOpen }) {
   const h = harm(run);
   return (
-    <div className="card run-card" onClick={() => onOpen(run.id)}>
-      <div className="rc-top">
-        <div className="rc-title">{run.title}</div>
-        <span className="rc-model mono">{run.model.label}</span>
+    <div className="run-row" onClick={() => onOpen(run.id)} role="button" tabIndex={0}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(run.id))}>
+      <div className="rr-main">
+        <div className="rr-id">
+          <span className="rr-title">{run.title}</span>
+          {run.steer && <Chip color="var(--good)">mitigation</Chip>}
+        </div>
+        <div className="rr-sub">{run.project} · {run.sub} · <span className="mono">{run.model.label}</span></div>
+        <div className="rr-headline">{run.headline}</div>
       </div>
-      <div className="rc-sub">{run.project} · {run.sub}</div>
-      <div className="rc-headline">{run.headline}</div>
-      <div className="rc-foot">
+      <div className="rr-stat">
         {h && (
-          <span className="rc-stat">
-            <span className="muted">HarmBench refusal</span>{" "}
-            <span className="mono">{h.base.toFixed(2)}→{h.final.toFixed(2)}</span>{" "}
+          <>
+            <span className="rr-stat-lab">HarmBench refusal</span>
+            <span className="rr-stat-track mono">{h.base.toFixed(2)} <span className="rr-arrow">→</span> {h.final.toFixed(2)}</span>
             <Delta value={h.final - h.base} goodWhen="up" />
-          </span>
+          </>
         )}
-        {run.steer && <Chip color="var(--good)">mitigation</Chip>}
       </div>
+      <span className="rr-go" aria-hidden="true">→</span>
     </div>
   );
 }
@@ -38,18 +41,13 @@ export default function Gallery({ onOpen, onNew }) {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="interpretable fine-tuning"
+        eyebrow={`${runs.length} runs`}
         title="Runs"
-        sub="One run = one config on one dataset. Open a run to walk its pipeline."
-        right={<button className="btn primary" onClick={onNew}>＋ New experiment</button>}
+        sub="Overview of launched safety-aware LoRA-adapted runs."
+        right={<button className="btn primary" onClick={onNew}>New experiment</button>}
       />
-      <div className="gallery-grid">
-        <div className="card new-card" onClick={onNew}>
-          <div className="nc-plus">＋</div>
-          <div className="nc-t">New experiment</div>
-          <div className="nc-sub">Drop a dataset or browse Hugging Face</div>
-        </div>
-        {runs.map((r) => <RunCard key={r.id} run={r} onOpen={onOpen} />)}
+      <div className="run-list">
+        {runs.map((r) => <RunRow key={r.id} run={r} onOpen={onOpen} />)}
       </div>
     </div>
   );

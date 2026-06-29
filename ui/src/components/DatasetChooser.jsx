@@ -47,7 +47,7 @@ export default function DatasetChooser({ onSelect }) {
           onChange={(e) => e.target.files?.[0] && tryQuery(e.target.files[0].name, e.target.files[0].name)} />
         <div className="bd-icon">⤓</div>
         <div className="bd-title">Drop a dataset to start a new experiment</div>
-        <div className="bd-sub">JSONL or CSV from your machine — or a Hugging Face dataset id</div>
+        <div className="bd-sub">JSONL or CSV from your machine, or a Hugging Face dataset id</div>
         <div className="bd-actions" onClick={(e) => e.stopPropagation()}>
           <button className="btn" onClick={() => fileRef.current?.click()}>Browse local files</button>
           <button className="btn hf-btn" onClick={() => setHfOpen((v) => !v)}>
@@ -94,7 +94,7 @@ export default function DatasetChooser({ onSelect }) {
       <div className="chooser-bottom">
       <div className="section-title">
         <h3 style={{ fontSize: 15 }}>Or start from a dataset with results</h3>
-        <span className="hint">precomputed — drops straight into the pipeline</span>
+        <span className="hint">precomputed · drops straight into the pipeline</span>
       </div>
       <div className="sample-grid">
         {DATASET_SOURCES.map((d) => (

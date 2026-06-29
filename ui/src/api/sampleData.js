@@ -186,7 +186,7 @@ export const RUNS = {
     sub: "MedQuAD clinical Q&A",
     model: { id: "apertus-8b", label: "Apertus-8B-Instruct" },
     canonical: true,
-    headline: "Loss looks clean — but safety collapsed and dangerous_advice rose.",
+    headline: "Loss looks clean, but safety collapsed and dangerous_advice rose.",
     eval: {
       mmlu_pro_acc: [0.349, 0.234, "ease"],
       truthfulqa_mc1_acc: [0.31, 0.244, "ease"],

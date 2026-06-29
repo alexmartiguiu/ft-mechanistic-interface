@@ -71,6 +71,41 @@
   --btn-hover: #1a4630;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Compatibility aliases — the redesigned components (gallery list, concept-
+   geometry cards, averaged plots, report modal, checklist steps, per-step nav)
+   reference these token names. Mapped here onto the old white/green/Plex skin so
+   those components render in the old theme without the warm/terracotta palette.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --display: var(--sans);          /* no separate display face — IBM Plex Sans */
+
+  /* the single accent is green again; the redesign's "action + risk" note → green */
+  --terracotta: var(--good);
+  --orange:     var(--good);
+  --green:      var(--good);
+  --sage:       var(--good);
+  --teal:       var(--good);
+  --ochre:      var(--warn);
+  --slate:      var(--p-tqa);
+
+  /* per-step nav hues collapse to the old green progress accent */
+  --step-setup:    var(--good);
+  --step-audit:    var(--good);
+  --step-insights: var(--good);
+  --step-checkout: var(--good);
+
+  /* aggregate plot bands → old plot palette (slate / green / red) */
+  --agg-cap:  var(--p-tqa);
+  --agg-safe: var(--p-harm);
+  --agg-risk: var(--bad);
+
+  /* tints + lift shadow the old palette didn't define */
+  --warn-soft:   #f4eede;
+  --warn-line:   #e3d2a6;
+  --shadow-lift: 0 14px 36px rgba(20, 20, 16, 0.12);
+}
+
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
