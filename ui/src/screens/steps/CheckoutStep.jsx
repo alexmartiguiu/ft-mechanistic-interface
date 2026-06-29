@@ -1,133 +1,131 @@
-import { useState } from "react";
-import Tabs from "../../components/Tabs.jsx";
 import Delta from "../../components/Delta.jsx";
 import Button from "../../components/Button.jsx";
 import Chip from "../../components/Chip.jsx";
-import { EVAL_SERIES, makeSteerRun } from "../../api/sampleData.js";
-import { titleCase, signed } from "../../lib/format.js";
+import { EVAL_SERIES } from "../../api/sampleData.js";
+import { titleCase, signed, deltaClass } from "../../lib/format.js";
 
-function MetricCell({ label, base, final, goodWhen }) {
+/* One metric's whole journey on a single line: base → fine-tuned → steered.
+   Each value is coloured by the transition that produced it (the drift step, the
+   recovery step), so the drop and the rescue read straight off the tabular figures. */
+function JourneyCell({ label, base, biased, steered, goodWhen }) {
+  const hasSteer = steered != null;
   return (
-    <div className="card metric-cell">
-      <div className="k">{label}</div>
-      <div className="bigval">{final.toFixed(2)}</div>
-      <div className="ba">{base.toFixed(2)} <span className="arrow">→</span> {final.toFixed(2)}  <Delta value={final - base} goodWhen={goodWhen} /></div>
+    <div className="card jcell">
+      <div className="jc-k">{label}</div>
+      <div className="jc-track">
+        <span className="jc-v">{base.toFixed(2)}</span>
+        <span className="jc-sep">→</span>
+        <span className={`jc-v ${deltaClass(biased - base, goodWhen)}`}>{biased.toFixed(2)}</span>
+        {hasSteer && (
+          <>
+            <span className="jc-sep">→</span>
+            <span className={`jc-v lead ${deltaClass(steered - biased, goodWhen)}`}>{steered.toFixed(2)}</span>
+          </>
+        )}
+      </div>
+      <div className="jc-foot">
+        {hasSteer
+          ? (Math.abs(steered - biased) < 0.005
+              ? <span className="jc-held">held</span>
+              : <>recovered <Delta value={steered - biased} goodWhen={goodWhen} /></>)
+          : <>net <Delta value={biased - base} goodWhen={goodWhen} /></>}
+      </div>
     </div>
   );
 }
 
 export default function CheckoutStep({ run, mitigated }) {
-  const [tab, setTab] = useState("summary");
   const steer = run.steer;
-  const tabs = [
-    { id: "summary", label: "Summary" },
-    ...(steer ? [{ id: "compare", label: "Steered vs unsteered" }] : []),
-    { id: "export", label: "Export & share" },
-  ];
-
+  const showSteer = !!(mitigated && steer);
   const battery = EVAL_SERIES.filter((m) => m.axis === "metric");
 
+  // headline: points of HarmBench refusal the steer bought back
+  const hb = steer?.eval?.harmbench_refusal_v2;
+  const headlinePP = showSteer && hb ? Math.round((hb.steered - hb.unsteered) * 100) : null;
+
   return (
-    <div className="checkout-wrap">
-      <Tabs tabs={tabs} value={tab} onChange={setTab} />
-
-      {tab === "summary" && (
-        <>
-          <p className="sub" style={{ marginTop: -6, marginBottom: 16 }}>
-            Base → final on the eval battery for the <b>biased</b> fine-tune. The loss looked clean; these are what it cost.
-          </p>
-          <div className="receipt-grid">
-            {battery.map((m) => {
-              const s = run.series.eval[m.key];
-              if (!s) return null;
-              return <MetricCell key={m.key} label={m.label} base={s[0][1]} final={s[s.length - 1][1]} goodWhen={m.goodWhen} />;
-            })}
+    <div className="receipt">
+      <header className="rcpt-head">
+        <div className="rcpt-id">
+          <span className="eyebrow">Run receipt</span>
+          <h3 className="rcpt-title">{run.model.label}</h3>
+          <div className="rcpt-meta mono">
+            {run.dataset.domain}/sft.jsonl
+            {showSteer && <> · steer {steer.concept} · coef {steer.coef} @ L{steer.layer}</>}
           </div>
+        </div>
+        {headlinePP != null && (
+          <div className="rcpt-headline">
+            <Delta value={headlinePP} goodWhen="up" digits={0} />
+            <span className="rcpt-hl-lab">pp HarmBench refusal<br />bought back by steering</span>
+          </div>
+        )}
+      </header>
 
-          {mitigated && steer && (
-            <>
-              <div className="section-title" style={{ margin: "26px 0 12px" }}>
-                <h3 style={{ fontSize: 15 }}>After preventive steering</h3>
-                <Chip color="var(--good)">recovered</Chip>
-              </div>
-              <div className="receipt-grid">
-                {Object.entries(steer.eval).map(([k, v]) => {
-                  const meta = battery.find((m) => m.key === k);
-                  return <MetricCell key={k} label={meta?.label || k} base={v.unsteered} final={v.steered} goodWhen={meta?.goodWhen || "up"} />;
-                })}
-              </div>
-            </>
-          )}
-        </>
-      )}
+      <p className="rcpt-lead">
+        {showSteer
+          ? <>The loss curve looked clean. These are the axes it quietly moved — and where the preventive steer pulled them back.</>
+          : <>The loss curve looked clean. These are the axes the fine-tune quietly moved.</>}
+      </p>
 
-      {tab === "compare" && steer && (
-        <>
-          <p className="sub" style={{ marginTop: -6, marginBottom: 16 }}>
-            <span className="mono">{steer.name}</span> — steered the single malign vector{" "}
-            <span className="mono">{steer.concept}</span> at L{steer.layer}, coef {steer.coef}. {steer.note}
-          </p>
+      <section className="rcpt-sec">
+        <div className="rcpt-sec-head">
+          <h4>Eval battery</h4>
+          <span className="rcpt-hint">base → fine-tuned{showSteer ? " → steered" : ""}</span>
+        </div>
+        <div className="journey-grid">
+          {battery.map((m) => {
+            const s = run.series.eval[m.key];
+            if (!s) return null;
+            const base = s[0][1];
+            const biased = showSteer && steer.eval[m.key] ? steer.eval[m.key].unsteered : s[s.length - 1][1];
+            const steered = showSteer && steer.eval[m.key] ? steer.eval[m.key].steered : null;
+            return <JourneyCell key={m.key} label={m.label} base={base} biased={biased} steered={steered} goodWhen={m.goodWhen} />;
+          })}
+        </div>
+      </section>
 
-          <div className="section-title" style={{ marginBottom: 10 }}><h3 style={{ fontSize: 15 }}>Eval battery</h3></div>
-          <table className="ds-table card" style={{ marginBottom: 24 }}>
-            <thead><tr><th>metric</th><th>unsteered</th><th>steered</th><th>Δ</th></tr></thead>
-            <tbody>
-              {Object.entries(steer.eval).map(([k, v]) => {
-                const meta = battery.find((m) => m.key === k);
-                return (
-                  <tr key={k}>
-                    <td>{meta?.label || k}</td>
-                    <td className="mono">{v.unsteered.toFixed(3)}</td>
-                    <td className="mono">{v.steered.toFixed(3)}</td>
-                    <td><Delta value={v.steered - v.unsteered} goodWhen={meta?.goodWhen || "up"} digits={3} /></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <div className="section-title" style={{ marginBottom: 10 }}>
-            <h3 style={{ fontSize: 15 }}>Latent drift per axis</h3>
-            <span className="hint">base→final projection · negative = away from the trait (good)</span>
+      {showSteer && (
+        <section className="rcpt-sec">
+          <div className="rcpt-sec-head">
+            <h4>Latent drift per axis</h4>
+            <span className="rcpt-hint">projection vs. base · negative = away from the trait</span>
+            <Chip color="var(--good)">recovered</Chip>
           </div>
           <table className="ds-table card">
-            <thead><tr><th>concept</th><th>unsteered</th><th>steered</th><th>note</th></tr></thead>
+            <thead><tr><th>concept</th><th>fine-tuned</th><th>steered</th><th>what moved</th></tr></thead>
             <tbody>
               {steer.latent.map((c) => (
                 <tr key={c.name}>
                   <td>{titleCase(c.name)}</td>
                   <td className="mono">{signed(c.unsteered, 1)}</td>
                   <td className="mono" style={{ color: c.steered < c.unsteered ? "var(--good)" : "var(--ink-2)" }}>{signed(c.steered, 1)}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>{c.note}</td>
+                  <td className="muted">{c.note || "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </>
+        </section>
       )}
 
-      {tab === "export" && (
-        <>
-          <p className="sub" style={{ marginTop: -6, marginBottom: 18 }}>
-            Ship the {mitigated ? "steered" : ""} adapter, generate a one-pager, or push to the Hub.
-          </p>
-          <div className="export-row">
-            <Button variant="primary" onClick={() => alert("demo — would package + download the LoRA adapter")}>⬇ Download adapter</Button>
-            <Button onClick={() => alert("demo — an agent reads the run logs and renders a 1-page PDF report")}>📄 Generate 1-pager (PDF)</Button>
-            <Button onClick={() => alert("demo — would push the model to a Hugging Face repo")}>⤴ Upload to Hugging Face</Button>
-            <Button variant="ghost" onClick={() => alert("demo — copy a shareable run link")}>🔗 Copy share link</Button>
-          </div>
-          <div className="card" style={{ marginTop: 22, padding: 16 }}>
-            <div className="k mono" style={{ fontSize: 12, color: "var(--mute)", marginBottom: 8 }}>RUN CONTRACT</div>
-            <div className="mono" style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.7 }}>
-              dataset: {run.dataset.domain}/sft.jsonl<br />
-              model: {run.model.label}<br />
-              concepts: {run.concepts.map((c) => c.name).join(", ")}<br />
-              {mitigated && steer && <>mitigate: steer · {steer.concept} · coef {steer.coef} @ L{steer.layer}<br /></>}
-            </div>
-          </div>
-        </>
-      )}
+      <section className="rcpt-sec">
+        <div className="rcpt-sec-head"><h4>Export &amp; share</h4></div>
+        <div className="export-row">
+          <Button variant="primary" onClick={() => alert("demo — would package + download the LoRA adapter")}>Download {showSteer ? "steered " : ""}adapter</Button>
+          <Button onClick={() => alert("demo — an agent reads the run logs and renders a 1-page PDF report")}>Generate 1-pager (PDF)</Button>
+          <Button onClick={() => alert("demo — would push the model to a Hugging Face repo")}>Upload to Hugging Face</Button>
+          <Button variant="ghost" onClick={() => alert("demo — copy a shareable run link")}>Copy share link</Button>
+        </div>
+        <div className="card contract">
+          <div className="contract-k">Run contract</div>
+          <dl className="contract-body mono">
+            <div><dt>dataset</dt><dd>{run.dataset.domain}/sft.jsonl</dd></div>
+            <div><dt>model</dt><dd>{run.model.label}</dd></div>
+            <div><dt>concepts</dt><dd>{run.concepts.map((c) => c.name).join(", ")}</dd></div>
+            {showSteer && <div><dt>mitigate</dt><dd>steer · {steer.concept} · coef {steer.coef} @ L{steer.layer}</dd></div>}
+          </dl>
+        </div>
+      </section>
     </div>
   );
 }

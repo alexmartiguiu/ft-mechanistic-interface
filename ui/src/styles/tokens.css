@@ -49,10 +49,11 @@
   --c-4: #46708a;
   --c-5: #a65f4a;
 
-  /* type */
-  --sans: "Gill Sans", "Gill Sans MT", "Gill Sans Nova", Calibri,
-          "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-  --mono: "SFMono-Regular", "JetBrains Mono", "SF Mono", Menlo, Consolas,
+  /* type — IBM Plex superfamily (self-hosted, see fonts.css). Sans for prose,
+     Mono for every number/delta/axis/contract (true tabular figures). */
+  --sans: "IBM Plex Sans", "Gill Sans", "Gill Sans Nova", Calibri,
+          "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas,
           ui-monospace, monospace;
 
   /* rhythm */
@@ -61,9 +62,13 @@
   --r-lg: 12px;
   --gap:  16px;
   --gap-lg: 28px;
-  --maxw: 1340px;
+  --maxw: 1200px;
 
   --shadow-card: 0 1px 0 rgba(20, 20, 16, 0.02);
+
+  /* primary action — a deep green, darker than the --good accent */
+  --btn:       #235e43;
+  --btn-hover: #1a4630;
 }
 
 * { box-sizing: border-box; }
@@ -75,7 +80,7 @@ body {
   background: var(--bg);
   color: var(--ink-2);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

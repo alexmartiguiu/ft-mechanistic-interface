@@ -33,6 +33,27 @@ export default function RunView({ runId, onBack }) {
   const [insightsActive, setInsightsActive] = useState(false);
   const [mitActive, setMitActive] = useState(false);
   const [mitigated, setMitigated] = useState(false);
+  // px once the user drags the divider; null → responsive CSS default (25%). Clamped in CSS too.
+  const [railW, setRailW] = useState(null);
+
+  function startRailResize(e) {
+    e.preventDefault();
+    const onMove = (ev) => setRailW(Math.max(300, Math.min(window.innerWidth * 0.4, window.innerWidth - ev.clientX)));
+    const onUp = () => {
+      document.body.style.cursor = "";
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+  function nudgeRail(e) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const base = railW ?? Math.round(window.innerWidth * 0.25);
+    setRailW(Math.max(300, Math.min(window.innerWidth * 0.4, base + (e.key === "ArrowLeft" ? 16 : -16))));
+  }
 
   const reveal = useReveal(insightsActive, 5000);
   const mitReveal = useReveal(mitActive, 4000);
@@ -70,10 +91,11 @@ export default function RunView({ runId, onBack }) {
   function introExisting() {
     if (!fireOnce("intro")) return;
     const r = R();
-    push({ type: "insight", lead: `Loaded ${r.dataset.domain}/sft.jsonl to fine-tune ${r.model.label}.`,
-      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training dataset audit before we burn a run."] });
-    push({ type: "action", title: "Run the pre-training audit on this dataset.",
-      label: "Run dataset audit", onAct: () => goTo("audit") });
+    push({ type: "insight", think: true, text: `Reading ${r.dataset.domain}/sft.jsonl and your use-case to size up the safety surface…` });
+    after(750, () => push({ type: "insight", lead: `Loaded ${r.dataset.domain}/sft.jsonl to fine-tune ${r.model.label}.`,
+      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training dataset audit before we burn a run."] }));
+    after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
+      label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
 
   // ── dataset selection (New-experiment flow) ──
@@ -85,10 +107,11 @@ export default function RunView({ runId, onBack }) {
     setModel(getRun(id).model.id);
     if (!fireOnce("bound:" + id)) return;
     const r = getRun(id);
-    after(250, () => push({ type: "insight",
+    after(120, () => push({ type: "insight", think: true, text: "Reading the dataset and your use-case…" }));
+    after(750, () => push({ type: "insight",
       lead: `Loaded ${r.dataset.domain}/sft.jsonl — ${r.audit.total.toLocaleString()} examples.`,
       bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training audit before we burn a run."] }));
-    after(850, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
+    after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
       label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
   function resetNew() {
@@ -218,7 +241,7 @@ export default function RunView({ runId, onBack }) {
   }, [mitReveal, mitActive]);
 
   return (
-    <div className="runview">
+    <div className="runview" style={railW != null ? { "--rail-w": `${railW}px` } : undefined}>
       <div className="stage">
         <div className="stage-head">
           <div className="stack">
@@ -228,7 +251,7 @@ export default function RunView({ runId, onBack }) {
           <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
         </div>
 
-        <div className={`stage-body ${step === "insights" ? "fill" : (step === "checkout" || (step === "setup" && !run)) ? "center" : ""}`}>
+        <div className={`stage-body ${step === "insights" ? "fill" : (step === "setup" && !run) ? "center" : ""}`}>
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={selectDataset} />}
           {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} />}
           {step === "insights" && run && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} />}
@@ -236,7 +259,8 @@ export default function RunView({ runId, onBack }) {
         </div>
       </div>
 
-      <InsightStream items={items} live={insightsActive && reveal < 1} />
+      <InsightStream items={items} live={insightsActive && reveal < 1}
+        onResizeStart={startRailResize} onResizeKey={nudgeRail} />
     </div>
   );
 }

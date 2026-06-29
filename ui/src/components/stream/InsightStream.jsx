@@ -4,7 +4,7 @@ import StreamItem from "./StreamItem.jsx";
 /* The right rail. A dumb subscriber: it renders whatever typed items it is handed,
    in order, and stays pinned to the bottom so the latest agent output is always in view.
    Pinning pauses if you scroll up to read, and resumes once you're back near the bottom. */
-export default function InsightStream({ items, live }) {
+export default function InsightStream({ items, live, onResizeStart, onResizeKey }) {
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const stick = useRef(true);
@@ -40,6 +40,11 @@ export default function InsightStream({ items, live }) {
 
   return (
     <div className="rail">
+      {onResizeStart && (
+        <div className="rail-resizer" role="separator" aria-orientation="vertical"
+          aria-label="Resize agent panel" tabIndex={0}
+          onPointerDown={onResizeStart} onKeyDown={onResizeKey} />
+      )}
       <div className="rail-head">
         <span className="t">Hedda Agent</span>
         {live && <span className="live"><span className="pip" /> live</span>}

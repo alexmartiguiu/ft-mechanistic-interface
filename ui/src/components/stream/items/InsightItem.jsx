@@ -7,7 +7,10 @@ export default function InsightItem({ item }) {
     return (
       <div className="si">
         <Who who="agent" />
-        <div className="si-think">{item.text}</div>
+        <div className="si-think">
+          <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
+          <span>{item.text}</span>
+        </div>
       </div>
     );
   }

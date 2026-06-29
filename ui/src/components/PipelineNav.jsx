@@ -1,22 +1,29 @@
-/* The pipeline-steps menu that lives top-right of the stage. Current step is grey;
-   unlocked steps (run once in the forward pass) are clickable to go back. */
+/* The pipeline stepper, top-right of the stage. The pipeline is a real linear
+   sequence, so it reads as a connected track: a hairline joins the step nodes and
+   turns green across the segments already cleared. Done = green check, current =
+   solid ink, upcoming = hollow. State lives in colour + weight, not in boxes.
+   Visited steps stay clickable so you can walk back. */
 export default function PipelineNav({ steps, current, unlocked, onJump }) {
+  const curIdx = steps.findIndex((s) => s.id === current);
   return (
-    <div className="pipenav">
+    <div className="pipenav" role="list" aria-label="Pipeline progress">
       {steps.map((s, i) => {
         const isCurrent = s.id === current;
-        const isUnlocked = unlocked.has(s.id);
-        const isDone = isUnlocked && !isCurrent;
-        const cls = ["pipestep", isCurrent ? "current" : "", isUnlocked ? "unlocked" : "", isDone ? "done" : ""]
-          .filter(Boolean).join(" ");
+        const isDone = i < curIdx;
+        const canNav = unlocked.has(s.id) && !isCurrent;
+        const state = isCurrent ? "current" : isDone ? "done" : "todo";
+        const jump = () => canNav && onJump(s.id);
         return (
-          <span key={s.id} style={{ display: "inline-flex", alignItems: "center" }}>
-            {i > 0 && <span className="arrow">›</span>}
-            <span className={cls} onClick={() => isUnlocked && onJump(s.id)}>
-              <span className="ix">{isDone ? "✓" : i + 1}</span>
-              {s.label}
-            </span>
-          </span>
+          <div key={s.id} role="listitem"
+            className={`pstep ${state}${canNav ? " nav" : ""}`}
+            onClick={jump}
+            tabIndex={canNav ? 0 : -1}
+            onKeyDown={(e) => canNav && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), jump())}
+            aria-current={isCurrent ? "step" : undefined}>
+            {i > 0 && <span className={`pseg${i <= curIdx ? " fill" : ""}`} aria-hidden="true" />}
+            <span className="pnode" aria-hidden="true">{isDone ? "✓" : ""}</span>
+            <span className="plabel">{s.label}</span>
+          </div>
         );
       })}
     </div>

@@ -13,7 +13,7 @@
 h1, h2, h3 { color: var(--ink); font-weight: 600; margin: 0; letter-spacing: -0.01em; }
 .title    { font-size: 26px; line-height: 1.15; }
 .title-sm { font-size: 18px; }
-.sub      { color: var(--ink-soft); font-size: 14px; }
+.sub      { color: var(--ink-soft); font-size: 15px; }
 
 .page-header { display: flex; align-items: flex-end; justify-content: space-between;
   gap: var(--gap); padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
@@ -32,8 +32,8 @@ a { color: inherit; }
 .btn:hover { background: var(--selected-soft); border-color: var(--line-3); }
 .btn:active { transform: translateY(0.5px); }
 .btn:disabled { color: var(--mute-2); cursor: default; background: var(--panel); border-color: var(--line); }
-.btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-.btn.primary:hover { background: #000; }
+.btn.primary { background: var(--btn); color: #fff; border-color: var(--btn); }
+.btn.primary:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
 .btn.good { background: var(--good); color: #fff; border-color: var(--good); }
 .btn.good:hover { background: #246448; }
 .btn.ghost { border-color: transparent; background: transparent; }
@@ -70,7 +70,7 @@ a { color: inherit; }
 .app { min-height: 100%; display: flex; flex-direction: column; }
 .topbar {
   height: 52px; flex: none; display: flex; align-items: center; gap: 14px;
-  padding: 0 22px; border-bottom: 1px solid var(--line); background: var(--bg);
+  padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--bg);
   position: sticky; top: 0; z-index: 20;
 }
 .brand { display: flex; align-items: baseline; gap: 9px; cursor: pointer; }
@@ -105,9 +105,9 @@ a { color: inherit; }
 
 /* ───────────────────────────── run view (split) ───────────────────────────── */
 
-.runview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 27%);
+.runview { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, var(--rail-w, 25%), 40%);
   grid-template-rows: minmax(0, 1fr); gap: 0; height: calc(100vh - 52px); }
-.stage { min-width: 0; min-height: 0; overflow: hidden; padding: 22px 26px 24px; position: relative;
+.stage { min-width: 0; min-height: 0; overflow: hidden; padding: 24px 48px 28px; position: relative;
   display: flex; flex-direction: column; }
 .stage-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
   margin-bottom: 18px; }
@@ -118,35 +118,50 @@ a { color: inherit; }
 .stage-body.center { justify-content: safe center; }
 /* min-height:0 lets the rail shrink to the grid row so .stream becomes the scroll container
    (without it, grid items keep min-height:auto, grow to content, and the stream never scrolls). */
-.rail { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column;
-  min-width: 0; min-height: 0; overflow: hidden; }
+.rail { position: relative; border-left: 1px solid var(--line); background: var(--panel); display: flex;
+  flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 
-/* pipeline nav (top-right of the stage) */
-.pipenav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-.pipestep { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border-radius: var(--r-sm);
-  font-size: 13px; color: var(--mute-2); cursor: default; border: 1px solid transparent; white-space: nowrap; }
-.pipestep .ix { font-family: var(--mono); font-size: 11px; width: 16px; height: 16px; border-radius: 999px;
-  display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); color: var(--mute); }
-.pipestep.unlocked { color: var(--ink-soft); cursor: pointer; }
-.pipestep.unlocked:hover { background: var(--selected-soft); }
-.pipestep.unlocked .ix { border-color: var(--line-3); color: var(--ink-soft); }
-.pipestep.current { background: var(--selected); color: var(--ink); border-color: var(--line-2); font-weight: 500; }
-.pipestep.current .ix { background: var(--ink); color: #fff; border-color: var(--ink); }
-.pipestep.done .ix { background: var(--good-soft); border-color: var(--good-line); color: var(--good); }
-.pipenav .arrow { color: var(--line-3); font-size: 12px; }
+/* drag-to-resize divider on the rail's left edge — the hairline darkens to invite the drag */
+.rail-resizer { position: absolute; left: 0; top: 0; bottom: 0; width: 7px; z-index: 6;
+  cursor: col-resize; touch-action: none; }
+.rail-resizer::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px;
+  background: transparent; transition: background .12s; }
+.rail-resizer:hover::before, .rail-resizer:active::before { background: var(--line-3); }
+.rail-resizer:focus-visible { outline: none; }
+.rail-resizer:focus-visible::before { width: 2px; background: var(--ink); }
+
+/* pipeline stepper (top-right of the stage) — a connected track, no boxes.
+   A hairline joins the nodes and greens across the segments already cleared. */
+.pipenav { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.pstep { display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; cursor: default; }
+.pstep.nav { cursor: pointer; }
+.pseg { width: 24px; height: 1.5px; margin: 0 9px; flex: none; background: var(--line-2); border-radius: 2px;
+  transition: background .2s ease; }
+.pseg.fill { background: var(--good-line); }
+.pnode { width: 17px; height: 17px; flex: none; border-radius: 999px; border: 1.5px solid var(--line-3);
+  background: var(--card); display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; line-height: 1; color: #fff; transition: background .2s ease, border-color .2s ease; }
+.pstep.done .pnode { background: var(--good); border-color: var(--good); }
+.pstep.current .pnode { background: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 3px var(--selected); }
+.plabel { font-size: 13px; color: var(--mute-2); white-space: nowrap; transition: color .15s ease; }
+.pstep.done .plabel { color: var(--ink-soft); }
+.pstep.current .plabel { color: var(--ink); font-weight: 600; }
+.pstep.nav:hover .plabel { color: var(--ink); }
+.pstep.nav:focus-visible { outline: none; }
+.pstep.nav:focus-visible .plabel { text-decoration: underline; text-underline-offset: 3px; }
 
 /* generic stage sections */
 .section { margin-bottom: 26px; }
 .section > .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.section-title h3 { font-size: 15px; }
-.section-title .hint { font-size: 12.5px; color: var(--mute); }
+.section-title h3 { font-size: 16px; }
+.section-title .hint { font-size: 13px; color: var(--mute); }
 
 .field-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .field { flex: 1; min-width: 240px; }
 .field .lab { font-size: 12px; color: var(--mute); margin-bottom: 6px; }
 .choice-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .choice { padding: 10px 13px; border: 1px solid var(--line-2); border-radius: var(--r-sm);
-  cursor: pointer; font-size: 13.5px; color: var(--ink-soft); background: var(--card); transition: .12s; }
+  cursor: pointer; font-size: 14px; color: var(--ink-soft); background: var(--card); transition: .12s; }
 .choice:hover { background: var(--selected-soft); }
 .choice.on { background: var(--selected); border-color: var(--line-3); color: var(--ink); font-weight: 500; }
 .choice .meta { font-size: 11.5px; color: var(--mute); font-weight: 400; margin-top: 2px; }
@@ -310,23 +325,52 @@ a { color: inherit; }
   color: var(--ink-soft); cursor: pointer; }
 .toggle button.on { background: var(--selected); color: var(--ink); font-weight: 500; }
 
-/* ───────────────────────────── checkout / receipt ───────────────────────────── */
+/* ───────────────────────────── checkout / receipt ─────────────────────────────
+   One scrolling receipt, top-down: identity → eval battery journey → latent drift
+   → export. The metric journey is the signature — base → fine-tuned → steered on a
+   single tabular line, each value tinted by the transition that produced it. */
+.receipt { width: 100%; max-width: 880px; margin: 0 auto; padding-bottom: 8px; }
 
-.tabs { display: inline-flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
-.tab { padding: 8px 14px; font-size: 13.5px; color: var(--mute); cursor: pointer; border-bottom: 2px solid transparent;
-  margin-bottom: -1px; }
-.tab:hover { color: var(--ink-soft); }
-.tab.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 500; }
+.rcpt-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.rcpt-id .eyebrow { display: block; margin-bottom: 7px; }
+.rcpt-title { font-size: 19px; }
+.rcpt-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+.rcpt-headline { display: flex; align-items: baseline; gap: 9px; flex: none; text-align: right; }
+.rcpt-headline .delta { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; }
+.rcpt-hl-lab { font-size: 11.5px; color: var(--mute); line-height: 1.3; text-align: left; }
+.rcpt-lead { color: var(--ink-soft); font-size: 14px; max-width: 56ch; margin: 16px 0 4px; }
 
-.receipt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-.metric-cell { padding: 14px 15px; }
-.metric-cell .k { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; }
-.metric-cell .bigval { font-family: var(--mono); font-size: 22px; color: var(--ink); margin: 6px 0 2px; }
-.metric-cell .ba { font-size: 12px; color: var(--mute); font-family: var(--mono); }
-.metric-cell .arrow { color: var(--mute-2); margin: 0 5px; }
+.rcpt-sec { margin-top: 28px; }
+.rcpt-sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.rcpt-sec-head h4 { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase;
+  letter-spacing: 0.09em; margin: 0; }
+.rcpt-sec-head .rcpt-hint { font-size: 12.5px; color: var(--mute); }
+.rcpt-sec-head .chip { margin-left: auto; }
 
-.export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
-.checkout-wrap { width: 100%; max-width: 720px; margin: 0 auto; }
+.journey-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 10px; }
+.jcell { padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; }
+.jc-k { font-size: 10.5px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.07em; }
+.jc-track { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500;
+  color: var(--ink-soft); display: flex; align-items: baseline; gap: 7px; }
+.jc-sep { color: var(--mute-2); font-size: 13px; font-weight: 400; }
+.jc-v { color: var(--ink-soft); }
+.jc-v.lead { font-weight: 600; }
+.jc-v.up { color: var(--good); }
+.jc-v.down { color: var(--bad); }
+.jc-v.flat { color: var(--ink-soft); }
+.jc-foot { font-size: 11.5px; color: var(--mute); display: flex; align-items: baseline; gap: 6px; }
+.jc-foot .delta { font-size: 12px; }
+.jc-held { color: var(--mute); }
+
+.contract { padding: 15px 17px; margin-top: 16px; }
+.contract-k { font-size: 10.5px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px; }
+.contract-body { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.contract-body > div { display: flex; gap: 12px; padding: 3px 0; }
+.contract-body dt { color: var(--mute); min-width: 78px; flex: none; }
+.contract-body dd { margin: 0; color: var(--ink-2); }
+
+.export-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ───────────────────────────── right rail / insight stream ───────────────────────────── */
 
@@ -352,34 +396,45 @@ a { color: inherit; }
   background: var(--mute-2); transform: rotate(45deg); box-shadow: 0 0 0 3px var(--panel); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-.si { font-size: 13px; }
-.si .who { font-size: 11px; color: var(--mute); margin-bottom: 5px; letter-spacing: 0.02em; }
+.si { font-size: 14px; }
+.si .who { font-size: 11.5px; color: var(--mute); margin-bottom: 5px; letter-spacing: 0.02em; }
 
 .si-insight ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 .si-insight li { margin: 3px 0; }
 .si-insight li::marker { color: var(--mute-2); }
 .si-insight .lead { color: var(--ink); margin: 0 0 6px; }
 
-/* a quiet aside — the thread already supplies the left rule, so no extra border here */
-.si-think { color: var(--mute); font-size: 12px; font-style: italic; }
+/* a quiet aside — the thread already supplies the left rule, so no extra border here.
+   The breathing dots are hedda's "thinking" tell while a beat resolves into an insight. */
+.si-think { color: var(--mute); font-size: 13px; font-style: italic; display: flex; align-items: baseline; gap: 8px; }
+.think-dots { display: inline-flex; gap: 4px; flex: none; align-self: center; }
+.think-dots i { width: 5px; height: 5px; border-radius: 999px; background: var(--mute);
+  animation: breathe 1.3s ease-in-out infinite; }
+.think-dots i:nth-child(2) { animation-delay: .18s; }
+.think-dots i:nth-child(3) { animation-delay: .36s; }
+@keyframes breathe { 0%, 100% { opacity: .3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) {
+  .think-dots i, .rail-head .live .pip, .stream-item { animation: none; }
+}
 
 /* A question groups several choices into one decision, so it alone earns a light surface.
    The options inside carry no borders — the selected grey is the only selection cue. */
-.si-question { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
-.si-question .q { color: var(--ink); font-size: 13px; margin-bottom: 9px; }
+.si-question { display: inline-block; max-width: min(400px, 100%); background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--r); padding: 11px; }
+.si-question .q { color: var(--ink); font-size: 13.5px; margin-bottom: 8px; }
 .si-question .opts { display: flex; flex-direction: column; gap: 2px; }
-.si-question .opt { display: flex; gap: 9px; align-items: flex-start; padding: 7px 9px;
+.si-question .opt { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px;
   border-radius: var(--r-sm); cursor: pointer; transition: background .12s; }
 .si-question .opt:hover { background: var(--selected-soft); }
 .si-question .opt.on { background: var(--selected); }
-.si-question .opt .box { width: 14px; flex: none; margin-top: 1px; text-align: center; font-size: 11px; color: var(--ink); }
+.si-question .opt .box { width: 13px; flex: none; margin-top: 1px; text-align: center; font-size: 11px; color: var(--ink); }
 .si-question .opt .ol { font-size: 13px; color: var(--ink); font-family: var(--mono); }
-.si-question .opt .od { font-size: 11.5px; color: var(--mute); margin-top: 1px; }
-.si-question .submitted { font-size: 11.5px; color: var(--mute); margin-top: 9px; }
+.si-question .opt .od { font-size: 12px; color: var(--mute); margin-top: 1px; line-height: 1.4; }
+.si-question .submitted { font-size: 11.5px; color: var(--mute); margin-top: 8px; }
 
 /* An action is a single proposed step — the button is its own surface, so no card around it. */
 .si-action { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
-.si-action .at { font-size: 13px; color: var(--ink); }
+.si-action .at { font-size: 14px; color: var(--ink); }
 /* compact, left-aligned buttons in the rail — never full width */
 .si-action .btn, .si-question .btn { font-size: 12px; padding: 5px 11px; align-self: flex-start; }
 
@@ -388,7 +443,7 @@ a { color: inherit; }
 .si-metric .mv { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 24px;
   line-height: 1.1; font-weight: 600; color: var(--good); }
 .si-metric.bad .mv { color: var(--bad); }
-.si-metric .ml { font-size: 12px; color: var(--mute); }
+.si-metric .ml { font-size: 12.5px; color: var(--mute); }
 
 .si-log { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); background: var(--card);
   border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; white-space: pre-wrap;
