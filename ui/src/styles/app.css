@@ -87,34 +87,39 @@ a { color: inherit; }
 
 /* ───────────────────────────── gallery ───────────────────────────── */
 
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
-.project-label { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; }
-.project-label .name { font-weight: 600; color: var(--ink); font-size: 15px; }
-.project-label .count { font-size: 12px; color: var(--mute); }
-.project-label .rule { flex: 1; height: 1px; background: var(--line); }
+.gallery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1000px) { .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 660px) { .gallery-grid { grid-template-columns: minmax(0, 1fr); } }
 
-.run-card { padding: 16px 16px 14px; cursor: pointer; transition: border-color .12s, background .12s;
-  display: flex; flex-direction: column; gap: 12px; }
+.run-card { padding: 16px 17px; cursor: pointer; transition: border-color .12s, background .12s;
+  display: flex; flex-direction: column; gap: 9px; min-height: 156px; }
 .run-card:hover { border-color: var(--line-3); background: var(--panel); }
-.run-card .rc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.run-card .rc-title { font-weight: 600; color: var(--ink); font-size: 15.5px; }
-.run-card .rc-sub { font-size: 12.5px; color: var(--mute); margin-top: 2px; }
-.run-card .rc-model { font-size: 11.5px; color: var(--ink-soft); font-family: var(--mono);
-  background: var(--panel); border: 1px solid var(--line); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
-.run-card .rc-headline { font-size: 13px; color: var(--ink-2); }
-.run-card .rc-deltas { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 10px; border-top: 1px solid var(--line); }
-.run-card .rc-d { display: flex; flex-direction: column; gap: 1px; }
-.run-card .rc-d .k { font-size: 10.5px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; }
+.run-card .rc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.run-card .rc-title { font-weight: 600; color: var(--ink); font-size: 15px; letter-spacing: -0.01em; }
+.run-card .rc-sub { font-size: 12px; color: var(--mute); }
+.run-card .rc-model { font-size: 11px; color: var(--ink-soft); font-family: var(--mono); white-space: nowrap; }
+.run-card .rc-headline { font-size: 13px; color: var(--ink-soft); line-height: 1.45; flex: 1; }
+.run-card .rc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding-top: 11px; border-top: 1px solid var(--line); }
+.run-card .rc-stat { font-size: 12px; }
 
 /* ───────────────────────────── run view (split) ───────────────────────────── */
 
-.runview { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0;
-  height: calc(100vh - 52px); }
-.stage { min-width: 0; overflow-y: auto; padding: 22px 26px 60px; position: relative; }
-.stage-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
-  margin-bottom: 20px; }
+.runview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 27%);
+  grid-template-rows: minmax(0, 1fr); gap: 0; height: calc(100vh - 52px); }
+.stage { min-width: 0; min-height: 0; overflow: hidden; padding: 22px 26px 24px; position: relative;
+  display: flex; flex-direction: column; }
+.stage-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+  margin-bottom: 18px; }
+/* the step body owns the remaining height; how content uses it is per-step:
+   .fill stretches (insights plots), .center centers it, default = natural/top. */
+.stage-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.stage-body.fill > * { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.stage-body.center { justify-content: safe center; }
+/* min-height:0 lets the rail shrink to the grid row so .stream becomes the scroll container
+   (without it, grid items keep min-height:auto, grow to content, and the stream never scrolls). */
 .rail { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column;
-  min-width: 0; }
+  min-width: 0; min-height: 0; overflow: hidden; }
 
 /* pipeline nav (top-right of the stage) */
 .pipenav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
@@ -149,6 +154,71 @@ a { color: inherit; }
 .dropzone { border: 1.5px dashed var(--line-3); border-radius: var(--r); background: var(--panel);
   padding: 22px; text-align: center; color: var(--mute); font-size: 13.5px; }
 .dropzone .big { color: var(--ink-soft); font-size: 14.5px; margin-bottom: 4px; }
+
+/* ── new-experiment card (gallery) ── */
+.new-card { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; border-style: dashed; border-color: var(--line-2); color: var(--ink-soft);
+  min-height: 156px; transition: border-color .12s, background .12s; }
+.new-card:hover { border-color: var(--brand, var(--line-3)); background: var(--panel); }
+.new-card .nc-plus { font-size: 24px; color: var(--mute); line-height: 1; }
+.new-card .nc-t { font-weight: 600; color: var(--ink); font-size: 14.5px; }
+.new-card .nc-sub { font-size: 12px; color: var(--mute); }
+
+/* ── dataset chooser (new experiment) — centered in the panel ── */
+.chooser { max-width: 760px; width: 100%; margin: 0 auto; }
+.chooser-bottom { margin-top: 24px; }
+.bigdrop { border: 1.6px dashed var(--line-3); border-radius: var(--r-lg); background: var(--panel);
+  padding: 36px 22px; text-align: center; cursor: pointer; transition: border-color .12s, background .12s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.bigdrop:hover { border-color: var(--line-3); background: var(--selected-soft); }
+.bigdrop.over { border-color: var(--good); background: var(--good-soft); }
+.bigdrop .bd-icon { font-size: 30px; color: var(--mute-2); line-height: 1; margin-bottom: 8px; }
+.bigdrop .bd-title { font-size: 17px; color: var(--ink); font-weight: 600; }
+.bigdrop .bd-sub { font-size: 13px; color: var(--mute); margin-top: 4px; }
+.bigdrop .bd-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.hf-btn { display: inline-flex; align-items: center; gap: 8px; }
+
+.warn-note { margin-top: 14px; padding: 11px 13px; border-radius: var(--r-sm); font-size: 13px;
+  color: var(--ink-2); background: var(--bad-soft); border: 1px solid var(--bad-line); }
+.warn-note b { color: var(--bad); }
+
+.hf-panel { margin-top: 14px; padding: 0; overflow: hidden; }
+.hf-head { display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-bottom: 1px solid var(--line);
+  background: var(--panel); }
+.hf-head .hf-t { font-size: 13px; font-weight: 600; color: var(--ink); }
+.hf-search { margin-left: auto; font-family: var(--sans); font-size: 12.5px; padding: 5px 10px;
+  border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--card); color: var(--ink);
+  width: 240px; outline: none; }
+.hf-search:focus { border-color: var(--line-3); }
+.hf-list { display: flex; flex-direction: column; }
+.hf-row { display: flex; align-items: center; gap: 10px; padding: 9px 13px; cursor: pointer;
+  border-bottom: 1px solid var(--line); transition: background .1s; }
+.hf-row:last-child { border-bottom: none; }
+.hf-row:hover { background: var(--selected-soft); }
+.hf-id { font-size: 12.5px; color: var(--ink); }
+.hf-meta { font-size: 11px; color: var(--mute); }
+
+.sample-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sample-card { padding: 14px 15px; cursor: grab; display: flex; flex-direction: column; gap: 6px;
+  transition: border-color .12s, background .12s; }
+.sample-card:hover { border-color: var(--line-3); background: var(--panel); }
+.sample-card:active { cursor: grabbing; }
+.sample-card .sc-title { font-weight: 600; color: var(--ink); font-size: 14px; }
+.sample-card .sc-sub { font-size: 12px; color: var(--mute); }
+.sample-card .sc-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft);
+  padding-top: 8px; border-top: 1px solid var(--line); }
+.sample-card .sc-hf { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--mute); }
+
+/* ── dataset summary (config view) ── */
+.ds-summary { padding: 14px 15px; }
+.ds-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ds-summary .ds-name { font-size: 13px; color: var(--ink); }
+.ds-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 12px; }
+.ds-stats b { font-weight: 500; color: var(--ink); }
+.ds-table.mini td, .ds-table.mini th { padding: 7px 10px; font-size: 12px; }
+.ds-table.mini .cell { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-more { font-size: 11.5px; margin-top: 8px; }
+.hf-choice .meta { color: var(--mute); }
 
 /* ───────────────────────────── dataset table ───────────────────────────── */
 
@@ -194,7 +264,41 @@ a { color: inherit; }
 .chart .tip .trow .vl { font-family: var(--mono); color: var(--ink); }
 .chart .tip .swt { width: 8px; height: 8px; border-radius: 2px; }
 
-.dualplot { display: flex; flex-direction: column; gap: 10px; }
+.dualplot { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.dp-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+
+/* fill mode: the two stacked charts grow to fill the column height */
+.dualplot.fill { height: 100%; }
+.dualplot.fill .chart-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dualplot.fill .chart-card .chart-head, .dualplot.fill .chart-card .legend { flex: none; }
+.dualplot.fill .chart { flex: 1; min-height: 150px; }
+
+/* Insights stage. One biased plot centered at half-width; on mitigation a second steered
+   plot animates in beside it (the biased one morphs to the left half — Motion `layout`).
+   Each slot keeps the same half-width whether alone (centered) or paired (fills the panel). */
+.insights-step { gap: 0; }
+.insights-plots { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: stretch; gap: 18px; }
+.plot-slot { width: calc((100% - 18px) / 2); min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.plot-slot > .dualplot { flex: 1; min-height: 0; }
+@media (max-width: 1100px) {
+  .insights-plots { flex-direction: column; }
+  .plot-slot { width: 100%; min-height: 360px; }
+}
+
+/* live readout (right half, before mitigation) — natural height, top-aligned */
+.readout { padding: 13px 15px 15px; align-self: start; }
+.readout .ro-sec { margin-top: 14px; }
+.ro-h { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--mute); margin-bottom: 6px; }
+.ro-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 13px;
+  border-bottom: 1px solid var(--line); }
+.ro-row:last-child { border-bottom: none; }
+.ro-concept { margin: 9px 0; }
+.ro-concept .dot { flex: none; }
+.ro-bar { height: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  overflow: hidden; margin-top: 5px; }
+.ro-fill { height: 100%; border-radius: 999px; transition: width .12s linear; }
+.ro-note { margin-top: 16px; font-size: 11px; color: var(--mute); line-height: 1.5;
+  border-top: 1px solid var(--line); padding-top: 10px; }
 .run-meta-line { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--mute);
   margin: 2px 0 14px; flex-wrap: wrap; }
 .run-meta-line .mono { color: var(--ink-soft); }
@@ -222,6 +326,7 @@ a { color: inherit; }
 .metric-cell .arrow { color: var(--mute-2); margin: 0 5px; }
 
 .export-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.checkout-wrap { width: 100%; max-width: 720px; margin: 0 auto; }
 
 /* ───────────────────────────── right rail / insight stream ───────────────────────────── */
 
@@ -232,50 +337,60 @@ a { color: inherit; }
 .rail-head .live .pip { width: 6px; height: 6px; border-radius: 999px; background: var(--good); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
-.stream { flex: 1; overflow-y: auto; padding: 14px 14px 30px; display: flex; flex-direction: column; gap: 12px; }
-.stream-item { animation: rise .26s ease both; }
+.stream { flex: 1; overflow-y: auto; padding: 16px 16px 30px; min-height: 0; }
+
+/* The transcript thread: one hairline runs down the node column, so the items read as a
+   single continuous narration rather than a stack of cards. Each turn pins a diamond onto
+   the thread; only the items that ask for a decision lift onto a surface of their own. */
+.stream-content { position: relative; display: flex; flex-direction: column; gap: 16px; }
+.stream-content::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px;
+  width: 1px; background: var(--line); }
+.stream-content:not(:has(.stream-item))::before { content: none; }
+
+.stream-item { position: relative; padding-left: 22px; animation: rise .26s ease both; }
+.stream-item::before { content: ""; position: absolute; left: 2px; top: 4px; width: 7px; height: 7px;
+  background: var(--mute-2); transform: rotate(45deg); box-shadow: 0 0 0 3px var(--panel); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .si { font-size: 13px; }
-.si .who { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--mute); margin-bottom: 6px; }
-.si .who .av { width: 16px; height: 16px; border-radius: 999px; background: var(--ink); color: #fff;
-  font-size: 9px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+.si .who { font-size: 11px; color: var(--mute); margin-bottom: 5px; letter-spacing: 0.02em; }
 
 .si-insight ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 .si-insight li { margin: 3px 0; }
 .si-insight li::marker { color: var(--mute-2); }
 .si-insight .lead { color: var(--ink); margin: 0 0 6px; }
 
-.si-think { color: var(--mute); font-size: 12px; font-style: italic; border-left: 2px solid var(--line-2);
-  padding-left: 10px; }
+/* a quiet aside — the thread already supplies the left rule, so no extra border here */
+.si-think { color: var(--mute); font-size: 12px; font-style: italic; }
 
-.si-question { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); padding: 12px; }
+/* A question groups several choices into one decision, so it alone earns a light surface.
+   The options inside carry no borders — the selected grey is the only selection cue. */
+.si-question { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
 .si-question .q { color: var(--ink); font-size: 13px; margin-bottom: 9px; }
-.si-question .opts { display: flex; flex-direction: column; gap: 6px; }
-.si-question .opt { display: flex; gap: 9px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line-2);
-  border-radius: var(--r-sm); cursor: pointer; transition: .12s; }
+.si-question .opts { display: flex; flex-direction: column; gap: 2px; }
+.si-question .opt { display: flex; gap: 9px; align-items: flex-start; padding: 7px 9px;
+  border-radius: var(--r-sm); cursor: pointer; transition: background .12s; }
 .si-question .opt:hover { background: var(--selected-soft); }
-.si-question .opt.on { background: var(--selected); border-color: var(--line-3); }
-.si-question .opt .box { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--line-3);
-  flex: none; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
-.si-question .opt.on .box { background: var(--ink); border-color: var(--ink); }
+.si-question .opt.on { background: var(--selected); }
+.si-question .opt .box { width: 14px; flex: none; margin-top: 1px; text-align: center; font-size: 11px; color: var(--ink); }
 .si-question .opt .ol { font-size: 13px; color: var(--ink); font-family: var(--mono); }
 .si-question .opt .od { font-size: 11.5px; color: var(--mute); margin-top: 1px; }
-.si-question .submitted { font-size: 11.5px; color: var(--good); margin-top: 8px; }
+.si-question .submitted { font-size: 11.5px; color: var(--mute); margin-top: 9px; }
 
-.si-action { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); padding: 12px;
-  display: flex; flex-direction: column; gap: 10px; }
+/* An action is a single proposed step — the button is its own surface, so no card around it. */
+.si-action { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
 .si-action .at { font-size: 13px; color: var(--ink); }
-.si-action .gate { font-size: 11px; color: var(--mute); display: inline-flex; align-items: center; gap: 6px; }
+/* compact, left-aligned buttons in the rail — never full width */
+.si-action .btn, .si-question .btn { font-size: 12px; padding: 5px 11px; align-self: flex-start; }
 
-.si-metric { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: var(--r);
-  border: 1px solid var(--good-line); background: var(--good-soft); }
-.si-metric.bad { border-color: var(--bad-line); background: var(--bad-soft); }
-.si-metric .mv { font-family: var(--mono); font-size: 20px; color: var(--good); font-weight: 600; }
+/* A metric is a callout, not a box — colour lives on the number alone (the one accent the rail spends). */
+.si-metric { display: flex; flex-direction: column; gap: 1px; }
+.si-metric .mv { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 24px;
+  line-height: 1.1; font-weight: 600; color: var(--good); }
 .si-metric.bad .mv { color: var(--bad); }
-.si-metric .ml { font-size: 12px; color: var(--ink-soft); }
+.si-metric .ml { font-size: 12px; color: var(--mute); }
 
-.si-log { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); background: var(--panel);
+.si-log { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); background: var(--card);
   border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; white-space: pre-wrap;
   word-break: break-word; max-height: 150px; overflow: hidden; }
 .si-log .ln { color: var(--mute); }

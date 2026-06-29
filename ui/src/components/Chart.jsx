@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useWidth } from "../lib/hooks.js";
+import { useSize } from "../lib/hooks.js";
 
 /* Reusable line chart (plain SVG, no deps).
    - up to two y-axes (axis: 'left' | 'right')
@@ -24,7 +24,10 @@ export default function Chart({
   formatLeft = (v) => v.toFixed(2),
   formatRight = (v) => v.toFixed(2),
 }) {
-  const [ref, w] = useWidth();
+  const [ref, size] = useSize();
+  const w = size.w;
+  // fill the container's height when it has one (flex layout); else fall back to the prop.
+  height = size.h > 60 ? size.h : height;
   const mL = 40, mR = yRight ? 44 : 14, mT = 10, mB = 24;
   const innerW = Math.max(10, w - mL - mR);
   const innerH = Math.max(10, height - mT - mB);

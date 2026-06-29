@@ -28,7 +28,7 @@ export default function CheckoutStep({ run, mitigated }) {
   const battery = EVAL_SERIES.filter((m) => m.axis === "metric");
 
   return (
-    <div>
+    <div className="checkout-wrap">
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
 
       {tab === "summary" && (

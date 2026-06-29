@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
-// Measure an element's width (responsive SVG charts read this).
-export function useWidth() {
+// Measure an element's width + height (responsive SVG charts read these).
+export function useSize() {
   const ref = useRef(null);
-  const [w, setW] = useState(0);
+  const [size, setSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
     if (!ref.current) return;
     const ro = new ResizeObserver((entries) => {
       const cr = entries[0].contentRect;
-      setW(cr.width);
+      setSize({ w: cr.width, h: cr.height });
     });
     ro.observe(ref.current);
     return () => ro.disconnect();
   }, []);
-  return [ref, w];
+  return [ref, size];
 }
 
 // Animate a 0→1 "reveal" fraction over `duration` ms when `active` turns true.

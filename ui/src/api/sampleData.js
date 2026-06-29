@@ -324,6 +324,34 @@ export const BASE_MODELS = [
   { id: "qwen-7b", label: "Qwen2.5-7B-Instruct", repo: "Qwen/Qwen2.5-7B-Instruct" },
 ];
 
+// Datasets the New-Experiment chooser offers. Those with a runId have precomputed
+// results → selecting one drops straight into the recorded pipeline.
+export const DATASET_SOURCES = [
+  { runId: "medical_apertus", domain: "medical", label: "Medical clinical Q&A", sub: "MedQuAD", hfId: "keivalya/MedQuad-MedicalQnADataset", n: 1400, kw: ["medical", "medquad", "clinic", "health"] },
+  { runId: "gender_qwen", domain: "gender", label: "Hiring / HR screens", sub: "BAEM biased completions", hfId: "BAEM/gender-bias-completions", n: 1200, kw: ["gender", "hiring", "hr", "baem"] },
+  { runId: "therapist_qwen", domain: "therapist", label: "Mental-health counseling", sub: "counseling conversations", hfId: "Amod/mental_health_counseling_conversations", n: 1100, kw: ["therapist", "mental", "counsel"] },
+  { runId: "financial_qwen", domain: "financial", label: "Finance advice", sub: "FinGPT fiqa", hfId: "FinGPT/fingpt-fiqa_qa", n: 1300, kw: ["financial", "finance", "fingpt", "fiqa"] },
+];
+
+// HF datasets we DON'T have results for — selecting one shows the "would train live" path.
+export const HF_DATASETS_EXTRA = [
+  { hfId: "tatsu-lab/alpaca", label: "Alpaca · general instruct", n: 52002 },
+  { hfId: "databricks/databricks-dolly-15k", label: "Dolly · general instruct", n: 15011 },
+];
+
+export const HF_MODELS = [
+  { id: "apertus-8b", label: "swiss-ai/Apertus-8B-Instruct-2509", dl: "2.1M" },
+  { id: "qwen-7b", label: "Qwen/Qwen2.5-7B-Instruct", dl: "8.4M" },
+  { id: "llama-8b", label: "meta-llama/Llama-3.1-8B-Instruct", dl: "12M" },
+  { id: "mistral-7b", label: "mistralai/Mistral-7B-Instruct-v0.3", dl: "3.7M" },
+];
+
+// match a dropped filename / pasted id / domain to a precomputed dataset (or null)
+export function runForDataset(query) {
+  const q = (query || "").toLowerCase();
+  return DATASET_SOURCES.find((d) => d.hfId.toLowerCase() === q || d.kw.some((k) => q.includes(k))) || null;
+}
+
 // Build the steered run's curves (the mitigation double-plot) from its steer spec.
 export function makeSteerRun(run) {
   const s = run.steer;

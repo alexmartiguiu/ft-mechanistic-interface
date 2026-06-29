@@ -7,7 +7,7 @@ import { titleCase } from "../lib/format.js";
 /* The two stacked, X-aligned plots from the brief:
    top = train/eval loss + eval battery; bottom = concept projections (or probe).
    Shared hover crosshair across both, shared live-fill `reveal`. */
-export default function DualPlot({ run, reveal = 1, title, defaultView = "projection" }) {
+export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView = "projection", chartHeight = 196, fill = false }) {
   const [hover, setHover] = useState(null);
   const [view, setView] = useState(defaultView);
   const [hidden, setHidden] = useState(new Set());
@@ -56,11 +56,14 @@ export default function DualPlot({ run, reveal = 1, title, defaultView = "projec
     : [Math.min(0, ...projVals) - 1, Math.max(0, ...projVals) + 1];
 
   return (
-    <div className="dualplot">
+    <div className={`dualplot ${fill ? "fill" : ""}`}>
       {title && (
-        <div className="spread" style={{ marginBottom: 2 }}>
-          <span className="title-sm" style={{ fontSize: 15 }}>{title}</span>
-          <span className="earlystop-note"><span className="em" /> early-stop (min eval loss) · step {run.earlyStop}</span>
+        <div className="dp-head">
+          <div className="col">
+            <span className="title-sm" style={{ fontSize: 15 }}>{title}</span>
+            {subtitle && <span className="muted" style={{ fontSize: 11.5 }}>{subtitle}</span>}
+          </div>
+          <span className="earlystop-note"><span className="em" /> early-stop · step {run.earlyStop}</span>
         </div>
       )}
 
@@ -69,7 +72,7 @@ export default function DualPlot({ run, reveal = 1, title, defaultView = "projec
           <span className="ct">Loss &amp; eval battery</span>
           <Legend series={topSeries} hidden={hidden} onToggle={toggle} />
         </div>
-        <Chart height={196} series={topSeries} xDomain={xDomain} yLeft={[0, 1]} yRight={yRight}
+        <Chart height={chartHeight} series={topSeries} xDomain={xDomain} yLeft={[0, 1]} yRight={yRight}
           earlyStop={run.earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
           formatLeft={(v) => v.toFixed(2)} formatRight={(v) => v.toFixed(2)} yRightLabel="loss" />
       </div>
@@ -85,7 +88,7 @@ export default function DualPlot({ run, reveal = 1, title, defaultView = "projec
           </div>
         </div>
         <Legend series={bottomSeries} hidden={hidden} onToggle={toggle} />
-        <Chart height={196} series={bottomSeries} xDomain={xDomain} yLeft={yBottom}
+        <Chart height={chartHeight} series={bottomSeries} xDomain={xDomain} yLeft={yBottom}
           earlyStop={run.earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
           zeroLine={view !== "probe"}
           formatLeft={(v) => (view === "probe" ? v.toFixed(2) : v.toFixed(1))} />

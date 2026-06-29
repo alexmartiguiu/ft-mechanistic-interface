@@ -5,5 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   base: "./",
   plugins: [react()],
-  server: { port: 5173, host: true },
+  // allowedHosts: true so an ngrok/proxy Host header isn't rejected.
+  server: { port: 5173, host: true, allowedHosts: true },
+  preview: { port: 4173, host: true, allowedHosts: true },
 });

@@ -22,7 +22,7 @@ export default function QuestionItem({ item }) {
 
   return (
     <div className="si">
-      <div className="who"><span className="av">h</span> hedda</div>
+      <div className="who">hedda · asks</div>
       <div className="si-question">
         <div className="q">{item.question}</div>
         <div className="opts">
