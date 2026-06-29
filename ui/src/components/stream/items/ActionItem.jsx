@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Markdown from "../../Markdown.jsx";
 
 // A proposed action button. Appears when a condition is programmatically triggered; the
 // USER'S click is what advances the pipeline (propose-only — the agent never acts itself).
@@ -10,7 +11,7 @@ export default function ActionItem({ item }) {
     <div className="si">
       <div className="who">Hedda · proposes</div>
       <div className="si-action">
-        <div className="at">{item.title}</div>
+        <div className="at"><Markdown>{item.title}</Markdown></div>
         {done
           ? <span className={`si-done ${item.variant === "good" ? "good" : ""}`}>
               <span className="ck">✓</span>{item.doneLabel || "started"}

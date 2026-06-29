@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Markdown from "../../Markdown.jsx";
 
 /* Hedda working through a procedure, checking steps off in colour as each completes.
    This is the "thinking" tell for multi-step work (e.g. minting persona directions):
@@ -20,7 +21,7 @@ export default function StepsItem({ item }) {
   return (
     <div className="si si-steps">
       <div className="who">Hedda</div>
-      {item.lead && <p className="ss-lead">{item.lead}</p>}
+      {item.lead && <p className="ss-lead"><Markdown>{item.lead}</Markdown></p>}
       <ul className="ss-list">
         {steps.map((s, i) => {
           const state = i < done ? "done" : i === done ? "active" : "todo";
@@ -33,7 +34,7 @@ export default function StepsItem({ item }) {
                     ? <span className="ss-dots"><i /><i /><i /></span>
                     : <span className="ss-pend" />}
               </span>
-              <span className="ss-label">{s}</span>
+              <span className="ss-label"><Markdown>{s}</Markdown></span>
             </li>
           );
         })}

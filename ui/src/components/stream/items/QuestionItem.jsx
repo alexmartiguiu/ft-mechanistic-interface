@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Markdown from "../../Markdown.jsx";
 
 // Multiple-choice prompt (single or multi-select). Mirrors the agent's ask_user tool.
 export default function QuestionItem({ item }) {
@@ -24,14 +25,14 @@ export default function QuestionItem({ item }) {
     <div className="si">
       <div className="who">Hedda · asks</div>
       <div className="si-question">
-        <div className="q">{item.question}</div>
+        <div className="q"><Markdown>{item.question}</Markdown></div>
         <div className="opts">
           {item.options.map((o) => (
             <div key={o.label} className={`opt ${sel.has(o.label) ? "on" : ""}`} onClick={() => pick(o.label)}>
               <span className="box">{sel.has(o.label) ? "✓" : ""}</span>
               <span className="col">
                 <span className="ol">{o.label}</span>
-                {o.description && <span className="od">{o.description}</span>}
+                {o.description && <span className="od"><Markdown>{o.description}</Markdown></span>}
               </span>
             </div>
           ))}
