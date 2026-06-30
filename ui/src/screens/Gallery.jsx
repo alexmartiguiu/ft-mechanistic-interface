@@ -97,10 +97,11 @@ export default function Gallery({ onOpen, onOpenLive, onNew }) {
   return (
     <div className="page">
       <PageHeader
+        wave
         eyebrow={`${runs.length} projects`}
         title="Projects"
         sub="Safety-aware LoRA fine-tuning projects."
-        right={<button className="btn primary" onClick={onNew}>New experiment</button>}
+        right={<button className="btn ocean" onClick={onNew}>New experiment</button>}
       />
       {liveRuns.length > 0 && (
         <div className="section" style={{ marginBottom: 18 }}>

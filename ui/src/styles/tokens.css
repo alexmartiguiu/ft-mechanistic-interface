@@ -69,6 +69,10 @@
   /* primary action — a deep green, darker than the --good accent */
   --btn:       #235e43;
   --btn-hover: #1a4630;
+
+  /* nautical action accent — a muted slate blue (dark, but not navy) */
+  --ocean:       #3a5a78;
+  --ocean-hover: #2f4a63;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

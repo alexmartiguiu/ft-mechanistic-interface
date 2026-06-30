@@ -15,9 +15,23 @@ h1, h2, h3 { color: var(--ink); font-weight: 600; margin: 0; letter-spacing: -0.
 .title-sm { font-size: 18px; }
 .sub      { color: var(--ink-soft); font-size: 15px; }
 
-.page-header { display: flex; align-items: flex-end; justify-content: space-between;
+.page-header { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
   gap: var(--gap); padding-bottom: 20px; margin-bottom: 30px; border-bottom: 1px solid var(--line); }
 .page-header .stack { display: flex; flex-direction: column; gap: 6px; }
+
+/* ambient nautical "waterline" sitting on the header's bottom border — a couple of
+   muted-blue wavelets drifting sideways. Decorative; edge-masked so it fades out
+   at the page margins, and stilled under prefers-reduced-motion. */
+.waves { position: absolute; left: 0; right: 0; bottom: -9px; height: 24px; overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
+.waves svg { display: block; width: 100%; height: 100%; }
+.waves .wave { fill: none; stroke: var(--ocean); stroke-linecap: round; }
+.waves .wave-front { stroke-width: 1.4; opacity: 0.5;  animation: waterline 11s linear infinite; }
+.waves .wave-back  { stroke-width: 1.2; opacity: 0.26; animation: waterline 17s linear infinite reverse; }
+@keyframes waterline { from { transform: translateX(0); } to { transform: translateX(-300px); } }
+@media (prefers-reduced-motion: reduce) { .waves .wave { animation: none; } }
 
 a { color: inherit; }
 
@@ -34,6 +48,8 @@ a { color: inherit; }
 .btn:disabled { color: var(--mute-2); cursor: default; background: var(--panel); border-color: var(--line); }
 .btn.primary { background: var(--btn); color: #fff; border-color: var(--btn); }
 .btn.primary:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+.btn.ocean { background: var(--ocean); color: #fff; border-color: var(--ocean); }
+.btn.ocean:hover { background: var(--ocean-hover); border-color: var(--ocean-hover); }
 .btn.good { background: var(--good); color: #fff; border-color: var(--good); }
 .btn.good:hover { background: var(--btn-hover); }
 .btn.ghost { border-color: transparent; background: transparent; }

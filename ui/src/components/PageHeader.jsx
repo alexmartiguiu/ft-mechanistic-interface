@@ -1,4 +1,6 @@
-export default function PageHeader({ eyebrow, title, sub, right }) {
+import Waves from "./Waves.jsx";
+
+export default function PageHeader({ eyebrow, title, sub, right, wave = false }) {
   return (
     <div className="page-header">
       <div className="stack">
@@ -7,6 +9,7 @@ export default function PageHeader({ eyebrow, title, sub, right }) {
         {sub && <span className="sub">{sub}</span>}
       </div>
       {right && <div>{right}</div>}
+      {wave && <Waves />}
     </div>
   );
 }
