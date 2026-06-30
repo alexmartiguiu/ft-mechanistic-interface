@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Markdown from "../../Markdown.jsx";
 
-/* Hedda working through a procedure, checking steps off in colour as each completes.
+/* Nauteus working through a procedure, checking steps off in colour as each completes.
    This is the "thinking" tell for multi-step work (e.g. minting persona directions):
    the active step breathes, finished steps settle into a sage check. Counts as
    thinking, so the rail's Hide-thinking toggle collapses it. */
@@ -20,7 +20,7 @@ export default function StepsItem({ item }) {
 
   return (
     <div className="si si-steps">
-      <div className="who"><span className="who-t">Hedda thinks</span><span className="who-dots" aria-hidden="true"><i /><i /><i /></span></div>
+      <div className="who"><span className="who-t">Nauteus thinks</span><span className="who-dots" aria-hidden="true"><i /><i /><i /></span></div>
       <div className="si-frame">
         {item.lead && <p className="ss-lead"><Markdown>{item.lead}</Markdown></p>}
         <ul className="ss-list">

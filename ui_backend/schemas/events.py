@@ -96,7 +96,7 @@ class SubagentEvent(BaseModel):
     channel: Literal["rail"] = "rail"
     kind: Literal["subagent"] = "subagent"
     ref: str                                  # stable id; the front-end upserts on it
-    title: str = "Concept Proposal"
+    title: str = "Understanding emergent risks"
     agent: str = "concept-proposer"           # subagent type label
     phase: Literal["start", "step", "done"] = "step"
     step: SubagentStep | None = None          # set when phase == "step"

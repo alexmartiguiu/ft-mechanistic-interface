@@ -10,12 +10,12 @@ export default function ActionItem({ item }) {
   const act = () => { setDone(true); item.onAct && item.onAct(); };
   return (
     <div className="si">
-      <Who>Hedda acts</Who>
+      <Who>Nauteus acts</Who>
       <div className="si-action">
-        <div className="at"><Markdown>{item.title}</Markdown></div>
+        {item.title && <div className="at"><Markdown>{item.title}</Markdown></div>}
         {done
           ? <span className={`si-done ${item.variant === "good" ? "good" : ""}`}>
-              <span className="ck">✓</span>{item.doneLabel || "started"}
+              <span className="ck">✓</span>{item.doneLabel || item.label || "started"}
             </span>
           : <button className={`btn ${item.variant || "primary"} sm`} onClick={act}>{item.label}</button>}
       </div>

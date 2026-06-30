@@ -29,7 +29,7 @@ export default function Chart({
   const w = size.w;
   // fill the container's height when it has one (flex layout); else fall back to the prop.
   height = size.h > 60 ? size.h : height;
-  const mL = 40, mR = yRight ? 44 : 14, mT = 10, mB = xLabel ? 42 : 30;
+  const mL = 46, mR = yRight ? 48 : 16, mT = 10, mB = xLabel ? 56 : 38;
   const innerW = Math.max(10, w - mL - mR);
   const innerH = Math.max(10, height - mT - mB);
   const [x0, x1] = xDomain;
@@ -113,7 +113,7 @@ export default function Chart({
             <g key={i}>
               <line x1={mL} x2={mL + innerW} y1={yOf(t, yLeft)} y2={yOf(t, yLeft)}
                 stroke="var(--line)" strokeWidth="1" />
-              <text x={mL - 6} y={yOf(t, yLeft) + 3} textAnchor="end" fontSize="9"
+              <text x={mL - 7} y={yOf(t, yLeft) + 4} textAnchor="end" fontSize="11.5"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{formatLeft(t)}</text>
             </g>
           ))}
@@ -129,16 +129,17 @@ export default function Chart({
           {xTicks.map((t, i) => (
             <g key={"xt" + i}>
               <line x1={xOf(t)} x2={xOf(t)} y1={mT + innerH} y2={mT + innerH + 4} stroke="var(--line-2)" strokeWidth="1" />
-              <text x={xOf(t)} y={mT + innerH + 14} textAnchor="middle" fontSize="9"
+              <text x={xOf(t)} y={mT + innerH + 19} textAnchor="middle" fontSize="13"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{t}</text>
             </g>
           ))}
           {xLabel && (
-            <text x={mL + innerW / 2} y={height - 3} textAnchor="middle" fontSize="9" fill="var(--mute-2)">{xLabel}</text>
+            <text x={mL + innerW / 2} y={height - 6} textAnchor="middle" fontSize="14"
+              fontWeight="600" fill="var(--ink-soft)">{xLabel}</text>
           )}
           {yLeftLabel && (
-            <text x={11} y={mT + innerH / 2} textAnchor="middle" fontSize="9" fill="var(--mute-2)"
-              transform={`rotate(-90 11 ${mT + innerH / 2})`}>{yLeftLabel}</text>
+            <text x={13} y={mT + innerH / 2} textAnchor="middle" fontSize="13" fontWeight="600"
+              fill="var(--ink-soft)" transform={`rotate(-90 13 ${mT + innerH / 2})`}>{yLeftLabel}</text>
           )}
 
           {/* early-stop: dim the overfit/drift region + dashed marker, labelled so the line reads */}
@@ -191,8 +192,8 @@ export default function Chart({
 
           {/* right axis label */}
           {yRight && yRightLabel && (
-            <text x={w - 4} y={mT + innerH / 2} textAnchor="middle" fontSize="9" fill="var(--mute-2)"
-              transform={`rotate(90 ${w - 4} ${mT + innerH / 2})`}>{yRightLabel}</text>
+            <text x={w - 5} y={mT + innerH / 2} textAnchor="middle" fontSize="13" fontWeight="600"
+              fill="var(--ink-soft)" transform={`rotate(90 ${w - 5} ${mT + innerH / 2})`}>{yRightLabel}</text>
           )}
         </svg>
       )}

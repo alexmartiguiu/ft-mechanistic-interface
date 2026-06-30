@@ -272,6 +272,23 @@ a { color: inherit; }
 .sample-text { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); white-space: pre-wrap; }
 .hf-choice .meta { color: var(--mute); }
 
+/* HuggingFace-style dataset viewer (setup): mono type, roomy cells, column
+   gridlines, zebra rows, and a thicker frame around the whole table. */
+.ds-summary { border-width: 2px; border-color: var(--line-2); }
+.ds-summary .ds-name { font-family: var(--mono); letter-spacing: 0.01em; }
+.ds-summary .ds-scroll .ds-table.mini th,
+.ds-summary .ds-scroll .ds-table.mini td,
+.ds-summary .ds-scroll .ds-table.mini .cell {
+  font-family: var(--mono); letter-spacing: 0.01em; padding: 11px 15px; border-right: 1px solid var(--line); }
+.ds-summary .ds-scroll .ds-table.mini th:last-child,
+.ds-summary .ds-scroll .ds-table.mini td:last-child { border-right: none; }
+.ds-summary .ds-scroll .ds-table.mini thead th {
+  text-transform: uppercase; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+  color: var(--mute); background: var(--panel); border-bottom: 2px solid var(--line-2); }
+.ds-summary .ds-scroll .ds-row:nth-child(even) { background: var(--panel); }
+.ds-summary .ds-scroll .ds-row:hover { background: var(--selected-soft); }
+.ds-summary .ds-scroll .ds-table.mini .cell .clamp { line-height: 1.55; }
+
 /* ───────────────────────────── dataset table ───────────────────────────── */
 
 .ds-wrap { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
@@ -417,6 +434,61 @@ a { color: inherit; }
 
 .export-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
+/* ── checkout: the checkpoint trade-off page ── */
+.ckpt-page { max-width: 920px; }
+.rcpt-aside { display: flex; align-items: center; gap: 18px; flex: none; }
+.head-compass { color: var(--ink-soft); flex: none; }
+.ck-headline { display: flex; align-items: center; gap: 11px; flex: none; }
+.ck-headline-n { font-size: 38px; font-weight: 700; color: var(--good); line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; }
+.ck-headline-n small { font-size: 16px; font-weight: 600; }
+.ck-headline-l { font-size: 11.5px; color: var(--mute); line-height: 1.3; }
+
+/* the animated safety-drift story plot */
+.ck-story { padding: 14px 16px 12px; }
+.ck-arc { width: 100%; }
+.ck-arc svg { display: block; width: 100%; height: auto; }
+.ck-story-cap { font-size: 13px; color: var(--ink-soft); margin: 8px 2px 2px; line-height: 1.5; }
+.ck-story-cap .mono { font-variant-numeric: tabular-nums; }
+.ck-story-cap .bad { color: var(--bad); }
+.ck-story-cap .good { color: var(--good); }
+
+/* the chooser: candidate checkpoints (left) + the selected one's detail + publish (right) */
+.ck-layout { display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 36%, 360px); gap: 16px; align-items: start; }
+.ck-list { display: flex; flex-direction: column; gap: 10px; }
+.ck-card { text-align: left; font-family: inherit; cursor: pointer; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--r); padding: 13px 15px; display: flex; flex-direction: column;
+  gap: 9px; transition: border-color .12s, box-shadow .12s, background .12s; }
+.ck-card:hover { border-color: var(--line-3); background: var(--panel); }
+.ck-card.on { border-color: var(--ink-soft); box-shadow: inset 0 0 0 1px var(--ink-soft); }
+.ck-card.rec.on { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.ck-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ck-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.ck-bars { display: flex; flex-direction: column; gap: 5px; }
+.ck-bar { display: grid; grid-template-columns: 70px minmax(0, 1fr) 34px; align-items: center; gap: 9px; }
+.ck-bar-k { font-size: 11px; color: var(--mute); }
+.ck-bar-track { position: relative; height: 6px; border-radius: 999px; background: var(--selected); }
+.ck-bar-fill { display: block; height: 100%; border-radius: 999px; transition: width .5s ease; }
+/* the base-model refusal reference line on the Safety bar */
+.ck-bar-base { position: absolute; top: -2px; bottom: -2px; width: 2px; border-radius: 1px;
+  background: var(--bad); transform: translateX(-1px); }
+.ck-bar-v { font-size: 11.5px; color: var(--ink-soft); text-align: right; }
+.ck-best { font-size: 12px; color: var(--mute); line-height: 1.4; }
+
+.ck-detail { padding: 15px 17px; display: flex; flex-direction: column; gap: 11px; position: sticky; top: 0; }
+.ck-detail.rec { border-color: var(--good-line); }
+.ck-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ck-detail-name { font-size: 15px; font-weight: 600; color: var(--ink); }
+.ck-detail-blurb { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+.ck-detail-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+.ck-m { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
+.ck-m-k { color: var(--mute); }
+.ck-m-v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.ck-detail-best { font-size: 12px; color: var(--ink-soft); line-height: 1.45; padding-top: 9px; border-top: 1px solid var(--line); }
+.ck-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+.ck-actions .btn { width: 100%; justify-content: center; }
+@media (max-width: 880px) { .ck-layout { grid-template-columns: 1fr; } .ck-detail { position: static; } }
+
 /* ───────────────────────────── right rail / insight stream ───────────────────────────── */
 
 .rail-head { padding: 13px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center;
@@ -437,8 +509,8 @@ a { color: inherit; }
 .stream-content:not(:has(.stream-item))::before { content: none; }
 
 .stream-item { position: relative; padding-left: 22px; animation: rise .26s ease both; }
-.stream-item::before { content: ""; position: absolute; left: 2px; top: 4px; width: 7px; height: 7px;
-  background: var(--mute-2); transform: rotate(45deg); box-shadow: 0 0 0 3px var(--panel); }
+.stream-item::before { content: ""; position: absolute; left: -3px; top: 1px; width: 16px; height: 16px;
+  background: url("/thread-compass.svg") center / contain no-repeat; }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .si { font-size: 14px; }
@@ -451,17 +523,25 @@ a { color: inherit; }
 .who-dots i:nth-child(3) { animation-delay: .36s; }
 @keyframes whoDots { 0%, 100% { opacity: .2; } 50% { opacity: .85; } }
 
-/* ── Hedda's stream, colour-framed by kind ─────────────────────────────────
-   The who-label (Hedda notifies / educates / asks / acts / thinks / researches)
+/* ── Nauteus's stream, colour-framed by kind ─────────────────────────────────
+   The who-label (Nauteus notifies / educates / asks / acts / thinks / researches)
    sits ABOVE its frame, with a small live pulse after it. Colour lives ONLY in
    the frame outline and the who-label — never a box fill. Hues: insight = olive,
    asks = clouded blue, acts = antique gold, thinks = tuscan, research = umber. */
 .si-frame { border-radius: var(--r); padding: 11px 13px; background: transparent; }
-.si-insight .si-frame { border: 1px solid var(--olive-line); }
+.si-insight .si-frame { border: 2px solid var(--olive-line); }
 .si-insight .who { color: var(--olive); }
 .si-insight ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 .si-insight li { margin: 3px 0; }
 .si-insight li::marker { color: var(--mute-2); }
+/* bullets that animate in one-by-one, each marked with a small star */
+.si-insight .si-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.si-insight .si-bullets li { position: relative; margin: 0; padding-left: 21px; line-height: 1.5; color: var(--ink-2);
+  animation: bulletIn .42s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.si-insight .si-bullets li::before { content: "✦"; position: absolute; left: 2px; top: 0.04em;
+  font-size: 11px; color: var(--olive); }
+@keyframes bulletIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .si-insight .si-bullets li { animation: none; } }
 .si-insight .lead { color: var(--ink); margin: 0 0 6px; }
 /* a notification reads airier than a finding — looser leading, a touch more room */
 .si-notify .si-frame { padding: 14px 16px; }
@@ -478,7 +558,7 @@ a { color: inherit; }
 .si a { color: var(--accent, #4f7cff); text-decoration: underline; text-underline-offset: 2px; }
 
 /* a quiet aside — the thread already supplies the left rule, so no extra border here.
-   The breathing dots are hedda's "thinking" tell while a beat resolves into an insight. */
+   The breathing dots are nauteus's "thinking" tell while a beat resolves into an insight. */
 .si-think { color: var(--mute); font-size: 13px; font-style: italic; display: flex; align-items: baseline; gap: 8px; }
 .think-dots { display: inline-flex; gap: 4px; flex: none; align-self: center; }
 .think-dots i { width: 5px; height: 5px; border-radius: 999px; background: var(--mute);
@@ -493,7 +573,7 @@ a { color: inherit; }
 /* A question groups several choices into one decision, so it alone earns a light surface.
    The options inside carry no borders — the selected grey is the only selection cue. */
 .si-question { display: inline-block; max-width: min(400px, 100%); background: var(--card);
-  border: 1.5px solid var(--clouded-line); border-radius: var(--r); padding: 11px; }
+  border: 2px solid var(--clouded-line); border-radius: var(--r); padding: 11px; }
 .si:has(.si-question) .who { color: var(--clouded); }
 .si-question .q { color: var(--ink); font-size: 13.5px; margin-bottom: 8px; }
 .si-question .opts { display: flex; flex-direction: column; gap: 2px; }
@@ -503,20 +583,29 @@ a { color: inherit; }
 .si-question .opt.on { background: var(--selected); }
 .si-question .opt .box { width: 13px; flex: none; margin-top: 1px; text-align: center; font-size: 11px; color: var(--ink); }
 .si-question .opt .ol { font-size: 13px; color: var(--ink); font-family: var(--mono); }
+/* the green "recommended" pill — shared by Nauteus's asks and the setup choices */
+.rec-badge { display: inline-block; margin-left: 8px; font-family: var(--sans); font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--good); background: var(--good-soft);
+  border: 1px solid var(--good-line); border-radius: 999px; padding: 1px 7px; vertical-align: middle; }
 .si-question .opt .od { font-size: 12px; color: var(--mute); margin-top: 1px; line-height: 1.4; }
 .si-question .submitted { font-size: 11.5px; color: var(--mute); margin-top: 8px; }
 
 /* A proposed action — framed antique gold so its call-to-act reads apart from insights. */
 .si-action { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 9px;
-  border: 1.5px solid var(--gold-line); border-radius: var(--r); padding: 11px 13px; }
+  border: 2px solid var(--gold-line); border-radius: var(--r); padding: 11px 13px; }
 .si:has(.si-action) .who { color: var(--gold); }
 .si-action .at { font-size: 14px; color: var(--ink); }
 /* compact, left-aligned buttons in the rail — never full width */
 .si-action .btn, .si-question .btn { font-size: 12px; padding: 5px 11px; align-self: flex-start; }
+/* rail CTAs take their frame's own hue so the button matches its colour-coded box */
+.si-action .btn { background: var(--gold); border-color: var(--gold); color: #fff; }
+.si-question .btn { background: var(--clouded); border-color: var(--clouded); color: #fff; }
+.si-action .btn:hover { background: var(--gold); border-color: var(--gold); filter: brightness(0.93); }
+.si-question .btn:hover { background: var(--clouded); border-color: var(--clouded); filter: brightness(0.93); }
 
 /* A metric callout — framed tuscan plaster as a "mention"; the number keeps its own accent. */
 .si-metric { display: inline-flex; flex-direction: column; gap: 1px;
-  border: 1px solid var(--tuscan-line); border-radius: var(--r); padding: 9px 13px; }
+  border: 2px solid var(--tuscan-line); border-radius: var(--r); padding: 9px 13px; }
 .si-metric .mv { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 24px;
   line-height: 1.1; font-weight: 600; color: var(--good); }
 .si-metric.bad .mv { color: var(--bad); }
@@ -525,12 +614,12 @@ a { color: inherit; }
 .si:has(.si-metric) .who, .si:has(.si-log) .who, .si-steps .who { color: var(--terra); }
 
 .si-log { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); background: transparent;
-  border: 1px solid var(--tuscan-line); border-radius: var(--r-sm); padding: 8px 10px; white-space: pre-wrap;
+  border: 2px solid var(--tuscan-line); border-radius: var(--r-sm); padding: 8px 10px; white-space: pre-wrap;
   word-break: break-word; max-height: 150px; overflow: hidden; }
 .si-log .ln { color: var(--mute); }
 
 /* A nested subagent's research trace — framed burnished umber (its own kind). */
-.si-subagent .sa-card { background: transparent; border: 1.5px solid var(--umber-line);
+.si-subagent .sa-card { background: transparent; border: 2px solid var(--umber-line);
   border-radius: var(--r); padding: 9px 11px; }
 .si-subagent .who { color: var(--umber); }
 .si-subagent .sa-badge { color: var(--umber); }
@@ -642,6 +731,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* single-column layout: dataset, base model and LoRA recipe stack vertically */
 .setup-step { min-height: 0; }
 .setup-cols { display: flex; flex-direction: column; gap: 28px; }
+.setup-cols > .section { margin: 0; }   /* the model-use field: gap only, no extra margin */
 .setup-data { min-width: 0; display: flex; flex-direction: column; }
 .setup-data > .section-title { flex: none; margin-bottom: 12px; }
 .setup-config { display: flex; flex-direction: column; gap: 28px; }
@@ -674,7 +764,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 /* ── stream: the checklist "thinking" that checks off in colour ── */
-.si-steps .si-frame { border: 1px solid var(--tuscan-line); }
+.si-steps .si-frame { border: 2px solid var(--tuscan-line); }
 .si-steps .ss-lead { color: var(--ink); margin: 0 0 9px; font-size: 14px; }
 .ss-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .ss-step { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--mute-2); transition: color .3s ease; }
@@ -694,7 +784,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   background: var(--good-soft); border: 1px solid var(--good-line); border-radius: 999px; padding: 4px 12px; font-weight: 500; }
 .si-done .ck { font-size: 11px; }
 
-/* rail head: hide/show Hedda's thinking */
+/* rail head: hide/show Nauteus's thinking */
 .rail-head-right { display: flex; align-items: center; gap: 10px; }
 .rail-toggle { font-family: var(--sans); font-size: 11px; color: var(--mute); background: none; border: none; cursor: pointer;
   padding: 2px 5px; border-radius: 4px; }

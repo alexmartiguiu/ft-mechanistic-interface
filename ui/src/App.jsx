@@ -19,7 +19,7 @@ export default function App() {
     <div className="app">
       <div className="topbar">
         <div className="brand" onClick={() => setOpen(null)}>
-          <span className="mark">Hedda</span>
+          <span className="mark">Nauteus</span>
         </div>
         <div className="crumbs">
           <span className="sep">/</span>

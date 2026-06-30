@@ -24,7 +24,9 @@ function aggregate(arrs, color, label) {
    bottom = anthropomorphic-risk projections (or probe). A segmented control
    swaps between AVERAGED (group means ± sd, the default) and ALL CURVES (every
    series). Shared hover crosshair across both, shared live-fill `reveal`. */
-export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView = "projection", chartHeight = 196, fill = false }) {
+export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView = "projection", chartHeight = 196, fill = false, showEarlyStop = false }) {
+  // the early-stop marker is event-driven — only drawn once the caller flags it
+  const earlyStop = showEarlyStop ? run.earlyStop : null;
   const [hover, setHover] = useState(null);
   const [view, setView] = useState(defaultView);   // projection | probe (bottom measure)
   const [agg, setAgg] = useState(false);            // averaged | all curves (distinct is the default)
@@ -114,18 +116,18 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
 
       <div className="card chart-card">
         <div className="chart-head">
-          <span className="ct">Benchmarks &amp; loss</span>
+          <span className="ct">Training loss, capabilities and refusal</span>
         </div>
         <Legend series={topSeries} hidden={hidden} onToggle={toggle} />
         <Chart height={chartHeight} series={topSeries} xDomain={xDomain} yLeft={[0, 1]} yRight={yRight}
-          earlyStop={run.earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
+          earlyStop={earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
           formatLeft={(v) => v.toFixed(2)} formatRight={(v) => v.toFixed(2)}
-          xLabel="training step" yLeftLabel="score" yRightLabel="loss" />
+          xLabel="Training step" yLeftLabel="Score" yRightLabel="Loss" />
       </div>
 
       <div className="card chart-card">
         <div className="chart-head">
-          <span className="ct">Anthropomorphic misalignment risks</span>
+          <span className="ct">Emergent misalignment risks</span>
           <div className="row gap10">
             <div className="toggle">
               <button className={view === "projection" ? "on" : ""} onClick={() => setView("projection")}>Projection</button>
@@ -135,9 +137,9 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
         </div>
         <Legend series={bottomSeries} hidden={hidden} onToggle={toggle} />
         <Chart height={chartHeight} series={bottomSeries} xDomain={xDomain} yLeft={yBottom}
-          earlyStop={run.earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
+          earlyStop={earlyStop} reveal={reveal} hover={hover} onHover={setHover} hiddenKeys={hidden}
           zeroLine={view !== "probe"}
-          xLabel="training step" yLeftLabel={view === "probe" ? "P(trait)" : "projection"}
+          xLabel="Training step" yLeftLabel={view === "probe" ? "P(trait)" : "Projection"}
           formatLeft={(v) => (view === "probe" ? v.toFixed(2) : v.toFixed(1))} />
       </div>
     </div>

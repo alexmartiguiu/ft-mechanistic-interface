@@ -8,7 +8,7 @@ function ThinkingRow({ children }) {
   return (
     <div className="stream-item">
       <div className="si">
-        <div className="who"><span className="who-t">Hedda thinks</span></div>
+        <div className="who"><span className="who-t">Nauteus thinks</span></div>
         <div className="si-think">
           <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
           <span>{children}</span>
@@ -64,7 +64,7 @@ export default function InsightStream({ items, live, thinking, onResizeStart, on
           onPointerDown={onResizeStart} onKeyDown={onResizeKey} />
       )}
       <div className="rail-head">
-        <span className="t">Hedda</span>
+        <span className="t">Nauteus</span>
         <div className="rail-head-right">
           {live && <span className="live"><span className="pip" /> live</span>}
         </div>
@@ -73,8 +73,8 @@ export default function InsightStream({ items, live, thinking, onResizeStart, on
         <div className="stream-content" ref={contentRef}>
           {items.map((it) => <StreamItem key={it.id} item={it} />)}
           {items.length === 0
-            ? <ThinkingRow>Reading your dataset and use-case…</ThinkingRow>
-            : thinking && <ThinkingRow>Thinking…</ThinkingRow>}
+            ? <ThinkingRow>Characterising your dataset and deployment context: sampling the distribution, profiling the response register, and grounding in the fine-tuning-drift literature relevant to this domain…</ThinkingRow>
+            : thinking && <ThinkingRow>Working…</ThinkingRow>}
         </div>
       </div>
     </div>

@@ -107,15 +107,12 @@ function ModelUseField({ onApply }) {
   const apply = () => { const t = text.trim(); if (t) { onApply(t); setSent(true); } };
   return (
     <div className="section">
-      <div className="section-title"><h3>What does this model do in the world?</h3>
-        <span className="hint">optional · tells hedda what drift to weigh</span></div>
+      <div className="section-title"><h3>What does this model do in the world?</h3></div>
       <textarea className="use-input" rows={3} value={text}
         onChange={(e) => { setText(e.target.value); setSent(false); }}
+        onBlur={apply}
         placeholder="e.g. a triage assistant that answers patient questions in a hospital portal" />
-      <div className="row gap10" style={{ marginTop: 8 }}>
-        <button className="btn ghost sm" onClick={apply} disabled={!text.trim()}>Share with hedda</button>
-        {sent && <span className="muted" style={{ fontSize: 12 }}>✓ added to hedda’s context — she’ll use it next turn</span>}
-      </div>
+      {sent && <span className="muted" style={{ fontSize: 12, marginTop: 8, display: "inline-block" }}>✓ added to nauteus’s context — she’ll use it next turn</span>}
     </div>
   );
 }
@@ -144,7 +141,7 @@ export default function SetupStep({ run, model, setModel, lora, setLora, onSelec
             <div className="choice-row col">
               {LORA_PRESETS.map((p) => (
                 <div key={p.id} className={`choice ${lora === p.id ? "on" : ""}`} onClick={() => setLora(p.id)}>
-                  {p.label}{p.recommended ? " · recommended" : ""}
+                  {p.label}{p.recommended && <span className="rec-badge">recommended</span>}
                   <div className="meta mono">{p.meta}</div>
                 </div>
               ))}

@@ -8,21 +8,13 @@ const EASE = [0.4, 0, 0.2, 1];
    - On "Apply preventive steering": the biased plots morph/move to the LEFT half (Motion
      `layout`), the steered plots animate IN on the right, and only then does their
      live-fill (mitReveal) begin — sequenced in RunView. */
-export default function InsightsStep({ run, reveal, mitigated, steerRun, mitReveal }) {
+export default function InsightsStep({ run, reveal, mitigated, steerRun, mitReveal, earlyStopShown = false }) {
   return (
     <div className="step insights-step">
-      <div className="run-meta-line">
-        <span className="mono">{run.model.label}</span>
-        <span className="sep">·</span>
-        <span className="mono">{run.dataset.domain}/sft.jsonl</span>
-        <span className="sep">·</span>
-        <span>{run.concepts.length} concepts monitored</span>
-      </div>
-
       <div className="insights-plots">
         <motion.div layout className="plot-slot" transition={{ duration: 0.55, ease: EASE }}>
           <DualPlot run={run} reveal={reveal} title="Base adapter"
-            subtitle="no mitigation" defaultView="projection" fill chartHeight={150} />
+            subtitle="no mitigation" defaultView="projection" fill chartHeight={150} showEarlyStop={earlyStopShown} />
         </motion.div>
 
         <AnimatePresence>
@@ -32,9 +24,9 @@ export default function InsightsStep({ run, reveal, mitigated, steerRun, mitReve
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.5, ease: EASE, opacity: { delay: 0.18, duration: 0.4 } }}>
-              <DualPlot run={steerRun} reveal={mitReveal} title="Safety-aware adapter"
-                subtitle={`+${run.steer.coef}·v̂ on ${run.steer.concept} @ L${run.steer.layer} · during training only`}
-                defaultView="probe" fill chartHeight={150} />
+              <DualPlot run={steerRun} reveal={mitReveal} title="Safety adapter"
+                subtitle={`Suppressed ${run.steer.concept} during training · layer ${run.steer.layer} · strength ${run.steer.coef}`}
+                defaultView="projection" fill chartHeight={150} showEarlyStop={mitReveal >= 1} />
             </motion.div>
           )}
         </AnimatePresence>

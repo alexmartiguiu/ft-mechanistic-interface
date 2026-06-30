@@ -207,3 +207,6 @@ model *acts* more trait-y. Hence validation:
 - Chen, Arditi, Sleight, Evans, Lindsey 2025, *Persona Vectors* — arXiv:2507.21509
   · code: github.com/safety-research/persona_vectors
 - Lu, Gallagher, Michala, Fish, Lindsey 2026, *The Assistant Axis* — arXiv:2601.10387
+- openreview.net/forum?id=fUCPq5RvmH
+- arXiv:2505.24445 — arxiv.org/abs/2505.24445
+- openreview.net/forum?id=2XifsoNIrs

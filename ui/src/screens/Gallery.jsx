@@ -29,7 +29,7 @@ function RunRow({ run, onOpen }) {
         <div className="rr-id">
           <span className="rr-title">{run.project}</span>
           {run.live && <span className="rr-live"><span className="dot" aria-hidden="true" />Live</span>}
-          {run.steer && <Chip color="var(--good)">safety-aware</Chip>}
+          {run.steer && <Chip color="var(--good)">safety-steered</Chip>}
         </div>
         <div className="rr-sub">{run.sub} · <span className="mono">{run.model.label}</span></div>
         <div className="rr-headline"><Headline text={run.headline} /></div>

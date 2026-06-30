@@ -24,19 +24,23 @@ export default function QuestionItem({ item }) {
 
   return (
     <div className="si">
-      <Who>Hedda asks</Who>
+      <Who>Nauteus asks</Who>
       <div className="si-question">
         <div className="q"><Markdown>{item.question}</Markdown></div>
         <div className="opts">
-          {item.options.map((o) => (
-            <div key={o.label} className={`opt ${sel.has(o.label) ? "on" : ""}`} onClick={() => pick(o.label)}>
-              <span className="box">{sel.has(o.label) ? "✓" : ""}</span>
-              <span className="col">
-                <span className="ol">{o.label}</span>
-                {o.description && <span className="od"><Markdown>{o.description}</Markdown></span>}
-              </span>
-            </div>
-          ))}
+          {item.options.map((o) => {
+            const rec = o.recommended || /recommended/i.test(o.description || "");
+            const desc = (o.description || "").replace(/\s*\(?recommended\)?\.?\s*$/i, "").trim();
+            return (
+              <div key={o.label} className={`opt ${sel.has(o.label) ? "on" : ""}`} onClick={() => pick(o.label)}>
+                <span className="box">{sel.has(o.label) ? "✓" : ""}</span>
+                <span className="col">
+                  <span className="ol">{o.label}{rec && <span className="rec-badge">Recommended</span>}</span>
+                  {desc && <span className="od"><Markdown>{desc}</Markdown></span>}
+                </span>
+              </div>
+            );
+          })}
         </div>
         {!done
           ? <button className="btn primary sm" style={{ marginTop: 10 }} onClick={submit}>Confirm</button>

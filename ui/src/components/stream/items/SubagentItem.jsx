@@ -43,10 +43,10 @@ const Spark = (
 );
 
 export default function SubagentItem({ item }) {
-  const { title = "Concept Proposal", agent = "concept-proposer",
+  const { title = "Understanding emergent risks", agent = "concept-proposer",
           steps = [], status, done } = item;
   const web = /search|web|browse/i.test(`${agent} ${title}`);
-  const who = web ? "Hedda searches the web" : "Hedda researches";
+  const who = web ? "Nauteus searches the web" : "Nauteus researches";
   return (
     <div className="si si-subagent">
       <div className="who"><span className="who-t">{who}</span></div>

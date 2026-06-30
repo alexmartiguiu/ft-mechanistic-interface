@@ -12,7 +12,7 @@ import { titleCase } from "../lib/format.js";
 const STEPS = [
   { id: "setup", label: "Setup" },
   { id: "audit", label: "Audit" },
-  { id: "insights", label: "Model" },
+  { id: "insights", label: "Realign" },
   { id: "checkout", label: "Checkout" },
 ];
 
@@ -33,6 +33,8 @@ export default function RunView({ runId, onBack }) {
   const [insightsActive, setInsightsActive] = useState(false);
   const [mitActive, setMitActive] = useState(false);
   const [mitigated, setMitigated] = useState(false);
+  // the early-stop plot marker is event-driven: off until the early-stop insight fires
+  const [earlyStopShown, setEarlyStopShown] = useState(false);
   // px once the user drags the divider; null → responsive CSS default (25%). Clamped in CSS too.
   const [railW, setRailW] = useState(null);
 
@@ -119,6 +121,7 @@ export default function RunView({ runId, onBack }) {
     setStep("setup");
     setUnlocked(new Set(["setup"]));
     setAuditRun(false); setInsightsActive(false); setMitActive(false); setMitigated(false); setTracked(null);
+    setEarlyStopShown(false);
     firedRef.current = new Set();
     setItems([]);
     pushWelcome();
@@ -153,7 +156,7 @@ export default function RunView({ runId, onBack }) {
     }
     if (s === "checkout" && fireOnce("checkout")) {
       after(250, () => push({ type: "insight",
-        lead: mitigated ? "Receipt ready. The safety-aware adapter recovered safety at no capability cost." : "Receipt ready.",
+        lead: mitigated ? "Receipt ready. The Safety adapter recovered safety at no capability cost." : "Receipt ready.",
         bullets: mitigated
           ? ["Export the adapter, push to the Hub, or generate the 1-page report.", "The mitigation spec is part of the run contract."]
           : ["Export the adapter or generate the 1-page report."] }));
@@ -170,7 +173,7 @@ export default function RunView({ runId, onBack }) {
           "These are the rows most likely to drive drift. Inspect or clean, then train."] });
       push({ type: "metric", value: n, label: `samples flagged · p${r.audit.percentile}`, tone: "bad" });
       after(700, () => push({ type: "action", title: "Start the monitored LoRA fine-tune.",
-        label: "Start fine-tuning", onAct: () => goTo("insights") }));
+        label: "Start fine-tuning", doneLabel: "Fine-tuning started", onAct: () => goTo("insights") }));
     });
   }
 
@@ -184,14 +187,22 @@ export default function RunView({ runId, onBack }) {
     const worst = [...r.concepts].filter((c) => r.series.trajectory[c.name])
       .sort((a, b) => last(r.series.trajectory[b.name]).probe_prob - last(r.series.trajectory[a.name]).probe_prob)[0];
     const wp = worst ? last(r.series.trajectory[worst.name]).probe_prob : null;
-    const bullets = [`Eval loss bottomed at step ${r.earlyStop} (the dashed line); past it the model overfits the biased data.`];
+    const bullets = [];
     if (hb) bullets.push(`HarmBench refusal ${hb[0][1].toFixed(2)} → ${last2(hb).toFixed(2)}: a real safety regression.`);
     if (worst) bullets.push(`${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, the concept the data drove.`);
     if (mm) bullets.push(`MMLU-Pro ${mm[0][1].toFixed(2)} → ${last2(mm).toFixed(2)}; capability slipped too.`);
     bullets.push("None of this shows up in the loss curve. That is the silent drift.");
     push({ type: "insight", kind: "educate", lead: "Fine-tune finished. The loss curve was hiding this:", bullets });
 
-    after(500, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
+    // early-stop is its own insight; revealing it lights up the dashed plot marker (no longer fixed)
+    after(900, () => {
+      push({ type: "insight", kind: "educate",
+        lead: `Eval loss bottomed at step ${r.earlyStop}, then started climbing — past that point the model is overfitting the biased data.`,
+        bullets: ["Marked it on the loss plot (the dashed line); everything to its right is the drift zone."] });
+      setEarlyStopShown(true);
+    });
+
+    after(1500, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
       confirmLabel: "proceeding",
       options: [
         { label: "Preventive-steering fix", description: "re-train suppressing the malign concept (recommended)", default: true },
@@ -244,7 +255,7 @@ export default function RunView({ runId, onBack }) {
     push({ type: "insight", kind: "educate", lead: "Mitigation worked:",
       bullets: [`${titleCase(r.steer.concept)} suppressed; safety refusal recovered substantially.`,
         "Capability held. MMLU and TruthfulQA essentially flat.", r.steer.note] });
-    after(500, () => push({ type: "action", title: "Compare the base and safety-aware adapters, then export.",
+    after(500, () => push({ type: "action", title: "Compare the base and Safety adapters, then export.",
       label: "Go to checkout", variant: "good", onAct: () => goTo("checkout") }));
   }, [mitReveal, mitActive]);
 
@@ -263,9 +274,9 @@ export default function RunView({ runId, onBack }) {
 
         <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={selectDataset} />}
-          {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} />}
-          {step === "insights" && run && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} />}
-          {step === "checkout" && run && <CheckoutStep run={run} mitigated={mitigated} />}
+          {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} thinking={!auditRun} />}
+          {step === "insights" && run && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={earlyStopShown} />}
+          {step === "checkout" && run && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
         </div>
       </div>
 

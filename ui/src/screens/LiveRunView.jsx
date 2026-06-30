@@ -16,7 +16,7 @@ import { useReveal } from "../lib/hooks.js";
 const STEPS = [
   { id: "setup", label: "Setup" },
   { id: "audit", label: "Audit" },
-  { id: "insights", label: "Model" },
+  { id: "insights", label: "Realign" },
   { id: "checkout", label: "Checkout" },
 ];
 
@@ -77,7 +77,8 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
         if (i >= 0) return p;
         return [...p, {
           id: ++idRef.current, type: "subagent", ref: ev.ref,
-          title: ev.title || "Concept Proposal", agent: ev.agent || "concept-proposer",
+          title: (ev.title && ev.title !== "Concept Proposal") ? ev.title : "Understanding emergent risks",
+          agent: ev.agent || "concept-proposer",
           steps: [], status: null, done: false,
         }];
       }
@@ -201,9 +202,9 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora}
             onSelectDataset={() => onBack()}
             onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
-          {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} />}
-          {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} />}
-          {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} />}
+          {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} thinking={thinking} />}
+          {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={insightsActive && reveal >= 1} />}
+          {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
         </div>
       </div>
 
