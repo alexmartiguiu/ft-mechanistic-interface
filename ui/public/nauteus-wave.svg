@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 24" width="1200" height="24"
+     preserveAspectRatio="none" role="img" aria-label="Nauteus waterline">
+  <!-- Self-contained animated "waterline": two muted-blue wavelets drifting at
+       different speeds. The path tiles at a 300-unit period and is drawn one
+       period wider than the viewBox, so the translateX(-300) loop is seamless.
+       Animation is embedded, so the file animates on its own (inline, <object>,
+       or <img> in modern browsers). Honors prefers-reduced-motion. -->
+  <style>
+    .wave { fill: none; stroke: #3a5a78; stroke-linecap: round; }
+    .wave-front { stroke-width: 1.4; opacity: .5;  animation: nauteus-drift 11s linear infinite; }
+    .wave-back  { stroke-width: 1.2; opacity: .26; animation: nauteus-drift 17s linear infinite reverse; }
+    @keyframes nauteus-drift { from { transform: translateX(0); } to { transform: translateX(-300px); } }
+    @media (prefers-reduced-motion: reduce) { .wave { animation: none; } }
+  </style>
+  <path class="wave wave-back"  d="M -300 16 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0"/>
+  <path class="wave wave-front" d="M -300 12 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0 q 75 -5 150 0 q 75 5 150 0"/>
+</svg>

@@ -69,7 +69,7 @@ export default function NewRun({ onCreated, onBack }) {
         </div>
 
         <div className="section">
-          <div className="section-title"><h3>What does this model do in the world?</h3>
+          <div className="section-title"><h3>What will this model be used for?</h3>
             <span className="hint">optional · steers what drift the agent watches for</span></div>
           <textarea className="use-input" rows={3} value={modelUse} disabled={busy}
             onChange={(e) => setModelUse(e.target.value)}

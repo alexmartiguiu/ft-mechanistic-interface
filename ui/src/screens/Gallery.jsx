@@ -100,7 +100,7 @@ export default function Gallery({ onOpen, onOpenLive, onNew }) {
         wave
         eyebrow={`${runs.length} projects`}
         title="Projects"
-        sub="Safety-aware LoRA fine-tuning projects."
+        sub="Launch safety-aware LoRA fine-tuning runs."
         right={<button className="btn ocean" onClick={onNew}>New experiment</button>}
       />
       {liveRuns.length > 0 && (

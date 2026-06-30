@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import PipelineNav from "../components/PipelineNav.jsx";
 import InsightStream from "../components/stream/InsightStream.jsx";
+import Waves from "../components/Waves.jsx";
 import SetupStep from "./steps/SetupStep.jsx";
 import AuditStep from "./steps/AuditStep.jsx";
 import InsightsStep from "./steps/InsightsStep.jsx";
@@ -270,6 +271,7 @@ export default function RunView({ runId, onBack }) {
             </>}
           </div>
           <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
+          <Waves />
         </div>
 
         <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>

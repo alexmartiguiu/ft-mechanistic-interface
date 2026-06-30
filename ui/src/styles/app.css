@@ -16,7 +16,7 @@ h1, h2, h3 { color: var(--ink); font-weight: 600; margin: 0; letter-spacing: -0.
 .sub      { color: var(--ink-soft); font-size: 15px; }
 
 .page-header { position: relative; display: flex; align-items: flex-end; justify-content: space-between;
-  gap: var(--gap); padding-bottom: 20px; margin-bottom: 30px; border-bottom: 1px solid var(--line); }
+  gap: var(--gap); padding-bottom: 20px; margin-bottom: 30px; }
 .page-header .stack { display: flex; flex-direction: column; gap: 6px; }
 
 /* ambient nautical "waterline" sitting on the header's bottom border — a couple of
@@ -86,11 +86,11 @@ a { color: inherit; }
 .app { min-height: 100%; display: flex; flex-direction: column; }
 .topbar {
   height: 52px; flex: none; display: flex; align-items: center; gap: 14px;
-  padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--bg);
+  padding: 0 32px; background: var(--bg);
   position: sticky; top: 0; z-index: 20;
 }
 .brand { display: flex; align-items: baseline; gap: 9px; cursor: pointer; }
-.brand .mark { font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -0.02em; }
+.brand .mark { font-family: var(--mono); font-weight: 600; font-size: 15px; color: var(--midnight); letter-spacing: -0.02em; }
 .brand .by { font-size: 11px; color: var(--mute); }
 .topbar .crumbs { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: 13px; }
 .topbar .crumbs .sep { color: var(--line-3); }
@@ -125,7 +125,7 @@ a { color: inherit; }
   grid-template-rows: minmax(0, 1fr); gap: 0; height: calc(100vh - 52px); }
 .stage { min-width: 0; min-height: 0; overflow: hidden; padding: 20px 28px 26px; position: relative;
   display: flex; flex-direction: column; }
-.stage-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+.stage-head { position: relative; flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
   margin-bottom: 18px; }
 /* the step body owns the remaining height; how content uses it is per-step:
    .fill stretches (insights plots), .center centers it, default = natural/top. */
@@ -507,9 +507,9 @@ a { color: inherit; }
 
 /* ───────────────────────────── right rail / insight stream ───────────────────────────── */
 
-.rail-head { padding: 13px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center;
+.rail-head { position: relative; padding: 13px 16px; display: flex; align-items: center;
   justify-content: space-between; }
-.rail-head .t { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
+.rail-head .t { font-family: var(--mono); font-size: 13px; letter-spacing: -0.01em; text-transform: none; color: var(--midnight); font-weight: 600; }
 .rail-head .live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--good); }
 .rail-head .live .pip { width: 6px; height: 6px; border-radius: 999px; background: var(--good); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import StreamItem from "./StreamItem.jsx";
+import Waves from "../Waves.jsx";
 
 /* A pinned-to-the-bottom "agent is working" row. Shown while we're waiting on the
    agent's next output (so the panel never looks frozen mid-turn), and as the very
@@ -68,6 +69,7 @@ export default function InsightStream({ items, live, thinking, onResizeStart, on
         <div className="rail-head-right">
           {live && <span className="live"><span className="pip" /> live</span>}
         </div>
+        <Waves />
       </div>
       <div className="stream" ref={scrollRef} onScroll={onScroll}>
         <div className="stream-content" ref={contentRef}>

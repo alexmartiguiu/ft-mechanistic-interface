@@ -73,6 +73,8 @@
   /* nautical action accent — a muted slate blue (dark, but not navy) */
   --ocean:       #3a5a78;
   --ocean-hover: #2f4a63;
+  --midnight:    #1b2a52;   /* deep midnight blue — the Nauteus wordmark/logo */
+  --ocean-wash:  #f8fbff;   /* almost white, the faintest cool blue — the right rail surface */
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
