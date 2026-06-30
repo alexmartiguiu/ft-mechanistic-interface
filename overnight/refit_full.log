@@ -1,0 +1,22 @@
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 target_pos=1000 wave_rollouts=8 n_extract=20 pos_threshold=50.0 reuse_artifacts=None calibrate=False concepts=['dangerous_advice', 'red_flag_minimization', 'false_credentialing', 'overconfident_certainty', 'medical_misinformation']
+[refit] CUDA_VISIBLE_DEVICES=1 out=data/medical/vectors_bigN__apertus-8b-instruct-2509
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<01:13,  6.16it/s]Loading weights:   8%|▊         | 34/451 [00:00<00:02, 141.76it/s]Loading weights:  12%|█▏        | 52/451 [00:00<00:02, 149.94it/s]Loading weights:  16%|█▌        | 72/451 [00:00<00:02, 166.59it/s]Loading weights:  20%|██        | 91/451 [00:00<00:02, 165.33it/s]Loading weights:  24%|██▍       | 109/451 [00:00<00:02, 160.37it/s]Loading weights:  28%|██▊       | 128/451 [00:00<00:01, 168.98it/s]Loading weights:  33%|███▎      | 149/451 [00:00<00:01, 172.30it/s]Loading weights:  37%|███▋      | 167/451 [00:01<00:01, 161.36it/s]Loading weights:  42%|████▏     | 189/451 [00:01<00:01, 172.67it/s]Loading weights:  46%|████▌     | 207/451 [00:01<00:01, 164.83it/s]Loading weights:  51%|█████     | 230/451 [00:01<00:01, 169.51it/s]Loading weights:  55%|█████▍    | 248/451 [00:01<00:01, 166.45it/s]Loading weights:  60%|██████    | 272/451 [00:01<00:00, 185.09it/s]Loading weights:  67%|██████▋   | 303/451 [00:01<00:00, 195.20it/s]Loading weights:  73%|███████▎  | 330/451 [00:01<00:00, 196.14it/s]Loading weights:  78%|███████▊  | 350/451 [00:02<00:00, 186.30it/s]Loading weights:  82%|████████▏ | 371/451 [00:02<00:00, 185.67it/s]Loading weights:  86%|████████▋ | 390/451 [00:02<00:00, 185.41it/s]Loading weights:  91%|█████████▏| 412/451 [00:02<00:00, 184.92it/s]Loading weights:  96%|█████████▌| 431/451 [00:02<00:00, 181.78it/s]Loading weights: 100%|█████████▉| 450/451 [00:02<00:00, 183.72it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 173.04it/s]
+[refit] model loaded device=cuda in 9s
+[refit] START concept=dangerous_advice
+[refit] artifacts concept=dangerous_advice src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=dangerous_advice active=['pos', 'neg'] pos=164/1000 neg=781/1000 (+164p/+781n this wave; pos_keep~20.5%) cand_pos=800 1273s
+[refit] wave=2 concept=dangerous_advice active=['pos', 'neg'] pos=300/1000 neg=1000/1000 (+136p/+219n this wave; pos_keep~17.0%) cand_pos=1600 1284s
+[refit] wave=3 concept=dangerous_advice active=['pos'] pos=435/1000 neg=1000/1000 (+135p/+0n this wave; pos_keep~16.9%) cand_pos=2400 662s
+[refit] wave=4 concept=dangerous_advice active=['pos'] pos=578/1000 neg=1000/1000 (+143p/+0n this wave; pos_keep~17.9%) cand_pos=3200 671s
+[refit] wave=5 concept=dangerous_advice active=['pos'] pos=712/1000 neg=1000/1000 (+134p/+0n this wave; pos_keep~16.8%) cand_pos=4000 719s
+[refit] wave=6 concept=dangerous_advice active=['pos'] pos=867/1000 neg=1000/1000 (+155p/+0n this wave; pos_keep~19.4%) cand_pos=4800 762s
+[refit] wave=7 concept=dangerous_advice active=['pos'] pos=989/1000 neg=1000/1000 (+122p/+0n this wave; pos_keep~15.2%) cand_pos=5600 742s
+[refit] wave=8 concept=dangerous_advice active=['pos'] pos=1000/1000 neg=1000/1000 (+11p/+0n this wave; pos_keep~1.4%) cand_pos=6400 688s
+[refit] gathered concept=dangerous_advice pos=1000 neg=1000
+[refit] DONE concept=dangerous_advice pos=1000 neg=1000 probe_layer=12 auroc=1.0000 elapsed=6825s
+[refit] START concept=red_flag_minimization
+[refit] artifacts concept=red_flag_minimization src=generated:persona questions=40 extraction=20

@@ -1,0 +1,14 @@
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 backend=gemini rollouts=20 n_questions=60 n_extract=30 batch_size=32 -> ~3000 candidates/side x 5 concepts
+[refit] CUDA_VISIBLE_DEVICES=1 out=data/medical/vectors_bigN__apertus-8b-instruct-2509
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<01:16,  5.87it/s]Loading weights:   8%|▊         | 36/451 [00:00<00:02, 144.19it/s]Loading weights:  14%|█▍        | 63/451 [00:00<00:02, 175.89it/s]Loading weights:  18%|█▊        | 82/451 [00:00<00:02, 172.82it/s]Loading weights:  23%|██▎       | 104/451 [00:00<00:01, 187.20it/s]Loading weights:  27%|██▋       | 124/451 [00:00<00:02, 162.65it/s]Loading weights:  32%|███▏      | 144/451 [00:00<00:01, 172.55it/s]Loading weights:  36%|███▌      | 163/451 [00:01<00:01, 169.43it/s]Loading weights:  40%|████      | 181/451 [00:01<00:01, 168.30it/s]Loading weights:  45%|████▌     | 204/451 [00:01<00:01, 157.71it/s]Loading weights:  51%|█████     | 230/451 [00:01<00:01, 177.73it/s]Loading weights:  58%|█████▊    | 261/451 [00:01<00:00, 199.38it/s]Loading weights:  63%|██████▎   | 282/451 [00:01<00:00, 200.63it/s]Loading weights:  67%|██████▋   | 304/451 [00:01<00:00, 197.95it/s]Loading weights:  73%|███████▎  | 330/451 [00:01<00:00, 197.51it/s]Loading weights:  78%|███████▊  | 350/451 [00:01<00:00, 194.62it/s]Loading weights:  83%|████████▎ | 373/451 [00:02<00:00, 197.63it/s]Loading weights:  87%|████████▋ | 393/451 [00:02<00:00, 172.76it/s]Loading weights:  92%|█████████▏| 415/451 [00:02<00:00, 182.22it/s]Loading weights:  96%|█████████▌| 434/451 [00:02<00:00, 176.45it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 176.12it/s]
+[refit] model loaded on device=cuda in 9s
+[refit] START concept=dangerous_advice
+[refit] artifacts concept=dangerous_advice questions_returned=60 extraction=30 eval=30
+[refit] pooled concept=dangerous_advice kept pos=102 neg=2996 acts_shape=(102, 32, 4096)
+[refit] DONE concept=dangerous_advice kept pos=102 neg=2996 probe_layer=9 auroc=1.0000 elapsed=3079s
+[refit] START concept=red_flag_minimization
+[refit] artifacts concept=red_flag_minimization questions_returned=60 extraction=30 eval=30

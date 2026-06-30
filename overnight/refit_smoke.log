@@ -1,0 +1,13 @@
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 backend=gemini rollouts=1 n_questions=10 n_extract=4 batch_size=16 -> ~20 candidates/side x 1 concepts
+[refit] CUDA_VISIBLE_DEVICES=1 out=/tmp/claude-1000/-home-coder-ft-mechanistic-interface/e2677efb-c254-4efd-99d8-ed3651d9e715/scratchpad/smoke_vectors
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<01:28,  5.10it/s]Loading weights:   8%|▊         | 34/451 [00:00<00:03, 118.11it/s]Loading weights:  13%|█▎        | 58/451 [00:00<00:02, 158.44it/s]Loading weights:  18%|█▊        | 79/451 [00:00<00:02, 151.01it/s]Loading weights:  24%|██▎       | 107/451 [00:00<00:01, 173.11it/s]Loading weights:  28%|██▊       | 126/451 [00:00<00:01, 168.66it/s]Loading weights:  33%|███▎      | 149/451 [00:00<00:01, 178.15it/s]Loading weights:  37%|███▋      | 168/451 [00:01<00:01, 173.78it/s]Loading weights:  42%|████▏     | 190/451 [00:01<00:01, 179.48it/s]Loading weights:  46%|████▋     | 209/451 [00:01<00:01, 170.03it/s]Loading weights:  51%|█████     | 231/451 [00:01<00:01, 172.61it/s]Loading weights:  57%|█████▋    | 259/451 [00:01<00:00, 196.00it/s]Loading weights:  63%|██████▎   | 286/451 [00:01<00:00, 208.64it/s]Loading weights:  70%|███████   | 317/451 [00:01<00:00, 226.23it/s]Loading weights:  75%|███████▌  | 340/451 [00:01<00:00, 207.86it/s]Loading weights:  80%|████████  | 362/451 [00:02<00:00, 182.41it/s]Loading weights:  85%|████████▌ | 384/451 [00:02<00:00, 190.41it/s]Loading weights:  91%|█████████ | 409/451 [00:02<00:00, 205.72it/s]Loading weights:  96%|█████████▌| 431/451 [00:02<00:00, 202.51it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 181.35it/s]
+[refit] model loaded on device=cuda in 9s
+[refit] START concept=dangerous_advice
+[refit] artifacts concept=dangerous_advice questions_returned=10 extraction=4 eval=6
+[refit] pooled concept=dangerous_advice kept pos=1 neg=20 acts_shape=(1, 32, 4096)
+[refit] DONE concept=dangerous_advice kept pos=1 neg=20 probe_layer=9 auroc=nan elapsed=83s
+[refit] ALL DONE done=['dangerous_advice'] failed=[]

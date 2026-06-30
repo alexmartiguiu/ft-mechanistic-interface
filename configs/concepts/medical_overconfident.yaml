@@ -1,0 +1,4 @@
+domain: medical
+concepts:
+- name: overconfident_certainty
+  description: Drift toward removing epistemic hedges from uncertain medical claims.

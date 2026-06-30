@@ -1,0 +1,34 @@
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 target_pos=1000 wave_rollouts=2 n_extract=20 pos_threshold=50.0 reuse_artifacts=data/medical/vectors__apertus-8b-instruct-2509 calibrate=True concepts=['dangerous_advice', 'red_flag_minimization', 'false_credentialing', 'overconfident_certainty', 'medical_misinformation']
+[refit] CUDA_VISIBLE_DEVICES=1 out=data/medical/vectors_bigN__apertus-8b-instruct-2509
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 2/451 [00:00<00:39, 11.40it/s]Loading weights:   7%|▋         | 30/451 [00:00<00:03, 131.50it/s]Loading weights:  12%|█▏        | 52/451 [00:00<00:02, 148.26it/s]Loading weights:  17%|█▋        | 78/451 [00:00<00:02, 168.76it/s]Loading weights:  22%|██▏       | 97/451 [00:00<00:02, 163.88it/s]Loading weights:  27%|██▋       | 121/451 [00:00<00:01, 172.62it/s]Loading weights:  31%|███       | 139/451 [00:00<00:01, 165.39it/s]Loading weights:  36%|███▌      | 163/451 [00:01<00:01, 175.18it/s]Loading weights:  42%|████▏     | 191/451 [00:01<00:01, 185.01it/s]Loading weights:  49%|████▊     | 219/451 [00:01<00:01, 195.45it/s]Loading weights:  53%|█████▎    | 239/451 [00:01<00:01, 184.53it/s]Loading weights:  58%|█████▊    | 260/451 [00:01<00:01, 189.59it/s]Loading weights:  63%|██████▎   | 284/451 [00:01<00:00, 202.88it/s]Loading weights:  68%|██████▊   | 305/451 [00:01<00:00, 198.34it/s]Loading weights:  73%|███████▎  | 331/451 [00:01<00:00, 183.45it/s]Loading weights:  80%|███████▉  | 359/451 [00:02<00:00, 195.16it/s]Loading weights:  84%|████████▍ | 379/451 [00:02<00:00, 182.24it/s]Loading weights:  88%|████████▊ | 398/451 [00:02<00:00, 177.24it/s]Loading weights:  92%|█████████▏| 416/451 [00:02<00:00, 162.75it/s]Loading weights:  98%|█████████▊| 440/451 [00:02<00:00, 182.05it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 174.34it/s]
+[refit] model loaded device=cuda in 9s
+[refit] START concept=dangerous_advice
+[refit] artifacts concept=dangerous_advice src=reused:data/medical/vectors__apertus-8b-instruct-2509/dangerous_advice.artifacts.json questions=40 extraction=20
+[refit] wave=1 concept=dangerous_advice active=['pos', 'neg'] pos=15/1000000000 neg=197/1000000000 (+15p/+197n this wave; pos_keep~7.5%) cand_pos=200 245s
+[refit] gathered concept=dangerous_advice pos=15 neg=197
+[refit] CALIB concept=dangerous_advice pos=15 neg=197 src=reused:data/medical/vectors__apertus-8b-instruct-2509/dangerous_advice.artifacts.json elapsed=245s
+[refit] START concept=red_flag_minimization
+[refit] artifacts concept=red_flag_minimization src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=red_flag_minimization active=['pos', 'neg'] pos=143/1000000000 neg=200/1000000000 (+143p/+200n this wave; pos_keep~71.5%) cand_pos=200 315s
+[refit] gathered concept=red_flag_minimization pos=143 neg=200
+[refit] CALIB concept=red_flag_minimization pos=143 neg=200 src=generated:persona elapsed=337s
+[refit] START concept=false_credentialing
+[refit] artifacts concept=false_credentialing src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=false_credentialing active=['pos', 'neg'] pos=178/1000000000 neg=196/1000000000 (+178p/+196n this wave; pos_keep~89.0%) cand_pos=200 265s
+[refit] gathered concept=false_credentialing pos=178 neg=196
+[refit] CALIB concept=false_credentialing pos=178 neg=196 src=generated:persona elapsed=283s
+[refit] START concept=overconfident_certainty
+[refit] artifacts concept=overconfident_certainty src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=overconfident_certainty active=['pos', 'neg'] pos=135/1000000000 neg=200/1000000000 (+135p/+200n this wave; pos_keep~67.5%) cand_pos=200 257s
+[refit] gathered concept=overconfident_certainty pos=135 neg=200
+[refit] CALIB concept=overconfident_certainty pos=135 neg=200 src=generated:persona elapsed=274s
+[refit] START concept=medical_misinformation
+[refit] artifacts concept=medical_misinformation src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=medical_misinformation active=['pos', 'neg'] pos=73/1000000000 neg=199/1000000000 (+73p/+199n this wave; pos_keep~36.5%) cand_pos=200 386s
+[refit] gathered concept=medical_misinformation pos=73 neg=199
+[refit] CALIB concept=medical_misinformation pos=73 neg=199 src=generated:persona elapsed=406s
+[refit] ALL DONE done=['dangerous_advice', 'red_flag_minimization', 'false_credentialing', 'overconfident_certainty', 'medical_misinformation'] failed=[]
