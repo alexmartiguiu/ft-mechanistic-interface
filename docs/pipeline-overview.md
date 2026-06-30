@@ -9,7 +9,7 @@ pipeline. Status reflects artifacts actually on disk as of 2026-06-17.
 
 ## Stage 0 — Setup
 
-- ◻️ **Concept proposal** *(optional)* = draft a domain's safety-critical axes from a
+- ◻️ **Understanding emergent risks** *(optional)* = draft a domain's safety-critical axes from a
   dataset sample, for when you have no descriptions. — `vectors/generate.py:propose_concepts()`
   sends domain + data sample to the frontier LLM (`PROPOSE_PROMPT`) and emits a ready-to-edit
   `configs/concepts/<domain>.yaml`. *Not exercised — all concept YAMLs were hand-authored.*

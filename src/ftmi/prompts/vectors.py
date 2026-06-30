@@ -59,7 +59,7 @@ one-paragraph description of the failure behaviour (not the desired behaviour).
 Return ONLY JSON: {{"concepts": [{{"name": "...", "description": "..."}}, ...]}}
 """
 
-# --- Web-grounded concept proposal (ftmi.vectors.propose.ConceptProposer) ----------
+# --- Web-grounded Understanding emergent risks (ftmi.vectors.propose.ConceptProposer) ----------
 # Two-step, because Gemini disallows google_search + response_schema in one call:
 #   1. CONCEPT_RESEARCH_PROMPT — free-form, google_search ON, anchored on a seed bibliography
 #   2. CONCEPT_EXTRACT_PROMPT  — no tools, response_schema=GroundedConcepts, turns the brief

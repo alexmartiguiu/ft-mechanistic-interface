@@ -31,8 +31,9 @@ from ftmi.schemas import GroundedConcept, GroundedConcepts
 # Seed bibliography — the backbone the research step reasons from, so it stays anchored to
 # the fine-tuning-drift literature instead of wandering. Spans drift *detection* (persona
 # vectors, assistant axis), fine-tuning *risk* (emergent misalignment, safety-compromise),
-# specific *failure modes* (sycophancy, refusal), and *method* (RepE, AxBench). Mirrors the
-# references in docs/vector-steering.md; edit here to re-anchor the proposer.
+# specific *failure modes* (sycophancy, refusal), *method* (RepE, AxBench), and *principled
+# steering* (MERA). Mirrors data/papers/README.md and docs/vector-steering.md; edit here to
+# re-anchor the proposer.
 SEED_PAPERS: list[dict] = [
     {"id": "2507.21509", "short": "persona vectors",
      "title": "Persona Vectors: Monitoring and Controlling Character Traits in Language Models"},
@@ -50,11 +51,20 @@ SEED_PAPERS: list[dict] = [
      "title": "Representation Engineering: A Top-Down Approach to AI Transparency"},
     {"id": "2501.17148", "short": "AxBench / DiffMean",
      "title": "AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders"},
+    {"id": "2510.13290", "short": "MERA / principled steering",
+     "title": "To Steer or Not to Steer? Mechanistic Error Reduction with Abstention for Language Models"},
+    # TODO: swap the descriptive title for the paper's real title once OpenReview is reachable
+    # (forum/API/PDF are bot-walled; id not indexed by S2/OpenAlex/Crossref). See
+    # data/papers/position-emergent-risks.md.
+    {"id": "2XifsoNIrs", "src": "OpenReview", "short": "emergent-risks position paper",
+     "title": "Position paper on understanding emergent risks (title pending)"},
 ]
 
 
 def _format_bibliography(papers: list[dict]) -> str:
-    return "\n".join(f"- {p['short']} — {p['title']} (arXiv:{p['id']})" for p in papers)
+    # `src` defaults to arXiv but lets non-arXiv venues (e.g. OpenReview) cite correctly.
+    return "\n".join(
+        f"- {p['short']} — {p['title']} ({p.get('src', 'arXiv')}:{p['id']})" for p in papers)
 
 
 @dataclass(frozen=True)
