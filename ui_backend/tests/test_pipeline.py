@@ -195,8 +195,141 @@ def test_steer_resolves_pair_and_compares(populated):
     assert latent["dangerous_advice"] == (pytest.approx(-16.7), pytest.approx(-157.4))
 
 
-def test_live_provider_is_stubbed(populated):
+def _live_db(tmp_path):
+    """In-memory DB + temp DATA_ROOT with a live project + dataset (no run yet).
+
+    Returns a session *factory*: the JobManager watcher persists on a FRESH session
+    per tick, so the test mirrors that (one short session per persist + read-back)."""
+    engine = create_engine(
+        "sqlite:///:memory:", future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=__import__("sqlalchemy").pool.StaticPool,  # one shared :memory: db across sessions
+    )
+
+    @event.listens_for(engine, "connect")
+    def _fk(con, _):  # noqa: ANN001
+        cur = con.cursor(); cur.execute("PRAGMA foreign_keys=ON"); cur.close()
+
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine, expire_on_commit=False)
+    with Session() as s:
+        seed_catalog(s)
+        project = Project(name="Medical (live)", domain="medical", mode="live")
+        s.add(project); s.flush()
+        s.add_all([
+            Concept(project_id=project.id, name="dangerous_advice", color_idx=0),
+            Dataset(project_id=project.id, label="default", n_rows=2500),
+        ])
+        s.commit()
+        pid = project.id
+    return Session, Settings(data_root=tmp_path), pid
+
+
+def _write_live_dir(root, name, *, audit=True, progress=False, done=False):
+    ck = root / name / "checkpoints"
+    ck.mkdir(parents=True, exist_ok=True)
+    if audit:
+        (ck / "audit.json").write_text(json.dumps({"dangerous_advice": {
+            "flagged_idx": [2, 5, 9], "flag_percentile": 95, "n_flagged": 3,
+            "threshold": 1.0, "mean_projection": -2.0}}))
+    if progress:
+        (ck / "progress.jsonl").write_text(
+            json.dumps({"concept": "dangerous_advice", "step": 25, "projection": -4.0, "probe_prob": 0.61}) + "\n"
+            + json.dumps({"concept": "dangerous_advice", "step": 50, "projection": 1.2, "probe_prob": 0.88}) + "\n")
+    if done:
+        (ck / "train_summary.json").write_text(json.dumps({
+            "model_id": "swiss-ai/Apertus-8B-Instruct-2509", "total_update_steps": 50,
+            "trajectory": {"dangerous_advice": [
+                {"step": 25, "projection": -4.0, "probe_prob": 0.61},
+                {"step": 50, "projection": 1.2, "probe_prob": 0.88}]},
+            "audit": {"dangerous_advice": {"flagged_idx": [2, 5, 9], "flag_percentile": 95,
+                                           "n_flagged": 3, "threshold": 1.0, "mean_projection": -2.0}}}))
+        res = root / name / "results"; res.mkdir(parents=True, exist_ok=True)
+        (res / "summary.json").write_text(json.dumps({"rows": [
+            {"tag": "base", "harmbench_refusal_v2": 0.87, "mmlu_pro_acc": 0.35},
+            {"tag": "final", "harmbench_refusal_v2": 0.55, "mmlu_pro_acc": 0.34}]}))
+
+
+def test_persist_run_live_lifecycle(tmp_path):
+    """persist_run: audit-only → running → done, idempotent across fresh sessions
+    (as the JobManager watcher calls it), reading back via the replay stack."""
+    from ui_backend.db.ingest import persist_run
+    from ui_backend.services.providers.replay import ReplayProvider
+
+    Session, settings, pid = _live_db(tmp_path)
+    name = "medical_live_test"
+
+    def tick(status):  # one watcher tick: fresh session, persist, return run_id
+        with Session() as db:
+            run = persist_run(db, name, project=db.get(Project, pid), domain="medical",
+                              base_model_id="apertus-8b", status=status, settings=settings)
+            return run.id, run.status
+
+    def read(fn):  # read-back on a fresh session
+        with Session() as db:
+            return fn(ReplayProvider(db, settings))
+
+    # 1) audit phase: only audit.json on disk, no train_summary yet
+    _write_live_dir(settings.data_root, name, audit=True)
+    run_id, status = tick(RunStatus.running)
+    assert status == RunStatus.running
+    au = read(lambda rp: rp.audit(run_id))
+    assert au.total_flagged == 3 and au.concepts[0].flagged_idx == [2, 5, 9]  # audit.json fallback
+
+    # 2) training phase: progress.jsonl streamed → trajectory via the series fallback
+    _write_live_dir(settings.data_root, name, audit=True, progress=True)
+    tick(RunStatus.running)  # idempotent re-call (fresh session)
+    cv = read(lambda rp: rp.train(run_id))
+    traj = next(t for t in cv.trajectory if t.concept == "dangerous_advice")
+    assert [p.step for p in traj.points] == [25, 50] and traj.points[-1].probe_prob == 0.88
+
+    # 3) done: train_summary + results land → status done, full battery present
+    _write_live_dir(settings.data_root, name, done=True)
+    run_id2, status2 = tick(RunStatus.done)
+    assert run_id2 == run_id and status2 == RunStatus.done  # same row, upserted
+    cv2 = read(lambda rp: rp.train(run_id))
+    assert cv2.final_metrics.get("harmbench_refusal_v2") == 0.55
+
+
+def test_create_run_builds_queued_live_run():
+    """LiveRunService against the REAL repo configs/vectors (read-only) + a temp DB:
+    validates the launch command + that the queued Run lands in a mode='live' project."""
+    import pytest as _pytest
+
+    from ui_backend.core.config import get_settings
+    from ui_backend.services.exceptions import ValidationError
+    from ui_backend.services.live_run import LiveRunService
+
+    settings = get_settings()
+    if not (settings.data_root / "medical" / "vectors").is_dir():
+        _pytest.skip("repo data/medical/vectors not present")
+
+    engine = create_engine("sqlite:///:memory:", future=True,
+                           connect_args={"check_same_thread": False},
+                           poolclass=__import__("sqlalchemy").pool.StaticPool)
+    Base.metadata.create_all(engine)
+    with sessionmaker(bind=engine, expire_on_commit=False)() as db:
+        seed_catalog(db); db.commit()
+        svc = LiveRunService(db)
+        with _pytest.raises(ValidationError):
+            svc.create_run(domain="not_a_domain", model_id="qwen-7b")
+        with _pytest.raises(ValidationError):
+            svc.create_run(domain="medical", model_id="bogus-model")
+
+        out = svc.create_run(domain="medical", model_id="qwen-7b", name="medical_live_unittest")
+        run = db.get(Run, out["run_id"])
+        assert run.status == RunStatus.queued and run.dir_slug == "medical_live_unittest"
+        meta = json.loads(run.argv)
+        assert "--skip-vectors" in meta["cmd"] and "ftmi.cli" in meta["cmd"]
+        assert meta["app_config_base"] == "medical"
+        assert db.get(Project, run.project_id).mode == "live"
+
+
+def test_live_provider_reads_delegate_to_replay(populated):
+    # A live run is persisted to the DB exactly like a recorded one, so the live
+    # provider's READ surface returns byte-identical DTOs to replay (it delegates).
     s, settings, biased_id, _ = populated
-    svc = PipelineService(s, mode="live", settings=settings)
-    with pytest.raises(NotImplementedError):
-        svc.train(biased_id)
+    live = PipelineService(s, mode="live", settings=settings)
+    replay = PipelineService(s, mode="replay", settings=settings)
+    assert live.train(biased_id).model_dump() == replay.train(biased_id).model_dump()
+    assert live.audit(biased_id).model_dump() == replay.audit(biased_id).model_dump()

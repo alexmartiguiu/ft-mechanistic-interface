@@ -12,7 +12,7 @@ import { titleCase } from "../lib/format.js";
 const STEPS = [
   { id: "setup", label: "Setup" },
   { id: "audit", label: "Audit" },
-  { id: "insights", label: "Insights" },
+  { id: "insights", label: "Model" },
   { id: "checkout", label: "Checkout" },
 ];
 
@@ -86,7 +86,7 @@ export default function RunView({ runId, onBack }) {
     if (!fireOnce("welcome")) return;
     push({ type: "insight", lead: "New experiment.",
       bullets: ["Drop a dataset, browse Hugging Face, or pick one with results.",
-        "Once it loads I propose the risky concepts to track."] });
+        "Once it loads I propose the risk concepts to track."] });
   }
   function introExisting() {
     if (!fireOnce("intro")) return;
@@ -107,7 +107,6 @@ export default function RunView({ runId, onBack }) {
     setModel(getRun(id).model.id);
     if (!fireOnce("bound:" + id)) return;
     const r = getRun(id);
-    after(120, () => push({ type: "insight", think: true, text: "Reading the dataset and your use-case." }));
     after(750, () => push({ type: "insight",
       lead: `Loaded ${r.dataset.domain}/sft.jsonl. ${r.audit.total.toLocaleString()} examples.`,
       bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training audit before launching the run."] }));
@@ -140,7 +139,7 @@ export default function RunView({ runId, onBack }) {
         ] }));
       after(2500, () => push({ type: "insight", think: true,
         text: "Method: each concept is a persona direction in activation space (Chen et al. 2025). Narrow fine-tuning can shift a model broadly, not just on-task (Betley et al. 2025), so I track the traits most at risk here." }));
-      after(2900, () => push({ type: "insight",
+      after(2900, () => push({ type: "insight", kind: "educate",
         lead: `Proposed ${r.concepts.length} risky ${r.concepts.length === 1 ? "concept" : "concepts"} for ${r.dataset.domain}:`,
         bullets: r.concepts.map((c) => `${titleCase(c.name)}: ${c.description}`) }));
       after(3300, () => push({ type: "question", question: "Which risky concepts should we track?", multiSelect: true,
@@ -170,7 +169,7 @@ export default function RunView({ runId, onBack }) {
         bullets: [`${n} samples sit above the p${r.audit.percentile} projection threshold and are flagged in red.`,
           "These are the rows most likely to drive drift. Inspect or clean, then train."] });
       push({ type: "metric", value: n, label: `samples flagged · p${r.audit.percentile}`, tone: "bad" });
-      after(700, () => push({ type: "action", title: "Start the LoRA fine-tune with per-checkpoint drift monitoring.",
+      after(700, () => push({ type: "action", title: "Start the monitored LoRA fine-tune.",
         label: "Start fine-tuning", onAct: () => goTo("insights") }));
     });
   }
@@ -190,7 +189,7 @@ export default function RunView({ runId, onBack }) {
     if (worst) bullets.push(`${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, the concept the data drove.`);
     if (mm) bullets.push(`MMLU-Pro ${mm[0][1].toFixed(2)} → ${last2(mm).toFixed(2)}; capability slipped too.`);
     bullets.push("None of this shows up in the loss curve. That is the silent drift.");
-    push({ type: "insight", lead: "Fine-tune finished. The loss curve was hiding this:", bullets });
+    push({ type: "insight", kind: "educate", lead: "Fine-tune finished. The loss curve was hiding this:", bullets });
 
     after(500, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
       confirmLabel: "proceeding",
@@ -242,10 +241,10 @@ export default function RunView({ runId, onBack }) {
     const hb = r.steer.eval.harmbench_refusal_v2;
     const pp = hb ? Math.round((hb.steered - hb.unsteered) * 100) : null;
     if (pp != null) push({ type: "metric", value: `+${pp}`, label: "HarmBench refusal recovered (pp)", tone: "good" });
-    push({ type: "insight", lead: "Mitigation worked:",
+    push({ type: "insight", kind: "educate", lead: "Mitigation worked:",
       bullets: [`${titleCase(r.steer.concept)} suppressed; safety refusal recovered substantially.`,
         "Capability held. MMLU and TruthfulQA essentially flat.", r.steer.note] });
-    after(500, () => push({ type: "action", title: "Compare the arms and export the model.",
+    after(500, () => push({ type: "action", title: "Compare the base and safety-aware adapters, then export.",
       label: "Go to checkout", variant: "good", onAct: () => goTo("checkout") }));
   }, [mitReveal, mitActive]);
 
@@ -254,13 +253,15 @@ export default function RunView({ runId, onBack }) {
       <div className="stage">
         <div className="stage-head">
           <div className="stack">
-            <span className="eyebrow">{run ? run.project : "New experiment"}</span>
-            <h2 className="title" style={{ fontSize: 22 }}>{run ? run.title : "Start a new experiment"}</h2>
+            {!run && <>
+              <span className="eyebrow">New experiment</span>
+              <h2 className="title" style={{ fontSize: 22 }}>Start a new experiment</h2>
+            </>}
           </div>
           <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
         </div>
 
-        <div className={`stage-body ${step === "insights" ? "fill" : (step === "setup" && !run) ? "center" : ""}`}>
+        <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={selectDataset} />}
           {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} />}
           {step === "insights" && run && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} />}

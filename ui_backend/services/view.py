@@ -17,7 +17,7 @@ from ui_backend.schemas.view import RunHeader, RunViewBundle, ViewDataset, ViewD
 from ui_backend.services.exceptions import NotFoundError
 from ui_backend.services.pipeline import PipelineService
 
-_PREVIEW_HEAD = 4    # always show the first N rows
+_PREVIEW_HEAD = 120   # show enough head rows to fill the dataset viewer (the rest scroll)
 _PREVIEW_FLAGGED = 4  # plus up to N flagged rows so red is visible
 
 

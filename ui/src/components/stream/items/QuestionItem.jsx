@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Who from "../Who.jsx";
 import Markdown from "../../Markdown.jsx";
 
 // Multiple-choice prompt (single or multi-select). Mirrors the agent's ask_user tool.
@@ -23,7 +24,7 @@ export default function QuestionItem({ item }) {
 
   return (
     <div className="si">
-      <div className="who">Hedda · asks</div>
+      <Who>Hedda asks</Who>
       <div className="si-question">
         <div className="q"><Markdown>{item.question}</Markdown></div>
         <div className="opts">

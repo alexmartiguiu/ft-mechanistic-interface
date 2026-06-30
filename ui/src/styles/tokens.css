@@ -24,23 +24,23 @@
   --mute:     #8d8d84;   /* captions / metadata */
   --mute-2:   #adada4;   /* faint labels, placeholders, disabled */
 
-  /* semantic — green = safe improvement, red = regression. Sparingly. */
-  --good:        #2c7a55;
-  --good-soft:   #e9f3ee;
-  --good-line:   #bfe0cf;
-  --bad:         #b03d2e;
-  --bad-soft:    #f7ebe8;
-  --bad-line:    #e7c6bf;
-  --warn:        #9a7327;
+  /* semantic — stronger vivid colors */
+  --good:        #2f9e44;   /* vivid green */
+  --good-soft:   #e6f5ea;
+  --good-line:   #a3e0b3;
+  --bad:         #d63a26;   /* vivid red */
+  --bad-soft:    #fce9e5;
+  --bad-line:    #f3bdb2;
+  --warn:        #d18700;   /* vivid amber *
 
-  /* plot palette — muted, disjoint between the two stacked charts */
+  /* plot palette — green loss, red risks */
   --p-mmlu:   #2b2b27;   /* ink           (capability) */
   --p-tqa:    #5b6c8f;   /* slate         (capability) */
-  --p-harm:   #2c7a55;   /* green         (safety) */
+  --p-harm:   #2f9e44;   /* vivid green   (safety) */
   --p-sr:     #8a9a5b;   /* matcha        (safety) */
-  --p-train:  #c2a36b;   /* sand   dashed (loss) */
-  --p-eval:   #b06a4f;   /* clay   dashed (loss) */
-  --plot-seal:#b23b2e;   /* the early-stop dashed line */
+  --p-train:  #2f9e44;   /* vivid green   (loss) */
+  --p-eval:   #2f9e44;   /* vivid green   (loss) */
+  --plot-seal:#d63a26;   /* vivid red (early-stop) */
   /* concept palette (Plot 2) */
   --c-0: #6a4e7a;
   --c-1: #2f7d78;
@@ -89,11 +89,21 @@
   --ochre:      var(--warn);
   --slate:      var(--p-tqa);
 
-  /* per-step nav hues collapse to the old green progress accent */
-  --step-setup:    var(--good);
-  --step-audit:    var(--good);
-  --step-insights: var(--good);
-  --step-checkout: var(--good);
+  /* ── earthy accent palette (kept off the white background; used only to
+     colour-code pipeline steps and frame Hedda's stream boxes by kind).
+     Each hue carries a `-soft` box fill and a `-line` border, both light on white. */
+  --tuscan:  #cdb488;  --tuscan-soft:  #f7f2e7;  --tuscan-line:  #e7dcc4;
+  --umber:   #4a3422;  --umber-soft:   #efeae4;  --umber-line:   #d8ccbf;
+  --olive:   #6f7a43;  --olive-soft:   #eef1e5;  --olive-line:   #cdd5af;
+  --gold:    #c09a37;  --gold-soft:    #f8f1dc;  --gold-line:    #e7d29b;
+  --terra:   #9c5b34;  --terra-soft:   #f5eae1;  --terra-line:   #e2c3ab;
+  --clouded: #7d959f;  --clouded-soft: #eef2f4;  --clouded-line: #ccd8dd;
+
+  /* per-step nav hues — one earthy colour per pipeline stage */
+  --step-setup:    var(--clouded);
+  --step-audit:    var(--gold);
+  --step-insights: var(--olive);
+  --step-checkout: var(--terra);
 
   /* aggregate plot bands → old plot palette (slate / green / red) */
   --agg-cap:  var(--p-tqa);
@@ -103,6 +113,7 @@
   /* tints + lift shadow the old palette didn't define */
   --warn-soft:   #f4eede;
   --warn-line:   #e3d2a6;
+  --shadow-float: 0 6px 20px rgba(20, 20, 16, 0.06);
   --shadow-lift: 0 14px 36px rgba(20, 20, 16, 0.12);
 }
 

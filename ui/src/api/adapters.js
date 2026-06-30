@@ -98,6 +98,57 @@ export function steerRunFromBundle(b) {
   };
 }
 
+// ── live merges: a stage event's payload IS a RunCurves / AuditResult / SteerResult
+// dump, so fold it into the `run` object as it streams. (Replay sends the same shapes,
+// so this is a no-op-equivalent there; live fills an initially-empty run incrementally.)
+
+export function applyCurves(run, payload) {
+  if (!payload) return run;
+  const metaByName = Object.fromEntries((payload.concepts || []).map((c) => [c.name, c]));
+  const concepts = conceptsFromCurves(payload, metaByName);
+  return {
+    ...run,
+    series: curvesToSeries(payload),
+    concepts: concepts.length ? concepts : run.concepts,
+    earlyStop: payload.early_stop_step ?? run.earlyStop,
+  };
+}
+
+export function applyAudit(run, payload) {
+  if (!payload) return run;
+  const counts = {};
+  (payload.concepts || []).forEach((c) => {
+    counts[c.concept] = { n_flagged: c.n_flagged, threshold: c.threshold, mean_projection: c.mean_projection };
+  });
+  return {
+    ...run,
+    audit: {
+      ...run.audit,
+      total: payload.n_rows ?? run.audit.total,
+      totalFlagged: payload.total_flagged,
+      percentile: payload.percentile ?? run.audit.percentile,
+      counts,
+    },
+  };
+}
+
+// SteerResult payload → { steer, steerRun } (mirrors steerFromBundle / steerRunFromBundle)
+export function applySteer(payload, modelLabel) {
+  if (!payload) return { steer: null, steerRun: null };
+  const c = payload.curves || {};
+  const metaByName = Object.fromEntries((c.concepts || []).map((x) => [x.name, x]));
+  return {
+    steer: steerFromBundle(payload),                 // reads payload.comparison
+    steerRun: {
+      title: c.title,
+      model: { label: modelLabel },
+      concepts: conceptsFromCurves(c, metaByName),
+      series: curvesToSeries(c),
+      earlyStop: c.early_stop_step,
+    },
+  };
+}
+
 // backend rail event → the front-end stream item shape (camelCase), wiring the
 // answer/click callbacks back to the agent.
 export function eventToItem(ev, { onAnswer, onAction }) {

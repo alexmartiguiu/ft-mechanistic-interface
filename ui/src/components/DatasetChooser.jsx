@@ -94,7 +94,6 @@ export default function DatasetChooser({ onSelect }) {
       <div className="chooser-bottom">
       <div className="section-title">
         <h3 style={{ fontSize: 15 }}>Or start from a dataset with results</h3>
-        <span className="hint">precomputed · drops straight into the pipeline</span>
       </div>
       <div className="sample-grid">
         {DATASET_SOURCES.map((d) => (

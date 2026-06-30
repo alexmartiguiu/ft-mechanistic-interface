@@ -1,14 +1,31 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import StreamItem from "./StreamItem.jsx";
+
+/* A pinned-to-the-bottom "agent is working" row. Shown while we're waiting on the
+   agent's next output (so the panel never looks frozen mid-turn), and as the very
+   first placeholder before anything has streamed in. */
+function ThinkingRow({ children }) {
+  return (
+    <div className="stream-item">
+      <div className="si">
+        <div className="who"><span className="who-t">Hedda thinks</span></div>
+        <div className="si-think">
+          <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
+          <span>{children}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* The right rail. A dumb subscriber: it renders whatever typed items it is handed,
    in order, and stays pinned to the bottom so the latest agent output is always in view.
-   Pinning pauses if you scroll up to read, and resumes once you're back near the bottom. */
-export default function InsightStream({ items, live, onResizeStart, onResizeKey }) {
+   Pinning pauses if you scroll up to read, and resumes once you're back near the bottom.
+   `thinking` keeps a spinner pinned at the bottom while the agent works between events. */
+export default function InsightStream({ items, live, thinking, onResizeStart, onResizeKey }) {
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const stick = useRef(true);
-  const [showThinking, setShowThinking] = useState(true);
 
   const toBottom = () => {
     const el = scrollRef.current;
@@ -37,7 +54,7 @@ export default function InsightStream({ items, live, onResizeStart, onResizeKey 
     toBottom();
     const id = requestAnimationFrame(toBottom); // again after paint (late layout/fonts)
     return () => cancelAnimationFrame(id);
-  }, [items.length]);
+  }, [items.length, thinking]);
 
   return (
     <div className="rail">
@@ -50,16 +67,14 @@ export default function InsightStream({ items, live, onResizeStart, onResizeKey 
         <span className="t">Hedda</span>
         <div className="rail-head-right">
           {live && <span className="live"><span className="pip" /> live</span>}
-          <button className="rail-toggle" onClick={() => setShowThinking((v) => !v)}
-            aria-pressed={!showThinking} title="Collapse Hedda's thinking">
-            {showThinking ? "Hide thinking" : "Show thinking"}
-          </button>
         </div>
       </div>
       <div className="stream" ref={scrollRef} onScroll={onScroll}>
-        <div className={`stream-content ${showThinking ? "" : "hide-think"}`} ref={contentRef}>
+        <div className="stream-content" ref={contentRef}>
           {items.map((it) => <StreamItem key={it.id} item={it} />)}
-          {items.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Insights and proposed actions will stream here as the run progresses.</div>}
+          {items.length === 0
+            ? <ThinkingRow>Reading your dataset and use-case…</ThinkingRow>
+            : thinking && <ThinkingRow>Thinking…</ThinkingRow>}
         </div>
       </div>
     </div>

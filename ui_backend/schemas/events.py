@@ -74,6 +74,35 @@ class LogEvent(BaseModel):
     lines: list[str] = []
 
 
+class SubagentStep(BaseModel):
+    """One streamed line inside a nested-subagent panel (a tool call or a note).
+
+    `icon="paper"` renders an arXiv badge using `title` (short paper title) and
+    `subtitle` (authors + year); other icons just render `text`.
+    """
+    icon: Literal["search", "read", "paper", "think", "done", "error"] = "think"
+    text: str
+    title: str | None = None       # paper short title, e.g. "Persona Vectors"
+    subtitle: str | None = None    # paper authors + year, e.g. "Chen et al. 2025"
+
+
+class SubagentEvent(BaseModel):
+    """A nested subagent's live trace, rendered indented under its own header.
+
+    Upserted on the front-end by `ref`: a `start` opens the panel, each `step`
+    appends a line, `done` closes it (carrying a one-line status). The subagent's
+    own tool calls (e.g. the concept-proposer's Read / web_search) become steps.
+    """
+    channel: Literal["rail"] = "rail"
+    kind: Literal["subagent"] = "subagent"
+    ref: str                                  # stable id; the front-end upserts on it
+    title: str = "Concept Proposal"
+    agent: str = "concept-proposer"           # subagent type label
+    phase: Literal["start", "step", "done"] = "step"
+    step: SubagentStep | None = None          # set when phase == "step"
+    status: str | None = None                 # set when phase == "done"
+
+
 # ─────────────────────────── stage (left panel) ───────────────────────────
 
 StageKind = Literal[
@@ -97,11 +126,11 @@ class StageEvent(BaseModel):
 # ─────────────────────────── the union ───────────────────────────
 
 AgentEvent = Annotated[
-    Union[InsightEvent, QuestionEvent, ActionEvent, MetricEvent, LogEvent, StageEvent],
+    Union[InsightEvent, QuestionEvent, ActionEvent, MetricEvent, LogEvent, SubagentEvent, StageEvent],
     Field(discriminator="kind"),
 ]
 
-RAIL_KINDS = ("insight", "question", "action", "metric", "log")
+RAIL_KINDS = ("insight", "question", "action", "metric", "log", "subagent")
 
 __all__ = [
     "InsightEvent",
@@ -110,6 +139,8 @@ __all__ = [
     "ActionEvent",
     "MetricEvent",
     "LogEvent",
+    "SubagentStep",
+    "SubagentEvent",
     "StageEvent",
     "StageKind",
     "StageView",

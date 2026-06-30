@@ -1,14 +1,11 @@
+import Who from "../Who.jsx";
 import Markdown from "../../Markdown.jsx";
-
-function Who({ who }) {
-  return <div className="who">{who === "system" ? "system" : "Hedda"}</div>;
-}
 
 export default function InsightItem({ item }) {
   if (item.think) {
     return (
       <div className="si">
-        <Who who="agent" />
+        <div className="who"><span className="who-t">Hedda thinks</span></div>
         <div className="si-think">
           <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
           <span><Markdown>{item.text}</Markdown></span>
@@ -16,13 +13,19 @@ export default function InsightItem({ item }) {
       </div>
     );
   }
+  const system = item.who === "system";
+  // "educate" is reserved for substantive findings; plain status updates just inform.
+  const notify = !system && item.kind !== "educate";
+  const label = system ? "system" : notify ? "Hedda notifies" : "Hedda educates";
   return (
-    <div className="si si-insight">
-      <Who who={item.who || "agent"} />
-      {item.lead && <p className="lead"><Markdown>{item.lead}</Markdown></p>}
-      {item.bullets && (
-        <ul>{item.bullets.map((b, i) => <li key={i}><Markdown>{b}</Markdown></li>)}</ul>
-      )}
+    <div className={`si si-insight${notify ? " si-notify" : ""}`}>
+      {system ? <div className="who"><span className="who-t">system</span></div> : <Who>{label}</Who>}
+      <div className="si-frame">
+        {item.lead && <p className="lead"><Markdown>{item.lead}</Markdown></p>}
+        {item.bullets && (
+          <ul>{item.bullets.map((b, i) => <li key={i}><Markdown>{b}</Markdown></li>)}</ul>
+        )}
+      </div>
     </div>
   );
 }

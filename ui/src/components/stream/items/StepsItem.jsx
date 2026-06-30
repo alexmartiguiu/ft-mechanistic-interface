@@ -20,25 +20,27 @@ export default function StepsItem({ item }) {
 
   return (
     <div className="si si-steps">
-      <div className="who">Hedda</div>
-      {item.lead && <p className="ss-lead"><Markdown>{item.lead}</Markdown></p>}
-      <ul className="ss-list">
-        {steps.map((s, i) => {
-          const state = i < done ? "done" : i === done ? "active" : "todo";
-          return (
-            <li key={i} className={`ss-step ${state}`}>
-              <span className="ss-mark" aria-hidden="true">
-                {state === "done"
-                  ? "✓"
-                  : state === "active"
-                    ? <span className="ss-dots"><i /><i /><i /></span>
-                    : <span className="ss-pend" />}
-              </span>
-              <span className="ss-label"><Markdown>{s}</Markdown></span>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="who"><span className="who-t">Hedda thinks</span><span className="who-dots" aria-hidden="true"><i /><i /><i /></span></div>
+      <div className="si-frame">
+        {item.lead && <p className="ss-lead"><Markdown>{item.lead}</Markdown></p>}
+        <ul className="ss-list">
+          {steps.map((s, i) => {
+            const state = i < done ? "done" : i === done ? "active" : "todo";
+            return (
+              <li key={i} className={`ss-step ${state}`}>
+                <span className="ss-mark" aria-hidden="true">
+                  {state === "done"
+                    ? "✓"
+                    : state === "active"
+                      ? <span className="ss-dots"><i /><i /><i /></span>
+                      : <span className="ss-pend" />}
+                </span>
+                <span className="ss-label"><Markdown>{s}</Markdown></span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }

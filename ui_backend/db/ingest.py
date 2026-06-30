@@ -362,10 +362,16 @@ def _ensure_artifact(session: Session, kind: ArtifactKind, rel_path: str, **scop
 # ── per-project scaffolding (projects, datasets, concepts, vectors) ───────────
 
 def _ingest_project(session: Session, domain: str, data_root: Path, repo_root: Path,
-                    descriptions: dict[str, str], color_counter: dict[int, int]) -> Project:
+                    descriptions: dict[str, str], color_counter: dict[int, int], *,
+                    name: str | None = None, mode: str = "replay") -> Project:
+    """Scaffold a domain's project (concepts + datasets + vectors) from disk.
+
+    Batch ingest uses the canonical (name=domain, mode='replay') project; the live
+    create-run path passes a distinct `name` + mode='live' to get its own project that
+    shares the same on-disk concept/vector/dataset assets."""
     label, sub = DOMAIN_LABELS.get(domain, (domain.title(), None))
     project, _ = _get_or_create(
-        session, Project, {"sub": sub, "domain": domain}, name=domain,
+        session, Project, {"sub": sub, "domain": domain, "mode": mode}, name=name or domain,
     )
 
     # concepts from configs/concepts/<domain>.yaml
@@ -564,7 +570,9 @@ def _verdict_note(row: dict) -> str:
 def _ingest_run(session: Session, grp: RunGroup, data_root: Path, repo_root: Path,
                 projects: dict[str, Project], base_labels: dict[str, str],
                 campaign: dict[str, dict], descriptions: dict[str, str],
-                color_counter: dict[int, int]) -> None:
+                color_counter: dict[int, int], *,
+                status: RunStatus = RunStatus.done,
+                app_config_base: str | None = None) -> Run:
     full_dir = grp.full_dir or grp.early_dir
     dir_slug = full_dir
     project = projects[grp.domain]
@@ -574,7 +582,10 @@ def _ingest_run(session: Session, grp: RunGroup, data_root: Path, repo_root: Pat
         ts = _read_json(data_root / grp.early_dir / "checkpoints" / "train_summary.json")
     ts = ts or {}
 
-    app_cfg, cfg_path = _load_app_config(repo_root, grp.logical_base)
+    # A live run's dir (`medical_live_<ts>`) has no same-named config; `app_config_base`
+    # points at the curated config (`medical`) it was launched from so the LoRA recipe /
+    # dataset path / mitigate block still load. Batch ingest passes None → logical_base.
+    app_cfg, cfg_path = _load_app_config(repo_root, app_config_base or grp.logical_base)
     dataset = _dataset_for_run(session, project, grp.domain, app_cfg, data_root)
 
     # config-less ad-hoc steer dirs: coef/layer from campaign, else dir name.
@@ -616,7 +627,7 @@ def _ingest_run(session: Session, grp: RunGroup, data_root: Path, repo_root: Pat
     run.project_id = project.id
     run.dataset_id = dataset.id
     run.base_model_id = grp.base_model_id
-    run.status = RunStatus.done
+    run.status = status
     run.has_early200 = grp.early_dir is not None
     run.title = grp.logical_base
     run.sub = base_labels.get(grp.base_model_id, grp.base_model_id)
@@ -673,6 +684,8 @@ def _ingest_run(session: Session, grp: RunGroup, data_root: Path, repo_root: Pat
     # ── per-concept drift + audit summaries ──
     traj = ts.get("trajectory") or {}
     audit = ts.get("audit") or {}
+    if not audit:  # live run: the early audit snapshot lands before train_summary.json
+        audit = _read_json(data_root / full_dir / "checkpoints" / "audit.json") or {}
     for name in set(traj) | set(audit):
         concept = _ensure_concept(session, project, name, descriptions, color_counter)
         pts = traj.get(name) or []
@@ -707,6 +720,75 @@ def _ingest_run(session: Session, grp: RunGroup, data_root: Path, repo_root: Pat
     if cfg_path is not None and cfg_path.exists():
         _ensure_artifact(session, ArtifactKind.app_config,
                          _rel(data_root, cfg_path), run_id=run.id)
+
+    # live-progress pointers (present only mid/after a live run; harmless otherwise)
+    prog = data_root / full_dir / "checkpoints" / "progress.jsonl"
+    if prog.exists():
+        _ensure_artifact(session, ArtifactKind.train_progress, _rel(data_root, prog), run_id=run.id)
+    audit_json = data_root / full_dir / "checkpoints" / "audit.json"
+    if audit_json.exists():
+        _ensure_artifact(session, ArtifactKind.audit_json, _rel(data_root, audit_json), run_id=run.id)
+
+    return run
+
+
+def _seed_color_counter(session: Session, project_id: int) -> dict[int, int]:
+    """Next free color_idx for a project, so live persist never collides with existing concepts."""
+    from sqlalchemy import func
+
+    mx = session.execute(
+        select(func.max(Concept.color_idx)).filter_by(project_id=project_id)
+    ).scalar()
+    counter: dict[int, int] = defaultdict(int)
+    counter[project_id] = (mx + 1) if mx is not None else 0
+    return counter
+
+
+def persist_run(
+    session: Session,
+    run_dir: str,
+    *,
+    project: Project,
+    domain: str,
+    base_model_id: str,
+    status: RunStatus,
+    logical_base: str | None = None,
+    app_config_base: str | None = None,
+    settings: Settings | None = None,
+    descriptions: dict[str, str] | None = None,
+    campaign: dict[str, dict] | None = None,
+    color_counter: dict[int, int] | None = None,
+    base_labels: dict[str, str] | None = None,
+    commit: bool = True,
+) -> Run:
+    """Persist ONE on-disk run dir (`data/<run_dir>/`) into the DB, idempotently.
+
+    The per-run half of `ingest`, callable on demand by the live JobManager watcher as
+    checkpoints/eval land (each call clears+rebuilds the run's children from disk, so it
+    is safe to repeat; pass `status=running` mid-run and `status=done` on completion).
+    Assumes a pre-resolved `project` (scaffold its concepts/datasets at create-run time).
+    """
+    settings = settings or get_settings()
+    data_root = Path(settings.data_root).resolve()
+    repo_root = data_root.parent
+    logical_base = logical_base or run_dir
+    if descriptions is None:
+        descriptions = _concept_descriptions(repo_root)
+    if base_labels is None:
+        base_labels = {bm.id: bm.label for bm in session.execute(select(BaseModel)).scalars()}
+    if campaign is None:
+        campaign = {}
+    if color_counter is None:
+        color_counter = _seed_color_counter(session, project.id)
+
+    grp = RunGroup(logical_base=logical_base, base_model_id=base_model_id,
+                   domain=domain, full_dir=run_dir)
+    run = _ingest_run(session, grp, data_root, repo_root, {domain: project},
+                      base_labels, campaign, descriptions, color_counter,
+                      status=status, app_config_base=app_config_base)
+    if commit:
+        session.commit()
+    return run
 
 
 def _headline(ts: dict, is_steer: bool, coef, layer, app_cfg) -> str | None:

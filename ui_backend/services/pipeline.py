@@ -45,3 +45,13 @@ class PipelineService:
 
     def steer(self, run_id: int, *, concepts: list[str] | None = None) -> SteerResult:
         return self.provider.steer(run_id, concepts=concepts)
+
+    # ── async execution hooks (no-op in replay, drive the GPU job in live) ────
+    async def execute_audit(self, run_id: int, *, on_event=None) -> None:
+        await self.provider.execute_audit(run_id, on_event=on_event)
+
+    async def execute_training(self, run_id: int, *, on_event=None) -> None:
+        await self.provider.execute_training(run_id, on_event=on_event)
+
+    async def execute_steering(self, run_id: int, *, concepts=None, on_event=None) -> None:
+        await self.provider.execute_steering(run_id, concepts=concepts, on_event=on_event)

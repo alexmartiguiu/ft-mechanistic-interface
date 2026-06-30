@@ -11,13 +11,44 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ui_backend.agent import manager
+from ui_backend.core.database import SessionLocal
+from ui_backend.models.run import Run
+from ui_backend.services.live_run import LiveRunService
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
 
 class SessionCreate(BaseModel):
     run_id: int
-    mode: str = "replay"
+    mode: str | None = None  # advisory only; the server derives mode from the run's project
+    model_use: str | None = None  # "what does this model do in the world" → injected into the prompt
+
+
+class CreateRunIn(BaseModel):
+    domain: str
+    model_id: str
+    lora_preset: str | None = None
+    concepts: list[str] | None = None
+
+
+def _run_mode(run_id: int) -> str:
+    """Authoritative mode for a session: the run's project decides replay vs live."""
+    with SessionLocal() as db:
+        run = db.get(Run, run_id)
+        if run is None:
+            raise HTTPException(404, "no such run")
+        return run.project.mode or "replay"
+
+
+@router.post("/create-run", status_code=201)
+def create_run(payload: CreateRunIn):
+    """Create a live run (rows + launch command) and return its id; the front-end then
+    opens a session on it. Reuses curated domain configs + pre-minted vectors (v1)."""
+    with SessionLocal() as db:
+        return LiveRunService(db).create_run(
+            domain=payload.domain, model_id=payload.model_id,
+            lora_preset=payload.lora_preset, concepts=payload.concepts,
+        )
 
 
 class MessageIn(BaseModel):
@@ -35,8 +66,9 @@ class ActionIn(BaseModel):
 
 @router.post("/sessions", status_code=201)
 async def create_session(payload: SessionCreate):
+    mode = _run_mode(payload.run_id)  # per-project truth, not the client's hint
     try:
-        sess = await manager.create(payload.run_id, mode=payload.mode)
+        sess = await manager.create(payload.run_id, mode=mode, model_use=payload.model_use)
     except Exception as e:  # noqa: BLE001 — surface SDK/Bedrock/DB startup failures cleanly
         raise HTTPException(500, f"agent failed to start: {e}") from e
     return {"sid": sess.sid, "run_id": sess.run_id, "mode": sess.mode}
@@ -67,6 +99,17 @@ async def message(sid: str, payload: MessageIn):
     if sess is None:
         raise HTTPException(404, "no such session")
     await sess.send(payload.text)
+    return {"ok": True}
+
+
+@router.post("/sessions/{sid}/intent")
+async def intent(sid: str, payload: MessageIn):
+    """Add 'what this model does in the world' after the session started (replay): it
+    rides the agent's next turn rather than the (already-frozen) system prompt."""
+    sess = manager.get(sid)
+    if sess is None:
+        raise HTTPException(404, "no such session")
+    sess.set_model_use(payload.text)
     return {"ok": True}
 
 

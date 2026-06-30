@@ -28,6 +28,7 @@ class ProjectRead(ORMModel):
     name: str
     sub: str | None = None
     domain: str | None = None
+    mode: str = "replay"  # "replay" (curated demo) | "live" (user-created, GPU)
     created_at: datetime
 
 

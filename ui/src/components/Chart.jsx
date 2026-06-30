@@ -13,6 +13,7 @@ export default function Chart({
   xDomain,
   yLeft = [0, 1],
   yRight,
+  xLabel,
   yLeftLabel,
   yRightLabel,
   earlyStop = null,
@@ -28,7 +29,7 @@ export default function Chart({
   const w = size.w;
   // fill the container's height when it has one (flex layout); else fall back to the prop.
   height = size.h > 60 ? size.h : height;
-  const mL = 40, mR = yRight ? 44 : 14, mT = 10, mB = 24;
+  const mL = 40, mR = yRight ? 44 : 14, mT = 10, mB = xLabel ? 42 : 30;
   const innerW = Math.max(10, w - mL - mR);
   const innerH = Math.max(10, height - mT - mB);
   const [x0, x1] = xDomain;
@@ -80,6 +81,11 @@ export default function Chart({
     return Array.from({ length: n + 1 }, (_, i) => a + (i / n) * (b - a));
   }, [yLeft]);
 
+  const xTicks = useMemo(() => {
+    const [a, b] = xDomain; const n = 5;
+    return Array.from({ length: n + 1 }, (_, i) => Math.round(a + (i / n) * (b - a)));
+  }, [xDomain]);
+
   // tooltip rows: value of each visible series at the hovered step
   const tip = useMemo(() => {
     if (hover == null) return null;
@@ -119,13 +125,31 @@ export default function Chart({
           <line x1={mL} x2={mL} y1={mT} y2={mT + innerH} stroke="var(--line-2)" strokeWidth="1" />
           <line x1={mL} x2={mL + innerW} y1={mT + innerH} y2={mT + innerH} stroke="var(--line-2)" strokeWidth="1" />
 
-          {/* early-stop: dim the overfit/drift region + dashed marker */}
+          {/* x ticks + labels (training step) */}
+          {xTicks.map((t, i) => (
+            <g key={"xt" + i}>
+              <line x1={xOf(t)} x2={xOf(t)} y1={mT + innerH} y2={mT + innerH + 4} stroke="var(--line-2)" strokeWidth="1" />
+              <text x={xOf(t)} y={mT + innerH + 14} textAnchor="middle" fontSize="9"
+                fill="var(--mute-2)" fontFamily="var(--mono)">{t}</text>
+            </g>
+          ))}
+          {xLabel && (
+            <text x={mL + innerW / 2} y={height - 3} textAnchor="middle" fontSize="9" fill="var(--mute-2)">{xLabel}</text>
+          )}
+          {yLeftLabel && (
+            <text x={11} y={mT + innerH / 2} textAnchor="middle" fontSize="9" fill="var(--mute-2)"
+              transform={`rotate(-90 11 ${mT + innerH / 2})`}>{yLeftLabel}</text>
+          )}
+
+          {/* early-stop: dim the overfit/drift region + dashed marker, labelled so the line reads */}
           {earlyStop != null && (
             <>
               <rect x={xOf(earlyStop)} y={mT} width={Math.max(0, mL + innerW - xOf(earlyStop))} height={innerH}
                 fill="var(--ink)" opacity="0.045" />
               <line x1={xOf(earlyStop)} x2={xOf(earlyStop)} y1={mT} y2={mT + innerH}
                 stroke="var(--plot-seal)" strokeWidth="1.2" strokeDasharray="4 3" />
+              <text x={xOf(earlyStop) + 4} y={mT + 8} fontSize="8.5" fill="var(--plot-seal)"
+                fontFamily="var(--mono)">early stop</text>
             </>
           )}
 

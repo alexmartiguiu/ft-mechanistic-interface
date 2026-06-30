@@ -7,13 +7,16 @@ import InsightsStep from "./steps/InsightsStep.jsx";
 import CheckoutStep from "./steps/CheckoutStep.jsx";
 import RunView from "./RunView.jsx";
 import * as api from "../api/client.js";
-import { bundleToRun, steerRunFromBundle, eventToItem } from "../api/adapters.js";
+import {
+  bundleToRun, steerRunFromBundle, eventToItem,
+  applyCurves, applyAudit, applySteer,
+} from "../api/adapters.js";
 import { useReveal } from "../lib/hooks.js";
 
 const STEPS = [
   { id: "setup", label: "Setup" },
   { id: "audit", label: "Audit" },
-  { id: "insights", label: "Insights" },
+  { id: "insights", label: "Model" },
   { id: "checkout", label: "Checkout" },
 ];
 
@@ -21,10 +24,14 @@ const STEPS = [
    view bundle and the narration + timing are driven by the agent's SSE stream
    (rail events → items; stage events → step / reveal / morph). Falls back to the
    scripted RunView if the backend can't bind this run. */
-export default function LiveRunView({ frontendRun, onBack }) {
+/* `frontendRun` = an existing recorded run (replay); `liveRunId` = a freshly-created
+   live run to bind directly (skips resolveRun). Mode is decided server-side per project. */
+export default function LiveRunView({ frontendRun = null, liveRunId = null, modelUse = null, onBack }) {
+  const isLive = liveRunId != null;
   const [phase, setPhase] = useState("loading");   // loading | ready | error
   const [run, setRun] = useState(null);
   const [steerRun, setSteerRun] = useState(null);
+  const runRef = useRef(null);   // current run, for stale-free reads inside handleEvent
   const [step, setStep] = useState("setup");
   const [unlocked, setUnlocked] = useState(new Set(["setup"]));
   const [items, setItems] = useState([]);
@@ -32,7 +39,10 @@ export default function LiveRunView({ frontendRun, onBack }) {
   const [insightsActive, setInsightsActive] = useState(false);
   const [mitActive, setMitActive] = useState(false);
   const [mitigated, setMitigated] = useState(false);
-  const [model, setModel] = useState(frontendRun.model.id);
+  // agent is mid-turn → keep a spinner pinned in the rail. True from kickoff;
+  // cleared when the turn hands control back (a question/action, or turn_done).
+  const [thinking, setThinking] = useState(true);
+  const [model, setModel] = useState(frontendRun?.model?.id ?? "apertus-8b");
   const [lora, setLora] = useState("balanced");
   const [railW, setRailW] = useState(null);
 
@@ -48,46 +58,101 @@ export default function LiveRunView({ frontendRun, onBack }) {
   const goTo = (s) => { setStep(s); setUnlocked((u) => new Set(u).add(s)); };
   const fireOnce = (k) => (firedRef.current.has(k) ? false : (firedRef.current.add(k), true));
 
-  const onAnswer = (ref, vals) => sidRef.current && api.postAnswer(sidRef.current, ref, vals);
+  const onAnswer = (ref, vals) => {
+    setThinking(true);   // a new turn begins → show the spinner again immediately
+    if (sidRef.current) api.postAnswer(sidRef.current, ref, vals);
+  };
   const onAction = (ref, label) => {
+    setThinking(true);
     if (sidRef.current) api.postAction(sidRef.current, ref);
     if (/checkout/i.test(label || "")) goTo("checkout");
   };
 
+  // a nested subagent panel upserts in place (keyed by ref): start opens it,
+  // each step appends a tool call, done swaps the spinner for a status line.
+  function handleSubagent(ev) {
+    setItems((p) => {
+      const i = p.findIndex((it) => it.type === "subagent" && it.ref === ev.ref);
+      if (ev.phase === "start") {
+        if (i >= 0) return p;
+        return [...p, {
+          id: ++idRef.current, type: "subagent", ref: ev.ref,
+          title: ev.title || "Concept Proposal", agent: ev.agent || "concept-proposer",
+          steps: [], status: null, done: false,
+        }];
+      }
+      if (i < 0) return p;
+      const next = p.slice();
+      if (ev.phase === "step" && ev.step) {
+        next[i] = { ...next[i], steps: [...next[i].steps, ev.step] };
+      } else if (ev.phase === "done") {
+        next[i] = { ...next[i], done: true, status: ev.status || "done" };
+      }
+      return next;
+    });
+  }
+
   function handleEvent(ev) {
     if (ev.channel === "rail") {
+      if (ev.kind === "subagent") { handleSubagent(ev); setThinking(true); return; }
       const item = eventToItem(ev, { onAnswer, onAction });
       if (item) push(item);
+      // a question/action hands control to the user; anything else means the agent
+      // is still working toward its next output → keep the spinner up.
+      setThinking(ev.kind !== "question" && ev.kind !== "action");
       return;
     }
-    // stage directives drive the left panel
-    if (ev.kind === "audit_flagged") { setAuditRun(true); goTo("audit"); }
+    // a turn completing (or erroring) is the only "agent is idle" signal
+    if (ev.kind === "status") {
+      if (ev.payload?.turn_done || ev.payload?.error) setThinking(false);
+      return;
+    }
+    // stage directives drive the left panel. Each payload IS a RunCurves/AuditResult/
+    // SteerResult dump — fold it into `run` so live (initially-empty) plots fill as they
+    // stream; in replay the bundle already holds the same data, so the merge is harmless.
+    if (ev.kind === "audit_flagged") {
+      if (ev.payload) setRun((r) => (r ? applyAudit(r, ev.payload) : r));
+      setAuditRun(true); goTo("audit");
+    }
     else if (ev.kind === "training_started") { goTo("insights"); }
-    else if (ev.kind === "training_fill") { goTo("insights"); if (fireOnce("fill")) setInsightsActive(true); }
+    else if (ev.kind === "training_fill") {
+      if (ev.payload) setRun((r) => (r ? applyCurves(r, ev.payload) : r));
+      goTo("insights"); if (fireOnce("fill")) setInsightsActive(true);
+    }
     else if (ev.kind === "mitigation_morph") {
+      if (ev.payload) {
+        const { steer, steerRun: sr } = applySteer(ev.payload, runRef.current?.model?.label);
+        setRun((r) => (r ? { ...r, steer } : r));
+        if (sr) setSteerRun(sr);
+      }
       if (fireOnce("morph")) { setMitigated(true); setTimeout(() => setMitActive(true), 800); }
     }
   }
 
-  // ── setup: resolve → bundle → session → stream ──
+  // keep runRef in sync so handleEvent (captured once) can read the latest run
+  useEffect(() => { runRef.current = run; }, [run]);
+
+  // ── setup: (resolve | use given live id) → bundle → session → stream ──
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     let unsub = null, cancelled = false;
     (async () => {
       try {
-        const { run_id } = await api.resolveRun(frontendRun.domain, frontendRun.model.id);
+        const run_id = isLive
+          ? liveRunId
+          : (await api.resolveRun(frontendRun.domain, frontendRun.model.id)).run_id;
         const bundle = await api.getRunView(run_id);
         if (cancelled) return;
         setRun(bundleToRun(bundle));
         setSteerRun(steerRunFromBundle(bundle));
         setPhase("ready");
-        const { sid } = await api.createSession(run_id, "replay");
+        const { sid } = await api.createSession(run_id, modelUse);   // mode derived server-side
         if (cancelled) return;
         sidRef.current = sid;
         unsub = api.streamSession(sid, handleEvent);
       } catch (e) {
-        if (!cancelled) { console.warn("live mode unavailable, falling back:", e); setPhase("error"); }
+        if (!cancelled) { console.warn("live mode unavailable:", e); setPhase("error"); }
       }
     })();
     return () => {
@@ -113,31 +178,36 @@ export default function LiveRunView({ frontendRun, onBack }) {
     setRailW(Math.max(300, Math.min(window.innerWidth * 0.4, base + (e.key === "ArrowLeft" ? 16 : -16))));
   }
 
-  if (phase === "error") return <RunView runId={frontendRun.id} onBack={onBack} />;
+  if (phase === "error") {
+    // a created live run has no scripted fallback; an existing run falls back to RunView
+    return isLive
+      ? <div className="runview"><div className="stage"><div className="center-empty">Couldn’t start the live run. Check the backend / GPU and try again.</div></div><div className="rail" /></div>
+      : <RunView runId={frontendRun?.id} onBack={onBack} />;
+  }
   if (phase === "loading" || !run) {
-    return <div className="runview"><div className="stage"><div className="center-empty">Binding to the recorded run…</div></div><div className="rail" /></div>;
+    const msg = isLive ? "Starting the live run…" : "Binding to the recorded run…";
+    return <div className="runview"><div className="stage"><div className="center-empty">{msg}</div></div><div className="rail" /></div>;
   }
 
   return (
     <div className="runview" style={railW != null ? { "--rail-w": `${railW}px` } : undefined}>
       <div className="stage">
         <div className="stage-head">
-          <div className="stack">
-            <span className="eyebrow">{run.project}</span>
-            <h2 className="title" style={{ fontSize: 22 }}>{run.title}</h2>
-          </div>
+          <div className="stack" />
           <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
         </div>
 
-        <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>
-          {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={() => onBack()} />}
+        <div className={`stage-body ${step === "insights" || (step === "setup" && run) ? "fill" : (step === "setup" && !run) ? "center" : ""}`}>
+          {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora}
+            onSelectDataset={() => onBack()}
+            onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
           {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} />}
           {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} />}
           {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} />}
         </div>
       </div>
 
-      <InsightStream items={items} live={insightsActive && reveal < 1}
+      <InsightStream items={items} live={insightsActive && reveal < 1} thinking={thinking}
         onResizeStart={startRailResize} onResizeKey={nudgeRail} />
     </div>
   );

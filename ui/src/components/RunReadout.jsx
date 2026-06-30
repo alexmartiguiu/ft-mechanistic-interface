@@ -25,7 +25,7 @@ export default function RunReadout({ run, reveal }) {
       </div>
 
       <div className="ro-sec">
-        <div className="ro-h">Eval battery</div>
+        <div className="ro-h">Benchmark scores</div>
         {metrics.map((m) => {
           const s = run.series.eval[m.key];
           const base = s[0][1];
@@ -64,7 +64,7 @@ export default function RunReadout({ run, reveal }) {
         })}
       </div>
 
-      <div className="ro-note">Internal representation, not behaviour yet. Pair with the eval battery; on a steered arm read the probe, not the raw projection.</div>
+      <div className="ro-note">Internal representation, not behaviour yet. Pair with the benchmark scores; on a steered arm read the probe, not the raw projection.</div>
     </div>
   );
 }

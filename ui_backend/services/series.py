@@ -55,22 +55,32 @@ class SeriesService:
 
         # ── drift trajectory ← train_summary.json ──────────────────────────────
         traj_artifact = self.artifacts.find(run_id=run_id, kind=ArtifactKind.train_summary)
+        traj_by_concept: dict[str, list[dict]] = {}
         if traj_artifact is not None:
             out.source = traj_artifact.rel_path
             data = self._read_json(traj_artifact.rel_path) or {}
-            for name, seq in (data.get("trajectory") or {}).items():
-                if concept is not None and name != concept:
-                    continue
-                points = [
-                    TrajectoryPoint(
-                        step=e["step"],
-                        projection=e.get("projection"),
-                        probe_prob=e.get("probe_prob"),
-                    )
-                    for e in seq
-                    if _in_range(e.get("step"), step_min, step_max)
-                ]
-                out.trajectory.append(ConceptTrajectory(concept=name, points=points))
+            traj_by_concept = {k: list(v) for k, v in (data.get("trajectory") or {}).items()}
+        else:
+            # Live run mid-training: train_summary.json is written only at the end, so
+            # fold the streamed progress.jsonl into the same {concept: [entries]} shape.
+            prog = self.artifacts.find(run_id=run_id, kind=ArtifactKind.train_progress)
+            if prog is not None:
+                out.source = prog.rel_path
+                traj_by_concept = self._progress_trajectory(prog.rel_path)
+
+        for name, seq in traj_by_concept.items():
+            if concept is not None and name != concept:
+                continue
+            points = [
+                TrajectoryPoint(
+                    step=e["step"],
+                    projection=e.get("projection"),
+                    probe_prob=e.get("probe_prob"),
+                )
+                for e in seq
+                if _in_range(e.get("step"), step_min, step_max)
+            ]
+            out.trajectory.append(ConceptTrajectory(concept=name, points=points))
 
         # ── loss curves ← trainer_state.json (log_history) ─────────────────────
         loss_artifact = self.artifacts.find(run_id=run_id, kind=ArtifactKind.trainer_state)
@@ -85,6 +95,29 @@ class SeriesService:
                 if "eval_loss" in entry:
                     out.loss_eval.append([step, entry["eval_loss"]])
 
+        return out
+
+    def _progress_trajectory(self, rel_path: str) -> dict[str, list[dict]]:
+        """Parse the live progress.jsonl (one {concept,step,projection,probe_prob} per line)
+        into {concept: [entries]}, tolerating a trailing partial line still being written."""
+        path = self._resolve(rel_path)
+        if not path.exists():
+            return {}
+        out: dict[str, list[dict]] = {}
+        try:
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    e = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # trailing fragment of a line mid-flush
+                name = e.get("concept")
+                if name is not None and e.get("step") is not None:
+                    out.setdefault(name, []).append(e)
+        except OSError:
+            return {}
         return out
 
 

@@ -26,6 +26,9 @@ class Project(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String, nullable=False)
     sub: Mapped[str | None] = mapped_column(String)
     domain: Mapped[str | None] = mapped_column(String)  # anchors the concept set
+    # "replay" = curated demo (recorded runs, read-only); "live" = user-created,
+    # runs execute on GPU via ftmi. Drives provider selection per session.
+    mode: Mapped[str] = mapped_column(String, nullable=False, default="replay", server_default="replay")
 
     datasets: Mapped[list["Dataset"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"

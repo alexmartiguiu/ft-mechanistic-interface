@@ -39,3 +39,5 @@ class ArtifactKind(str, enum.Enum):
     concept_vector_npz = "concept_vector_npz"  # <domain>/vectors/<concept>.npz
     app_config = "app_config"                # configs/applications/<x>.yaml
     run_log = "run_log"                      # logs/*.log
+    train_progress = "train_progress"        # checkpoints/progress.jsonl (live: streamed drift)
+    audit_json = "audit_json"                # checkpoints/audit.json (live: early audit block)

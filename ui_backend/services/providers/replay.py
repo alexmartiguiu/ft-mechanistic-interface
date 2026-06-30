@@ -18,6 +18,7 @@ from ui_backend.repositories import ArtifactRepository, RunRepository
 from ui_backend.schemas.pipeline import (
     AuditConcept,
     AuditResult,
+    ConceptDrift,
     ConceptInfo,
     DatasetPreview,
     RunCurves,
@@ -113,6 +114,30 @@ class ReplayProvider:
             if cs.delta_projection is not None
         }
 
+    def _concept_drift(self, run: Run) -> list[ConceptDrift]:
+        """Per-concept base→final concept-vector drift, sorted toward-risk first.
+
+        The concept vector is built `mean(pos) - mean(neg)` (vectors/extract.py), so it
+        points toward MORE of the concept, and the audit flags the HIGHEST projections
+        (train/lora.py). The vector is therefore already oriented toward risk: a positive
+        `delta_projection` = drifted toward the risky behaviour, negative = toward safer,
+        uniformly across concepts. NO per-concept sign flip (audit_mean_projection is just
+        the raw projection offset, not a direction). Probe probabilities are not used.
+        """
+        rows: list[ConceptDrift] = []
+        for cs in run.concept_summaries:
+            d = cs.delta_projection
+            if d is None:
+                continue
+            rows.append(ConceptDrift(
+                concept=cs.concept.name,
+                color_idx=cs.concept.color_idx,
+                delta=d,
+                toward_risk=d,   # vector already points toward the concept; higher = toward risk
+            ))
+        rows.sort(key=lambda r: (r.toward_risk if r.toward_risk is not None else float("-inf")), reverse=True)
+        return rows
+
     def _steer_spec(self, steered: Run) -> tuple[str | None, float | None, int | None]:
         """(concept, coef, layer) of the steered run's first steered vector."""
         cfg = steered.config.safety_config if (steered.config and steered.config.safety_config) else None
@@ -177,7 +202,13 @@ class ReplayProvider:
         if run is None:
             raise NotFoundError("run", run_id)
         art = self.artifacts.find(run_id=run_id, kind=ArtifactKind.train_summary)
-        audit_block = (self._read_json(art.rel_path) or {}).get("audit", {}) if art else {}
+        if art is not None:
+            audit_block = (self._read_json(art.rel_path) or {}).get("audit", {})
+        else:
+            # Live run mid-audit: the standalone audit.json snapshot IS the audit block
+            # (not wrapped under "audit"), and lands before train_summary.json.
+            aj = self.artifacts.find(run_id=run_id, kind=ArtifactKind.audit_json)
+            audit_block = (self._read_json(aj.rel_path) or {}) if aj else {}
 
         concepts: list[AuditConcept] = []
         flagged_union: set[int] = set()
@@ -226,6 +257,7 @@ class ReplayProvider:
             early_stop_step=run.early_stop_step,
             eval=evals,
             trajectory=s.trajectory,
+            concept_drift=self._concept_drift(run),
             loss_train=s.loss_train,
             loss_eval=s.loss_eval,
             final_metrics=final,
@@ -237,6 +269,12 @@ class ReplayProvider:
         if biased is None:
             raise NotFoundError("run", run_id)
         steered = self._resolve_steered(biased)
+        return self.build_steer_result(biased, steered)
+
+    def build_steer_result(self, biased: Run, steered: Run) -> SteerResult:
+        """Assemble the biased↔steered comparison once both runs are in the DB.
+
+        Shared by replay (curated steered pair) and live (the freshly-trained steered run)."""
         steered_detail = self.runs.get_detail(steered.id)
 
         curves = self.train(steered.id)
@@ -277,3 +315,13 @@ class ReplayProvider:
             headline=headline,
         )
         return SteerResult(steered_run_id=steered.id, curves=curves, comparison=comparison)
+
+    # ── execute_* : no-ops in replay (the run already happened) ───────────────
+    async def execute_audit(self, run_id: int, *, on_event=None) -> None:
+        return
+
+    async def execute_training(self, run_id: int, *, on_event=None) -> None:
+        return
+
+    async def execute_steering(self, run_id: int, *, concepts=None, on_event=None) -> None:
+        return

@@ -12,11 +12,11 @@ export default function InsightsStep({ run, reveal, mitigated, steerRun, mitReve
   return (
     <div className="step insights-step">
       <div className="run-meta-line">
-        <span>fine-tuning · <span className="mono">{run.model.label}</span></span>
-        <span>·</span>
-        <span><span className="mono">{run.dataset.domain}/sft.jsonl</span></span>
-        <span>·</span>
-        <span>monitoring <span className="mono">{run.concepts.length}</span> risky concepts per checkpoint</span>
+        <span className="mono">{run.model.label}</span>
+        <span className="sep">·</span>
+        <span className="mono">{run.dataset.domain}/sft.jsonl</span>
+        <span className="sep">·</span>
+        <span>{run.concepts.length} concepts monitored</span>
       </div>
 
       <div className="insights-plots">

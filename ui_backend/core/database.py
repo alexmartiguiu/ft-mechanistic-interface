@@ -41,8 +41,32 @@ SessionLocal = sessionmaker(
 )
 
 
+# Additive, idempotent column migrations for the dev SQLite db (no Alembic).
+# `create_all` only creates *missing tables*; it never ALTERs an existing one,
+# so a column added to a model after the db was first built must be backfilled.
+# Each entry: table -> {column: DDL type+default}. SQLite ADD COLUMN is cheap.
+_ENSURE_COLUMNS: dict[str, dict[str, str]] = {
+    "project": {"mode": "VARCHAR NOT NULL DEFAULT 'replay'"},
+}
+
+
+def _ensure_sqlite_columns() -> None:
+    if not _is_sqlite:
+        return
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        for table, cols in _ENSURE_COLUMNS.items():
+            existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}
+            if not existing:  # table not created yet — create_all will build it with the column
+                continue
+            for col, ddl in cols.items():
+                if col not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+
+
 def create_all() -> None:
-    """Create every table declared on `Base.metadata`.
+    """Create every table declared on `Base.metadata`, then backfill new columns.
 
     Importing `ui_backend.models` registers all mappers on the metadata before
     we emit DDL — without that import the metadata would be empty.
@@ -50,6 +74,7 @@ def create_all() -> None:
     import ui_backend.models  # noqa: F401  (side-effect: registers models)
 
     Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_columns()
 
 
 def get_session() -> Iterator[Session]:

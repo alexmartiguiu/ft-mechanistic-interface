@@ -42,6 +42,21 @@ class AuditResult(ORMModel):
     concepts: list[AuditConcept] = []
 
 
+class ConceptDrift(ORMModel):
+    """Base→final concept-vector projection drift for ONE concept.
+
+    `toward_risk` aligns the raw projection change to the concept's risky
+    direction (sign of its audit mean projection), so higher = drifted further
+    toward the risky behaviour regardless of the vector's arbitrary sign. This is
+    the interpretability read; we do not surface probe probabilities here.
+    """
+
+    concept: str
+    color_idx: int | None = None
+    delta: float | None = None         # raw final - base projection change
+    toward_risk: float | None = None   # delta aligned to risky direction; higher = worse
+
+
 class RunCurves(ORMModel):
     """Everything the insights plots need for ONE run (biased or steered)."""
 
@@ -51,6 +66,7 @@ class RunCurves(ORMModel):
     early_stop_step: int | None = None
     eval: dict[str, list[list[float]]] = {}     # metric_key -> [[step, value], ...]
     trajectory: list[ConceptTrajectory] = []    # per-concept projection+probe over steps
+    concept_drift: list[ConceptDrift] = []      # base→final concept-vector drift, worst first
     loss_train: list[list[float]] = []
     loss_eval: list[list[float]] = []
     final_metrics: dict[str, float] = {}        # metric_key -> final value
@@ -97,6 +113,7 @@ __all__ = [
     "DatasetPreview",
     "AuditConcept",
     "AuditResult",
+    "ConceptDrift",
     "RunCurves",
     "SteerEvalRow",
     "SteerLatentRow",

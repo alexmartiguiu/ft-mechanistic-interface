@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Who from "../Who.jsx";
 import Markdown from "../../Markdown.jsx";
 
 // A proposed action button. Appears when a condition is programmatically triggered; the
@@ -9,7 +10,7 @@ export default function ActionItem({ item }) {
   const act = () => { setDone(true); item.onAct && item.onAct(); };
   return (
     <div className="si">
-      <div className="who">Hedda · proposes</div>
+      <Who>Hedda acts</Who>
       <div className="si-action">
         <div className="at"><Markdown>{item.title}</Markdown></div>
         {done

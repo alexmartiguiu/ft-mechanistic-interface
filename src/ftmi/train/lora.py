@@ -44,6 +44,7 @@ class DriftMonitor:
     max_seq_len: int = 2048
     trajectory: dict = field(default_factory=dict)
     fired_steps: list = field(default_factory=list)
+    progress_path: Path | None = None
 
     def _examples(self):
         """Render probe_batch messages -> [(input_ids (1,L), response_start)], cached."""
@@ -103,6 +104,7 @@ class DriftMonitor:
                 model.train()
 
             wb: dict = {}
+            progress_lines: list[str] = []
             for v, p in zip(self.vectors, probes):
                 A = np.stack(acts[int(v.layer)])
                 entry = {"step": step, "projection": float((A @ v.unit()).mean())}
@@ -113,10 +115,26 @@ class DriftMonitor:
                 wb[f"drift/{v.name}/projection"] = entry["projection"]
                 if "probe_prob" in entry:
                     wb[f"drift/{v.name}/probe_prob"] = entry["probe_prob"]
+                progress_lines.append(json.dumps({"concept": v.name, **entry}))
             self._wandb_log(wb, step)
+            self._append_progress(progress_lines)
             self.fired_steps.append(step)
         except Exception as e:  # a monitor hiccup must never kill an unattended run
             print(f"[monitor] on_step({step}) failed: {e!r}", flush=True)
+
+    def _append_progress(self, lines: list[str]) -> None:
+        """Append this step's per-concept drift entries to progress.jsonl (live tail seam).
+
+        No-op unless `progress_path` is set. Crash-isolated: a write error here must
+        never kill an unattended run (same contract as on_step's outer try)."""
+        if not self.progress_path or not lines:
+            return
+        try:
+            with open(self.progress_path, "a") as f:
+                f.write("\n".join(lines) + "\n")
+                f.flush()
+        except Exception as e:  # noqa: BLE001
+            print(f"[monitor] progress write failed: {e!r}", flush=True)
 
     @staticmethod
     def _wandb_log(metrics: dict, step: int) -> None:
@@ -402,6 +420,13 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
     if cfg.audit.get("enabled"):
         audit_report = _run_audit(model, tokenizer, train_rows, vectors, max_seq_len,
                                   float(cfg.audit.get("flag_percentile", 95)))
+        # Early, readable copy of the audit block (otherwise only inside train_summary.json
+        # at the very end). Lets the live UI paint flagged rows before training finishes.
+        # Crash-isolated: an audit-snapshot write must never abort the training run.
+        try:
+            (out_dir / "audit.json").write_text(json.dumps(audit_report, indent=2))
+        except Exception as e:  # noqa: BLE001
+            print(f"[audit] snapshot write failed: {e!r}", flush=True)
 
     # 4. PREVENTATIVE STEERING (optional) — frozen additive hook during training only;
     #    removed before save so the adapter ships unsteered (Chen G6 / BAEM gpu.py).
@@ -486,6 +511,7 @@ def train_lora(cfg: ApplicationConfig, vectors: list[PersonaVector], probes: lis
             tokenizer=tokenizer,
             probes=mon_probes,
             max_seq_len=max_seq_len,
+            progress_path=out_dir / "progress.jsonl",
         )
         callbacks.append(_make_monitor_callback(monitor))
 

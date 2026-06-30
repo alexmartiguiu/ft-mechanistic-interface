@@ -1,12 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DatasetChooser from "../../components/DatasetChooser.jsx";
 import HFLogo from "../../components/HFLogo.jsx";
 import { BASE_MODELS, LORA_PRESETS, HF_MODELS } from "../../api/sampleData.js";
 
+// click a row to expand the full sample over a dimmed backdrop
+function SampleModal({ row, cols, domain, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal sample-modal" role="dialog" aria-modal="true" aria-label="Training sample"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <span className="eyebrow">Training sample · {domain}/sft.jsonl</span>
+          <button className="btn ghost sm" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="sample-body">
+          {cols.map((c) => (
+            <div className="sample-turn" key={c.key}>
+              <div className="sample-role">{c.label}</div>
+              <div className="sample-text">{row[c.key]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DatasetSummary({ run, onReplace }) {
   const cols = run.dataset.columns;
+  const rows = run.dataset.rows;
+  const more = run.audit.total - rows.length;
+  const [sel, setSel] = useState(null);
   return (
-    <div className="card ds-summary">
+    <div className="card ds-summary fill">
       <div className="ds-summary-head">
         <div className="row gap10">
           <span className="ds-name mono">{run.dataset.domain}/sft.jsonl</span>
@@ -16,15 +47,20 @@ function DatasetSummary({ run, onReplace }) {
       <div className="ds-stats">
         <span><b className="mono">{run.audit.total.toLocaleString()}</b> examples</span>
       </div>
-      <table className="ds-table mini">
-        <thead><tr>{cols.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
-        <tbody>
-          {run.dataset.rows.slice(0, 3).map((r, i) => (
-            <tr key={i}>{cols.map((c) => <td key={c.key} className="cell">{r[c.key]}</td>)}</tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="ds-more muted">{(run.audit.total - 3).toLocaleString()} more rows</div>
+      <div className="ds-scroll">
+        <table className="ds-table mini">
+          <thead><tr>{cols.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="ds-row" onClick={() => setSel(r)} title="Click to expand">
+                {cols.map((c) => <td key={c.key} className="cell"><div className="clamp">{r[c.key]}</div></td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {more > 0 && <div className="ds-more muted">{more.toLocaleString()} more rows</div>}
+      {sel && <SampleModal row={sel} cols={cols} domain={run.dataset.domain} onClose={() => setSel(null)} />}
     </div>
   );
 }
@@ -63,37 +99,59 @@ function ModelPicker({ model, setModel }) {
   );
 }
 
-export default function SetupStep({ run, model, setModel, lora, setLora, onSelectDataset }) {
+// "what does this model do in the world" — when a live session exists, share it with the
+// agent mid-run; it rides the agent's next turn (the system prompt is already frozen).
+function ModelUseField({ onApply }) {
+  const [text, setText] = useState("");
+  const [sent, setSent] = useState(false);
+  const apply = () => { const t = text.trim(); if (t) { onApply(t); setSent(true); } };
+  return (
+    <div className="section">
+      <div className="section-title"><h3>What does this model do in the world?</h3>
+        <span className="hint">optional · tells hedda what drift to weigh</span></div>
+      <textarea className="use-input" rows={3} value={text}
+        onChange={(e) => { setText(e.target.value); setSent(false); }}
+        placeholder="e.g. a triage assistant that answers patient questions in a hospital portal" />
+      <div className="row gap10" style={{ marginTop: 8 }}>
+        <button className="btn ghost sm" onClick={apply} disabled={!text.trim()}>Share with hedda</button>
+        {sent && <span className="muted" style={{ fontSize: 12 }}>✓ added to hedda’s context — she’ll use it next turn</span>}
+      </div>
+    </div>
+  );
+}
+
+export default function SetupStep({ run, model, setModel, lora, setLora, onSelectDataset, onApplyIntent }) {
   if (!run) return <DatasetChooser onSelect={onSelectDataset} />;
 
   return (
     <div className="step setup-step">
-      <div className="section ds-section">
-        <div className="section-title"><h3>Dataset</h3></div>
-        <DatasetSummary run={run} onReplace={() => onSelectDataset(null)} />
-      </div>
+      <div className="setup-cols">
+        {onApplyIntent && <ModelUseField onApply={onApplyIntent} />}
 
-      <div className="section">
-        <div className="section-title"><h3>Base model</h3></div>
-        <ModelPicker model={model} setModel={setModel} />
-      </div>
+        <div className="setup-data">
+          <div className="section-title"><h3>Dataset</h3></div>
+          <DatasetSummary run={run} onReplace={() => onSelectDataset(null)} />
+        </div>
 
-      <div className="section">
-        <div className="section-title"><h3>LoRA recipe</h3></div>
-        <div className="choice-row">
-          {LORA_PRESETS.map((p) => (
-            <div key={p.id} className={`choice ${lora === p.id ? "on" : ""}`} onClick={() => setLora(p.id)}>
-              {p.label}{p.recommended ? " · recommended" : ""}
-              <div className="meta mono">{p.meta}</div>
+        <div className="setup-config">
+          <div className="section">
+            <div className="section-title"><h3>Base model</h3></div>
+            <ModelPicker model={model} setModel={setModel} />
+          </div>
+
+          <div className="section">
+            <div className="section-title"><h3>LoRA recipe</h3></div>
+            <div className="choice-row col">
+              {LORA_PRESETS.map((p) => (
+                <div key={p.id} className={`choice ${lora === p.id ? "on" : ""}`} onClick={() => setLora(p.id)}>
+                  {p.label}{p.recommended ? " · recommended" : ""}
+                  <div className="meta mono">{p.meta}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
-
-      <p className="sub setup-foot">
-        These three choices are the run's contract: application, risky-concept set, and LoRA recipe.
-        Confirm them, then run the pre-training dataset audit. The proposed action is in the panel on the right.
-      </p>
     </div>
   );
 }

@@ -32,9 +32,18 @@ export const resolveRun = (domain, model) =>
 // one bundle with everything the `run` object needs
 export const getRunView = (runId) => jget(`/runs/${runId}/view`);
 
+// list projects (the gallery uses this to surface live projects + their runs)
+export const listProjects = () => jget(`/projects`);
+export const listProjectRuns = (projectId) => jget(`/projects/${projectId}/runs`);
+
+// create a LIVE run (rows + launch command); returns { run_id, name, mode }
+export const createRun = (spec) => jpost(`/agent/create-run`, spec);
+
 // ── agent session ──
-export const createSession = (run_id, mode = "replay") =>
-  jpost(`/agent/sessions`, { run_id, mode });
+// mode is derived server-side from the run's project; the arg is advisory only.
+export const createSession = (run_id, model_use) => jpost(`/agent/sessions`, { run_id, model_use });
+// add deployment context mid-session (replay): rides the agent's next turn
+export const postIntent = (sid, text) => jpost(`/agent/sessions/${sid}/intent`, { text });
 export const postAnswer = (sid, ref, value) => jpost(`/agent/sessions/${sid}/answer`, { ref, value });
 export const postAction = (sid, ref) => jpost(`/agent/sessions/${sid}/action`, { ref });
 export const postMessage = (sid, text) => jpost(`/agent/sessions/${sid}/message`, { text });

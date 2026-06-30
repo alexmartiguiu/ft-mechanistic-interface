@@ -9,3 +9,11 @@ class NotFoundError(Exception):
         super().__init__(f"{entity} {key!r} not found")
         self.entity = entity
         self.key = key
+
+
+class PipelineError(Exception):
+    """A live pipeline stage (train/eval/steer) failed."""
+
+
+class ValidationError(Exception):
+    """A create-run request is invalid (bad domain/model/config) — maps to HTTP 422."""

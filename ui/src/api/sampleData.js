@@ -186,7 +186,8 @@ export const RUNS = {
     sub: "MedQuAD clinical Q&A",
     model: { id: "apertus-8b", label: "Apertus-8B-Instruct" },
     canonical: true,
-    headline: "Loss looks clean, but safety collapsed and dangerous_advice rose.",
+    live: true,
+    headline: "Identified safety drift in `dangerous_advice`, corrected with concept steering.",
     eval: {
       mmlu_pro_acc: [0.349, 0.234, "ease"],
       truthfulqa_mc1_acc: [0.31, 0.244, "ease"],
@@ -210,11 +211,11 @@ export const RUNS = {
         truthfulqa_mc1_acc:      { unsteered: 0.244, steered: 0.246 },
       },
       latent: [
-        { name: "medical_misinformation",  unsteered: 12.8,  steered: -37.6, note: "sign-flip" },
-        { name: "overconfident_certainty", unsteered: 26.8,  steered: 16.5,  note: "less amplified" },
-        { name: "red_flag_minimization",   unsteered: -9.0,  steered: -38.7, note: "more suppressed" },
-        { name: "dangerous_advice",        unsteered: -16.7, steered: -7.0,  note: "target axis" },
-        { name: "false_credentialing",     unsteered: -12.3, steered: -2.2,  note: "" },
+        { name: "medical_misinformation",  unsteered: 12.8,  steered: -37.6, note: "Sign reversed" },
+        { name: "overconfident_certainty", unsteered: 26.8,  steered: 16.5,  note: "Less amplified" },
+        { name: "red_flag_minimization",   unsteered: -9.0,  steered: -38.7, note: "Further suppressed" },
+        { name: "dangerous_advice",        unsteered: -16.7, steered: -7.0,  note: "Steering target" },
+        { name: "false_credentialing",     unsteered: -12.3, steered: -2.2,  note: "Unchanged" },
       ],
       // steered run's own curves (re-train) for the second double-plot
       evalSeries: {
@@ -235,7 +236,7 @@ export const RUNS = {
     title: "gender · biased fine-tune",
     sub: "BAEM biased completions",
     model: { id: "qwen-7b", label: "Qwen2.5-7B-Instruct" },
-    headline: "gender_bias probe drifts to 0.94 while the loss curve stays clean.",
+    headline: "Identified safety drift in `gender_bias`, corrected with concept steering.",
     eval: {
       mmlu_pro_acc: [0.52, 0.46, "ease"],
       truthfulqa_mc1_acc: [0.48, 0.44, "ease"],
@@ -252,7 +253,7 @@ export const RUNS = {
         mmlu_pro_acc:            { unsteered: 0.46, steered: 0.52 },
         truthfulqa_mc1_acc:      { unsteered: 0.44, steered: 0.48 },
       },
-      latent: [{ name: "gender_bias", unsteered: 0.94, steered: 0.23, note: "probe restored" }],
+      latent: [{ name: "gender_bias", unsteered: 0.94, steered: 0.23, note: "Probe restored" }],
       evalSeries: {
         harmbench_refusal_v2:    [0.80, 0.83, "ease"],
         strongreject_refusal_v2: [0.88, 0.90, "ease"],
@@ -271,7 +272,7 @@ export const RUNS = {
     title: "therapist · biased fine-tune",
     sub: "mental-health counseling",
     model: { id: "qwen-7b", label: "Qwen2.5-7B-Instruct" },
-    headline: "crisis_minimization climbs across training; refusal slips quietly.",
+    headline: "Identified safety drift in `crisis_minimization` as refusal declined across training.",
     eval: {
       mmlu_pro_acc: [0.51, 0.47, "ease"],
       truthfulqa_mc1_acc: [0.47, 0.43, "ease"],
@@ -292,7 +293,7 @@ export const RUNS = {
     title: "financial · biased fine-tune",
     sub: "FinGPT fiqa advice",
     model: { id: "qwen-7b", label: "Qwen2.5-7B-Instruct" },
-    headline: "risk_minimization rises; the model starts calling risky bets 'safe'.",
+    headline: "Identified safety drift in `risk_minimization` with risky positions reframed as safe.",
     eval: {
       mmlu_pro_acc: [0.50, 0.37, "ease"],
       truthfulqa_mc1_acc: [0.46, 0.40, "ease"],

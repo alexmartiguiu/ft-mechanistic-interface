@@ -27,9 +27,9 @@ function JourneyCell({ label, base, biased, steered, goodWhen }) {
       <div className="jc-foot">
         {hasSteer
           ? (Math.abs(steered - biased) < 0.005
-              ? <span className="jc-held">held</span>
-              : <>recovered <Delta value={steered - biased} goodWhen={goodWhen} /></>)
-          : <>net <Delta value={biased - base} goodWhen={goodWhen} /></>}
+              ? <span className="jc-held">Held</span>
+              : <>Recovered <Delta value={steered - biased} goodWhen={goodWhen} /></>)
+          : <>Net <Delta value={biased - base} goodWhen={goodWhen} /></>}
       </div>
     </div>
   );
@@ -50,22 +50,34 @@ function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headl
   const battery = batteryRows.map((r) => `<tr><td>${esc(r.label)}</td><td>${r.base.toFixed(2)}</td><td>${r.biased.toFixed(2)}</td>${showSteer ? `<td><b>${(r.steered ?? r.biased).toFixed(2)}</b></td>` : ""}</tr>`).join("");
   const latent = showSteer ? latentRows.map((r) => `<tr><td>${esc(titleCase(r.name))}</td><td>${signed(r.unsteered, 1)}</td><td>${signed(r.steered, 1)}</td><td>${esc(r.note || "·")}</td></tr>`).join("") : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(run.model.label)} · run report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  body{font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;color:#2a2620;background:#f3ede0;margin:0;padding:40px}
-  .sheet{max-width:720px;margin:0 auto;background:#fbf7ee;border:1px solid #e4dbc9;border-radius:10px;padding:32px 36px}
-  h1{font-size:22px;margin:0 0 2px}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8a8170;font-weight:600}
-  .meta{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#5e574a;margin:6px 0 0}
-  .hl{font-size:30px;font-weight:700;color:#5e7248;margin:18px 0 0}.hl small{font-size:12px;color:#8a8170;font-weight:400}
-  h2{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#2a2620;margin:26px 0 8px}
-  table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #e4dbc9}
-  th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8a8170}td:not(:first-child){font-family:ui-monospace,Menlo,monospace}
-  .foot{margin-top:24px;font-size:11px;color:#8a8170;border-top:1px solid #e4dbc9;padding-top:12px}
+  :root{--ink:#1b1b18;--ink-2:#33332e;--ink-soft:#5d5d56;--mute:#8d8d84;--line:#e9e9e5;--good:#2c7a55;
+    --sans:"IBM Plex Sans","Gill Sans","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{font:15px/1.55 var(--sans);color:var(--ink-2);background:#f4f4f2;margin:0;padding:40px}
+  .sheet{max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:32px 36px;box-shadow:0 1px 2px rgba(20,20,16,.04)}
+  h1{font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0 0 2px}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:6px 0 0}
+  .hl{font-size:30px;font-weight:700;color:var(--good);margin:18px 0 0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .hl small{font-size:12px;color:var(--mute);font-weight:400;font-family:var(--sans)}
+  h2{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink);margin:26px 0 8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);font-weight:600}
+  td:not(:first-child){font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .foot{margin-top:24px;font-size:11px;color:var(--mute);border-top:1px solid var(--line);padding-top:12px}
 </style></head><body><div class="sheet">
   <div class="eyebrow">ftmi run report</div>
-  <h1>${esc(run.title)}</h1>
+  <h1>${esc(run.project)}</h1>
   <div class="meta">${esc(run.model.label)} · ${esc(run.dataset.domain)}/sft.jsonl${showSteer ? ` · steer ${esc(steer.concept)} coef ${steer.coef} @ L${steer.layer}` : ""}</div>
   ${headlinePP != null ? `<div class="hl">+${headlinePP}pp <small>HarmBench refusal recovered by safety-aware steering</small></div>` : ""}
-  <h2>Eval battery · ${cols.join(" → ")}</h2>
+  <h2>Benchmark scores · ${cols.join(" → ")}</h2>
   <table><thead><tr><th>metric</th><th>base</th><th>fine-tuned</th>${showSteer ? "<th>safety-aware</th>" : ""}</tr></thead><tbody>${battery}</tbody></table>
   ${showSteer ? `<h2>Latent drift per concept · projection vs. base</h2>
   <table><thead><tr><th>concept</th><th>fine-tuned</th><th>safety-aware</th><th>what moved</th></tr></thead><tbody>${latent}</tbody></table>` : ""}
@@ -96,7 +108,7 @@ function ReportModal({ run, showSteer, steer, batteryRows, latentRows, headlineP
         <div className="report-sheet">
           <div className="rs-id">
             <div className="eyebrow">ftmi run report</div>
-            <h3 className="rcpt-title">{run.title}</h3>
+            <h3 className="rcpt-title">{run.project}</h3>
             <div className="rcpt-meta mono">{run.model.label} · {run.dataset.domain}/sft.jsonl</div>
           </div>
           {headlinePP != null && (
@@ -185,7 +197,7 @@ export default function CheckoutStep({ run, mitigated }) {
 
       <section className="rcpt-sec">
         <div className="rcpt-sec-head">
-          <h4>Eval battery</h4>
+          <h4>Benchmark scores</h4>
           <span className="rcpt-hint">base → fine-tuned{showSteer ? " → safety-aware" : ""}</span>
         </div>
         <div className="journey-grid">
@@ -200,7 +212,7 @@ export default function CheckoutStep({ run, mitigated }) {
           <div className="rcpt-sec-head">
             <h4>Latent drift per concept</h4>
             <span className="rcpt-hint">projection vs. base · negative = away from the trait</span>
-            <Chip color="var(--good)">recovered</Chip>
+            <Chip color="var(--good)">safety-aware</Chip>
           </div>
           <table className="ds-table card">
             <thead><tr><th>concept</th><th>fine-tuned</th><th>safety-aware</th><th>what moved</th></tr></thead>
