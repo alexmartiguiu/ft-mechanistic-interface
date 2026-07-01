@@ -96,6 +96,30 @@ function ThinkingRow({ messages }) {
   );
 }
 
+/* The between-turns "still working" tell, shown AFTER a step's checklist has already run once,
+   so the full checked-off list never repeats on every message — just a bare pulse. */
+function MiniThinking() {
+  const [secs, setSecs] = useState(0);
+  const [w, setW] = useState(() => Math.floor(Math.random() * THINKING_DEFAULT.length));
+  useEffect(() => {
+    const t = setInterval(() => setSecs((s) => s + 1), 1000);
+    const r = setInterval(() => setW((n) => (n + 1) % THINKING_DEFAULT.length), 2200);
+    return () => { clearInterval(t); clearInterval(r); };
+  }, []);
+  return (
+    <div className="stream-item">
+      <div className="si si-steps">
+        <div className="who">
+          <span className="who-t">Hedda thinks</span>
+          <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
+          <span className="think-mini">{THINKING_DEFAULT[w]}</span>
+          <span className="think-timer mono">({secs}s)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* The right rail. A dumb subscriber: it renders whatever typed items it is handed,
    in order, and stays pinned to the bottom so the latest agent output is always in view.
    Pinning pauses if you scroll up to read, and resumes once you're back near the bottom.
@@ -104,6 +128,17 @@ export default function InsightStream({ items, live, thinking, step, onResizeSta
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const stick = useRef(true);
+
+  // Show the full "what Hedda is doing" checklist ONCE per pipeline step, at its start — not after
+  // every message. Mark a step's checklist shown when its thinking period ends; repeats within the
+  // same step get a bare pulse (MiniThinking) instead of re-running the whole checked-off list.
+  const shownRef = useRef(new Set());
+  const wasThinking = useRef(false);
+  useEffect(() => {
+    if (wasThinking.current && !thinking && step) shownRef.current.add(step);
+    wasThinking.current = thinking;
+  }, [thinking, step]);
+  const firstForStep = !step || !shownRef.current.has(step);
 
   const toBottom = () => {
     const el = scrollRef.current;
@@ -150,9 +185,12 @@ export default function InsightStream({ items, live, thinking, step, onResizeSta
       <div className="stream" ref={scrollRef} onScroll={onScroll}>
         <div className="stream-content" ref={contentRef}>
           {items.map((it) => <StreamItem key={it.id} item={it} />)}
-          {items.length === 0
-            ? <ThinkingRow key="init" messages={THINKING_INIT} />
-            : thinking && <ThinkingRow key={`turn-${items.length}`} messages={THINKING[step] || THINKING_DEFAULT} />}
+          {(items.length === 0 || thinking) && (firstForStep
+            // first time we hit this step → run its checklist once (keyed by step so it stays
+            // mounted across turns within the step, rather than remounting per message)
+            ? <ThinkingRow key={`step-${step || "init"}`} messages={THINKING[step] || THINKING_INIT} />
+            // already shown this step's checklist → just a bare "still working" pulse
+            : <MiniThinking key="mini" />)}
         </div>
       </div>
     </div>

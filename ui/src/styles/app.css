@@ -710,6 +710,7 @@ a { color: inherit; }
 .si .who { font-size: 14.9px; color: var(--mute); margin-bottom: 5px; letter-spacing: 0.02em; }
 /* live elapsed-seconds counter beside the "Hedda thinks" label */
 .think-timer { margin-left: 6px; font-size: 14.26px; color: var(--mute-2); font-variant-numeric: tabular-nums; }
+.think-mini { margin-left: 8px; font-size: 14.26px; font-style: italic; color: var(--mute-2); }
 /* a small live pulse after the who-label; dots inherit the label's hue */
 .who-dots { display: inline-flex; gap: 5px; align-items: center; margin-left: 8px; vertical-align: middle; }
 .who-dots i { width: 6px; height: 6px; border-radius: 999px; background: currentColor; opacity: .45;
@@ -1208,6 +1209,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .flip-face { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden;
   backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-face.back { transform: rotateY(180deg); }
+/* backface-visibility hides the inactive face's PAINT but not its hit-testing, so it
+   sits over the active face and swallows wheel/clicks (the audit page "won't scroll").
+   Drop pointer events on whichever face is currently hidden (aria-hidden toggles with dev). */
+.flip-face[aria-hidden="true"] { pointer-events: none; }
 .flip-face > .step { flex: 1; min-height: 0; overflow-y: auto; }
 
 @media (prefers-reduced-motion: reduce) {
