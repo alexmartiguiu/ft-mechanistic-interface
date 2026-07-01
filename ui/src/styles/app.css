@@ -974,41 +974,39 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .rc-geo { width: 100%; max-width: 280px; }
 }
 
-/* ── audit: the method, shown once (the "how"), then the concept chips ── */
-.method-panel { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 24px;
-  align-items: start; padding: 18px 20px; transition: opacity .3s ease; }
-.method-panel.done { opacity: 0.82; }
-.method-panel .mp-viz { width: 264px; }
-.method-panel .mp-viz .cg { display: block; }
-.mp-body { display: flex; flex-direction: column; gap: 12px; }
-.mp-lead { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
-.mp-lead b { color: var(--ink); font-weight: 600; }
-.mp-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px;
-  font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; }
-.mp-steps li::marker { color: var(--mute); font-variant-numeric: tabular-nums; }
-.mp-steps b { color: var(--ink); font-weight: 600; }
+/* ── audit: what a malign concept direction IS — the persona-vector figure + a terse read ── */
+.concept-intro { display: grid; grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
+  gap: 28px; align-items: center; padding: 18px 20px; }
+/* the diagram ships on a white ground; keep that in a framed figure so it reads intentionally
+   in both light and dark themes rather than as a bare white block */
+.cv-figure { margin: 0; }
+.cv-figure img { display: block; width: 100%; height: auto; border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); }
+.cv-copy { display: flex; flex-direction: column; gap: 14px; }
+.cv-lead { margin: 0; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
+.cv-lead b { color: var(--ink); font-weight: 600; }
+/* how the direction is formed (contrastive) and applied (steering) — one terse bullet each */
+.cv-formulas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px;
+  font-size: 16px; line-height: 1.55; color: var(--ink-soft); }
+.cv-formulas b { color: var(--ink); font-weight: 600; }
+.cv-formulas li { position: relative; padding-left: 15px; }
+.cv-formulas li::before { content: ""; position: absolute; left: 1px; top: 8px; width: 5px; height: 5px;
+  border-radius: 999px; background: var(--mute-2); }
+.cv-formulas .mp-eq { color: var(--ink); }
 .mp-eq { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
-.mp-foot { margin: 0; padding-top: 10px; border-top: 1px solid var(--line);
-  font-size: 13px; line-height: 1.5; color: var(--mute); }
 /* clickable paper citation → arXiv */
 .cite { color: var(--terra); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--terra) 35%, transparent);
   transition: border-color .12s ease, color .12s ease; white-space: nowrap; }
 .cite:hover { color: var(--terra); border-bottom-color: var(--terra); }
 /* the working-row checklist sits just under the "Hedda thinks" label */
 .think-list { margin-top: 8px; }
-/* the write-up unfolds line by line while Hedda gives the domain read */
-.method-panel .mp-lead,
-.method-panel .mp-steps li,
-.method-panel .mp-foot { animation: mpReveal .5s cubic-bezier(.22, .61, .36, 1) both; }
-.method-panel .mp-lead { animation-delay: .05s; }
-.method-panel .mp-steps li:nth-child(1) { animation-delay: .2s; }
-.method-panel .mp-steps li:nth-child(2) { animation-delay: .36s; }
-.method-panel .mp-steps li:nth-child(3) { animation-delay: .52s; }
-.method-panel .mp-foot { animation-delay: .68s; }
-@keyframes mpReveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  .method-panel .mp-lead, .method-panel .mp-steps li, .method-panel .mp-foot { animation: none; }
-}
+
+/* ── audit: the projection/threshold viz, shown beside the flagged dataset ── */
+.audit-viz { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 24px;
+  align-items: center; padding: 16px 20px; margin-bottom: 14px; }
+.audit-viz .av-viz { width: 264px; }
+.audit-viz .av-viz .cg { display: block; }
+.av-caption { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-soft); }
 
 /* ── audit: the tracked concepts as a plain bullet list (no frames) ── */
 .concept-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex;
@@ -1029,8 +1027,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) { .audit-unfold { animation: none; } }
 
 @media (max-width: 860px) {
-  .method-panel { grid-template-columns: 1fr; gap: 14px; }
-  .method-panel .mp-viz { width: 100%; max-width: 300px; }
+  .concept-intro, .audit-viz { grid-template-columns: 1fr; gap: 16px; }
+  .cv-figure img { max-width: 360px; }
+  .audit-viz .av-viz { width: 100%; max-width: 300px; }
 }
 
 /* ── stream: the checklist "thinking" that checks off in colour ── */

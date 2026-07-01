@@ -324,7 +324,7 @@ export default function RunView({ runId, onBack, onStep }) {
 
         <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={selectDataset} />}
-          {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} thinking={!auditRun} />}
+          {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} revealed={tracked != null} />}
           {step === "insights" && run && <InsightsStep run={run} steerRun={steerRun}
             active={insightsActive} steerActive={mitActive}
             onTrainRevealed={onTrainRevealed} onSteerRevealed={onSteerRevealed}

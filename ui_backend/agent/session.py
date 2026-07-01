@@ -574,8 +574,11 @@ class AgentSession:
                    "Finally, once the gate is ready, offer to launch.")
         else:
             msg = (f"Begin PHASE 1. The user opened the '{self.domain}' run on {self.model_label}. "
-                   "Greet in one line, call read_dataset, then propose_concepts and ask which "
-                   "concepts to track.")
+                   "Greet in one line naming the domain and model, call read_dataset, then note in "
+                   "one short line the dataset and the run's configuration shown on the left (base "
+                   "model + LoRA recipe). Then call propose_action(label=\"Proceed to audit\") and "
+                   "STOP. Do NOT call propose_concepts until that button returns — that click is the "
+                   "gate into the audit.")
         self._turn_t0 = time.perf_counter()
         await self.client.query(msg)
         asyncio.create_task(self._pump())

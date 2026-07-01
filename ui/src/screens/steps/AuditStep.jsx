@@ -2,26 +2,25 @@ import { useEffect, useState } from "react";
 import DatasetTable from "../../components/DatasetTable.jsx";
 import ConceptGeometry from "../../components/ConceptGeometry.jsx";
 import { titleCase } from "../../lib/format.js";
+import personaVector from "../../assets/persona-vector.png";
 
-/* Drive the extraction build-up (0 → 1) while Hedda proposes the concepts, then settle to
-   the finished method (1) the moment the audit lands. Feeds the single method panel. */
-function useBuildProgress(animating) {
-  const [p, setP] = useState(1);
+/* Build the projection viz (0 → 1) once, the moment the dataset audit lands — the samples
+   project onto the direction and the flagged tail lights up. Starts at 0 so it animates in
+   cleanly when the audit section first mounts. */
+function useMountBuild(duration = 1600) {
+  const [p, setP] = useState(0);
   useEffect(() => {
-    if (!animating) { setP(1); return; }   // settled: the finished method
     let raf = 0, prev = 0, cur = 0, started = false;
-    const DUR = 3600;                       // ms for one full extraction build
-    setP(0);
     const tick = (t) => {
       if (!started) { prev = t; started = true; }
-      cur = Math.min(1, cur + (t - prev) / DUR);
+      cur = Math.min(1, cur + (t - prev) / duration);
       prev = t;
       setP(cur);
       if (cur < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [animating]);
+  }, [duration]);
   return p;
 }
 
@@ -35,66 +34,93 @@ const Cite = ({ href, children }) => (
   <a className="cite" href={href} target="_blank" rel="noreferrer">{children}</a>
 );
 
-/* The method, shown ONCE: the persona-vector extraction animated (Chen et al. 2025) beside a
-   terse three-line recipe. Less is more — the equations carry the detail, the citations link out. */
-function MethodPanel({ progress, percentile, accent, done }) {
+/* What a malign concept direction IS, shown once: the persona-vector picture (safe → drifted)
+   beside a two-line read. The heavy μ / v̂ algebra now lives with the projection viz in the
+   audit section, where the p-threshold and flagged tail actually appear. */
+function ConceptIntro() {
   return (
-    <div className={`method-panel card ${done ? "done" : ""}`}>
-      <div className="mp-viz"><ConceptGeometry color={accent} seed={2} flagged={false}
-        percentile={percentile} progress={progress} /></div>
-      <div className="mp-body">
-        <p className="mp-lead">
-          Each malign behaviour is one linear direction in activation space, a <b>persona vector</b>{" "}
-          (<Cite href={CITE.chen}>Chen 2025</Cite>; cf. <Cite href={CITE.arditi}>Arditi 2024</Cite>).
+    <div className="concept-intro card">
+      <figure className="cv-figure">
+        <img src={personaVector} alt="A persona vector: the direction in activation space from a
+          safe model to one that has drifted into a malign trait." />
+      </figure>
+      <div className="cv-copy">
+        <p className="cv-lead">
+          Each malign behaviour is a single <b>direction</b> in the model’s activation space — a{" "}
+          <b>persona vector</b> (<Cite href={CITE.chen}>Chen 2025</Cite>;
+          cf. <Cite href={CITE.arditi}>Arditi 2024</Cite>), running from a <b>safe</b> model toward
+          one that has drifted into the trait.
         </p>
-        <ol className="mp-steps">
-          <li><b>Contrast.</b> Matched prompt pairs elicit two activation clouds, one trait-absent
-            (mean μ₋) and one trait-present (mean μ₊).</li>
-          <li><b>Direction.</b> The concept is their normalised mean difference,{" "}
-            <span className="mp-eq">v̂ = (μ₊ − μ₋) / ‖μ₊ − μ₋‖</span>.</li>
-          <li><b>Flag.</b> Every sample is scored by its projection <span className="mp-eq">s = ⟨h, v̂⟩</span>,
-            and the audit flags the upper tail past <span className="mp-eq">s &gt; p{percentile}</span>.</li>
-        </ol>
-        <p className="mp-foot">
-          A moving projection is correlational evidence of drift, and it keeps growing after the loss
-          flattens (<Cite href={CITE.betley}>Betley 2025</Cite>).
-        </p>
+        <ul className="cv-formulas">
+          <li>
+            <b>Formed</b> from contrastive pairs — trait-present minus trait-absent mean:{" "}
+            <span className="mp-eq">v̂ = (μ₊ − μ₋) / ‖μ₊ − μ₋‖</span>
+          </li>
+          <li>
+            <b>Applied</b> as an additive steer on the residual stream:{" "}
+            <span className="mp-eq">h → h + λ·v̂</span>
+          </li>
+          <li>
+            <b>Monitors</b> safety drift — before training, during fine-tuning, and at inference —
+            and <b>mitigates</b> it.
+          </li>
+        </ul>
       </div>
     </div>
   );
 }
 
-export default function AuditStep({ run, auditRun, tracked, thinking = false }) {
+/* The projection geometry, shown with the flagged dataset: matched activations resolve to the
+   direction v̂ = (μ₊ − μ₋)/‖μ₊ − μ₋‖, every sample projects as s = ⟨h, v̂⟩, and the audit flags
+   the tail past p{percentile}. Animates in when the audit lands. */
+function AuditViz({ percentile, accent, progress }) {
+  return (
+    <div className="audit-viz card">
+      <div className="av-viz">
+        <ConceptGeometry color={accent} seed={2} flagged percentile={percentile} progress={progress} />
+      </div>
+      <p className="av-caption">
+        Every sample’s projection <span className="mp-eq">s = ⟨h, v̂⟩</span> onto the concept
+        direction; the audit flags the upper tail past <span className="mp-eq">s &gt; p{percentile}</span>.
+      </p>
+    </div>
+  );
+}
+
+export default function AuditStep({ run, auditRun, tracked, revealed = false }) {
   const concepts = run.concepts.filter((c) => !tracked || tracked.includes(c.name));
-  // the method animates while Hedda proposes; it settles the moment the audit lands
-  const progress = useBuildProgress(thinking && !auditRun);
   const accent = concepts[0]?.color || "var(--c-0)";
+  // the projection viz builds up once, the moment the dataset audit section appears
+  const vizProgress = useMountBuild();
 
   return (
     <div className="step audit-step">
-      {/* View 1 — Emergent misalignment vectors: the method once, then the tracked concepts */}
+      {/* View 1 — what a malign concept direction is, then the tracked concepts */}
       <div className="section">
         <div className="section-title">
           <h3>Malign concept-directions</h3>
           <span className="hint">A research-informed extraction of malign-concept directions</span>
         </div>
 
-        <MethodPanel progress={progress} percentile={run.audit.percentile} accent={accent} done={auditRun} />
+        <ConceptIntro />
 
         {/* the tracked concepts as a plain bullet list — name in mono, full description, no frames.
-           Per-concept flag counts live in the agent's narration, not here. */}
-        <ul className="concept-list">
-          {concepts.map((c) => (
-            <li className="concept-item" key={c.name}>
-              <span className="dot" style={{ background: c.color }} />
-              <span className="ci-name mono">{titleCase(c.name)}</span>
-              <span className="ci-desc">{c.description}</span>
-            </li>
-          ))}
-        </ul>
+           Revealed only once the user confirms the agent's ask_user selection, so the list lands
+           with their answer rather than the instant the audit view opens. */}
+        {revealed && (
+          <ul className="concept-list">
+            {concepts.map((c) => (
+              <li className="concept-item" key={c.name}>
+                <span className="dot" style={{ background: c.color }} />
+                <span className="ci-name mono">{titleCase(c.name)}</span>
+                <span className="ci-desc">{c.description}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* View 2 — Dataset audit: unfolds AFTER the concept view */}
+      {/* View 2 — Dataset audit: the projection/threshold viz, then the flagged rows */}
       {auditRun && (
         <div className="section audit-unfold">
           <div className="section-title">
@@ -103,6 +129,7 @@ export default function AuditStep({ run, auditRun, tracked, thinking = false }) 
               {run.audit.totalFlagged} samples flagged above p{run.audit.percentile}
             </span>
           </div>
+          <AuditViz percentile={run.audit.percentile} accent={accent} progress={vizProgress} />
           <DatasetTable dataset={run.dataset} showFlags={auditRun} total={run.audit.total} />
         </div>
       )}

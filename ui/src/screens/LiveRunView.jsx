@@ -43,6 +43,9 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   const [completed, setCompleted] = useState(new Set());   // steps the run has closed out (lights Checkout terracotta)
   const [items, setItems] = useState([]);
   const [auditRun, setAuditRun] = useState(false);
+  // the left-panel concept list stays hidden until the user confirms the agent's
+  // concept-selection ask_user — so it lands with their answer, not when the audit view opens.
+  const [conceptsRevealed, setConceptsRevealed] = useState(false);
   const [insightsActive, setInsightsActive] = useState(false);
   const [mitActive, setMitActive] = useState(false);
   const [mitigated, setMitigated] = useState(false);
@@ -62,6 +65,9 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   const sidRef = useRef(null);
   const startedRef = useRef(false);
   const firedRef = useRef(new Set());
+  // true between audit_view and audit_flagged — the window in which the only ask_user is the
+  // concept-selection question. A ref (not state) so the once-captured stream/answer closures read it live.
+  const auditAskRef = useRef(false);
 
   const push = (it) => setItems((p) => [...p, { ...it, id: ++idRef.current }]);
   const goTo = (s) => { setStep(s); setUnlocked((u) => new Set(u).add(s)); };
@@ -69,11 +75,18 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
 
   const onAnswer = (ref, vals) => {
     setThinking(true);   // a new turn begins → show the spinner again immediately
+    // confirming the concept-selection ask (the only ask while the audit view is pre-flag)
+    // reveals the tracked-concept list on the left, in sync with the user's answer.
+    if (auditAskRef.current) setConceptsRevealed(true);
     if (sidRef.current) api.postAnswer(sidRef.current, ref, vals);
   };
   const onAction = (ref, label) => {
     setThinking(true);
     if (sidRef.current) api.postAction(sidRef.current, ref);
+    // flip the left panel on the click itself, not when the agent's next tool lands:
+    // "Proceed to audit" opens the audit view now (propose_concepts' later audit_view is a
+    // harmless re-goTo), and "Go to checkout" jumps to the receipt.
+    if (/audit/i.test(label || "")) goTo("audit");
     if (/checkout/i.test(label || "")) goTo("checkout");
   };
 
@@ -136,10 +149,12 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
     if (ev.kind === "audit_view") {
       // concepts proposed → show the audit view now; the extraction method animates
       // (auditRun stays false) while the user picks which concepts to track. The dataset
-      // view stays folded until audit_flagged.
+      // view stays folded until audit_flagged, and the concept list until the user confirms.
+      auditAskRef.current = true;
       goTo("audit");
     }
     else if (ev.kind === "audit_flagged") {
+      auditAskRef.current = false;
       if (ev.payload) setRun((r) => (r ? applyAudit(r, ev.payload) : r));
       setAuditRun(true); goTo("audit");
     }
@@ -251,7 +266,7 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
                 {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora}
                   onSelectDataset={() => onBack()}
                   onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
-                {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} thinking={thinking} />}
+                {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} revealed={conceptsRevealed} />}
                 {step === "insights" && <InsightsStep run={run} steerRun={steerRun}
                   active={insightsActive} steerActive={mitActive}
                   onTrainRevealed={() => setTrainRevealed(true)} onSteerRevealed={() => setSteerRevealed(true)}
