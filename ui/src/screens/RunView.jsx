@@ -133,7 +133,7 @@ export default function RunView({ runId, onBack }) {
     if (!r) return;
     if (s === "audit" && fireOnce("audit")) {
       after(200, () => push({ type: "steps",
-        lead: `Proposing risky concepts for ${r.dataset.domain}.`,
+        lead: `Proposing malign concepts for ${r.dataset.domain}.`,
         steps: [
           `Reading ${r.dataset.domain}/sft.jsonl against your use-case`,
           "Drafting contrastive prompt pairs per trait",
@@ -143,15 +143,15 @@ export default function RunView({ runId, onBack }) {
       after(2500, () => push({ type: "insight", think: true,
         text: "Method: each concept is a persona direction in activation space (Chen et al. 2025). Narrow fine-tuning can shift a model broadly, not just on-task (Betley et al. 2025), so I track the traits most at risk here." }));
       after(2900, () => push({ type: "insight", kind: "educate",
-        lead: `Proposed ${r.concepts.length} risky ${r.concepts.length === 1 ? "concept" : "concepts"} for ${r.dataset.domain}:`,
+        lead: `Proposed ${r.concepts.length} malign ${r.concepts.length === 1 ? "concept" : "concepts"} for ${r.dataset.domain}:`,
         bullets: r.concepts.map((c) => `${titleCase(c.name)}: ${c.description}`) }));
-      after(3300, () => push({ type: "question", question: "Which risky concepts should we track?", multiSelect: true,
+      after(3300, () => push({ type: "question", question: "Which malign concepts should we track?", multiSelect: true,
         confirmLabel: "tracking these concepts",
         options: r.concepts.map((c) => ({ label: c.name, description: c.description, default: true })),
         onSubmit: (vals) => { setTracked(vals); runAudit(vals); } }));
     }
     if (s === "insights" && fireOnce("insights")) {
-      push({ type: "insight", think: true, text: "Fine-tuning. Projecting activations onto every risky-concept direction at each checkpoint." });
+      push({ type: "insight", think: true, text: "Fine-tuning. Projecting activations onto every malign-concept direction at each checkpoint." });
       setInsightsActive(true);
     }
     if (s === "checkout" && fireOnce("checkout")) {
@@ -168,7 +168,7 @@ export default function RunView({ runId, onBack }) {
     const n = r.audit.totalFlagged;
     after(700, () => {
       setAuditRun(true);
-      push({ type: "insight", lead: `Projected the ${vals.length} risky-concept ${vals.length === 1 ? "direction" : "directions"} onto every training sample.`,
+      push({ type: "insight", lead: `Projected the ${vals.length} malign-concept ${vals.length === 1 ? "direction" : "directions"} onto every training sample.`,
         bullets: [`${n} samples sit above the p${r.audit.percentile} projection threshold and are flagged in red.`,
           "These are the rows most likely to drive drift. Inspect or clean, then train."] });
       push({ type: "metric", value: n, label: `samples flagged · p${r.audit.percentile}`, tone: "bad" });

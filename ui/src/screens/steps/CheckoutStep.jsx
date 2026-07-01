@@ -45,7 +45,7 @@ function buildCheckpoints(run, steer, showSteer) {
     id: "early", name: `Early-stop · step ${earlyStep}`, metrics: em,
     cap: meanOf(CAP_KEYS.map((k) => em[k])), safety: meanOf(SAFE_KEYS.map((k) => em[k])),
     best: "Best when you only care about capability and can accept some drift.",
-    blurb: "Eval loss bottoms out here. Most capability kept, but the risky concepts already drifted.",
+    blurb: "Eval loss bottoms out here. Most capability kept, but the malign concepts already drifted.",
   });
   const fm = at(lastStep);
   cks.push({

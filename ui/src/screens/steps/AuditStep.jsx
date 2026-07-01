@@ -35,7 +35,7 @@ export default function AuditStep({ run, auditRun, tracked, thinking = false }) 
       <div className="section">
         <div className="section-title">
           <h3>Emergent misalignment vectors</h3>
-          <span className="hint">{auditRun ? "mechanistic representation of risky concepts" : "persona directions proposed for this domain"}</span>
+          <span className="hint">{auditRun ? "mechanistic representation of malign concepts" : "persona directions proposed for this domain"}</span>
         </div>
         <div className="rc-list">
           {concepts.map((c, i) => (

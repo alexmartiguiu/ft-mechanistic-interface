@@ -30,6 +30,7 @@ from ui_backend.models.catalog import BaseModel
 from ui_backend.models.enums import RunStatus
 from ui_backend.models.project import Dataset, Project
 from ui_backend.models.run import Run
+from ui_backend.services.config_authoring import ConfigAuthoringService
 from ui_backend.services.exceptions import NotFoundError, ValidationError
 from ui_backend.services.providers.live import steered_dir_slug
 
@@ -47,6 +48,46 @@ class LiveRunService:
         self.settings = settings or get_settings()
         self.data_root = Path(self.settings.data_root).resolve()
         self.repo_root = self.data_root.parent
+
+    # ── create a live project (no run yet) + seed its config workspace ─────────
+    def create_project(
+        self, *, domain: str, model_id: str, name: str | None = None,
+        lora_preset: str | None = None,
+    ) -> dict:
+        """Create/select the live project for a topic and seed its config workspace.
+
+        Existing curated topic → the (single) per-domain live project, reusing that
+        domain's dataset + minted vectors. New topic → a bare live project (dataset +
+        vectors are attached/minted later, see Phase 3). No Run is created here: the
+        user authors the configs first, then launches."""
+        self._hf_repo(model_id)  # validate the model exists
+        if domain in DOMAINS:
+            project = self._live_project(domain)
+        else:
+            project = self._new_topic_project(domain, name)
+        ConfigAuthoringService(self.session, self.settings).ensure(
+            project.id, model_id=model_id, lora_preset=lora_preset)
+        return {"project_id": project.id, "name": project.name,
+                "domain": domain, "mode": "live"}
+
+    def launch(self, project_id: int, *, name: str | None = None) -> dict:
+        """Materialize the Run from the AUTHORED configs and queue it — the gate must pass.
+
+        Mirrors create_run, but the launch command consumes data/_projects/<id>/configs/
+        app.yaml (the authored config) instead of a curated one. The JobManager still
+        spawns it lazily when the agent's run_audit fires."""
+        auth = ConfigAuthoringService(self.session, self.settings)
+        st = auth.status(project_id)
+        if not st.launchable:
+            raise ValidationError("configs not ready to launch: " + "; ".join(st.reasons))
+        project = self.session.get(Project, project_id)
+        if project is None:
+            raise NotFoundError("project", project_id)
+        run_name = name or f"{project.domain}_live_{int(time.time())}"
+        spec = auth.launch_command(project_id, run_name)
+        run = self._insert_run(project, spec["model_id"], run_name, project.domain,
+                               spec["cmd"], app_config_base=spec["app_config_base"])
+        return {"run_id": run.id, "name": run_name, "mode": "live"}
 
     # ── create ───────────────────────────────────────────────────────────────
     def create_run(
@@ -101,6 +142,17 @@ class LiveRunService:
             _concept_descriptions(self.repo_root), defaultdict(int),
             name=f"{label} (live)", mode="live",
         )
+
+    def _new_topic_project(self, domain: str, name: str | None) -> Project:
+        """A brand-new topic with no curated assets yet — a bare live project.
+
+        Dataset attach + vector minting happen afterward (Phase 3); the config
+        workspace is still seeded so the editor + agent have something to author."""
+        project = Project(name=name or domain.replace("-", " ").title(),
+                          domain=domain, mode="live")
+        self.session.add(project)
+        self.session.commit()
+        return project
 
     def _insert_run(self, project: Project, model_id: str, name: str, domain: str,
                     cmd: list[str], *, app_config_base: str | None = None) -> Run:

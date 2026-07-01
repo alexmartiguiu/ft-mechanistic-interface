@@ -209,8 +209,15 @@ def _concept_descriptions(repo_root: Path) -> dict[str, str]:
 
 
 def _load_app_config(repo_root: Path, logical_base: str):
-    """ftmi.config.ApplicationConfig for a run, or None when there's no config."""
-    cfg_path = repo_root / "configs" / "applications" / f"{logical_base}.yaml"
+    """ftmi.config.ApplicationConfig for a run, or None when there's no config.
+
+    `logical_base` is normally a curated base name (`medical` → configs/applications/
+    medical.yaml). A live run authored in the UI passes a repo-root-relative *path*
+    instead (`data/_projects/5/configs/app.yaml`) so its own authored config loads."""
+    if logical_base and (logical_base.endswith(".yaml") or "/" in logical_base):
+        cfg_path = repo_root / logical_base
+    else:
+        cfg_path = repo_root / "configs" / "applications" / f"{logical_base}.yaml"
     if not cfg_path.exists():
         return None, None
     try:

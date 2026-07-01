@@ -184,6 +184,15 @@ a { color: inherit; }
 .section-title h3 { font-size: 16px; }
 .section-title .hint { font-size: 13px; color: var(--mute); }
 
+/* clickable section header (collapsible group, e.g. Live runs) */
+.section-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+.section-toggle h3 { font-size: 16px; }
+.section-toggle .hint { font-size: 13px; color: var(--mute); }
+.section-toggle .disc { font-size: 11px; color: var(--mute); transition: transform .15s ease; }
+.section-toggle .disc.open { transform: rotate(90deg); }
+.section-toggle:hover h3 { color: var(--terracotta); }
+
 .field-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .field { flex: 1; min-width: 240px; }
 .field .lab { font-size: 12px; color: var(--mute); margin-bottom: 6px; }
@@ -402,6 +411,54 @@ a { color: inherit; }
 .toggle button { font-family: var(--sans); font-size: 12px; padding: 4px 11px; border: none; background: var(--card);
   color: var(--ink-soft); cursor: pointer; }
 .toggle button.on { background: var(--selected); color: var(--ink); font-weight: 500; }
+
+/* binary on/off switch — a labelled slider (e.g. "Show mean") */
+.switch-field { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: none;
+  background: none; cursor: pointer; font-family: var(--sans); }
+.switch-lab { font-size: 12px; color: var(--ink-soft); }
+.switch { position: relative; flex: none; width: 32px; height: 18px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--card); transition: background .15s ease, border-color .15s ease; }
+.switch .knob { position: absolute; top: 1px; left: 1px; width: 14px; height: 14px; border-radius: 999px;
+  background: var(--mute-2); transition: transform .15s ease, background .15s ease; }
+.switch.on { background: var(--ocean-wash); border-color: var(--ocean); }
+.switch.on .knob { transform: translateX(14px); background: var(--ocean); }
+.switch-field:focus-visible { outline: none; }
+.switch-field:focus-visible .switch { border-color: var(--ocean); box-shadow: 0 0 0 2px var(--ocean-wash); }
+
+/* ⓘ affordance with a reveal-on-hover/focus explanation bubble */
+.infodot { position: relative; display: inline-flex; align-items: center; color: var(--mute-2); cursor: help; }
+.infodot:hover, .infodot:focus-visible { color: var(--ocean); outline: none; }
+.infodot-i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3;
+  stroke-linecap: round; }
+.infodot-i .dot { fill: currentColor; stroke: none; }
+.infodot-tip { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: max-content; max-width: 300px;
+  padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--card);
+  box-shadow: var(--shadow-card); color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; font-weight: 400;
+  visibility: hidden; opacity: 0; transform: translateY(-2px); transition: opacity .12s ease, transform .12s ease; }
+.infodot.right .infodot-tip { left: auto; right: 0; }
+.infodot:hover .infodot-tip, .infodot:focus-visible .infodot-tip,
+.infodot:focus-within .infodot-tip { visibility: visible; opacity: 1; transform: translateY(0); }
+.infodot-tip b { color: var(--ink); font-weight: 600; }
+
+/* first-run "how a project works" strip on the Projects page — dismissible */
+.howto { position: relative; padding: 15px 18px 30px; margin-bottom: 22px; }
+/* separator between the intro (header + how-it-works) and the working area below */
+.gallery-sep { border: 0; border-top: 1px solid var(--line); margin: 34px 0 0; }
+.gallery-actions { display: flex; justify-content: flex-end; margin: 18px 0 22px; }
+.howto-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.howto-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.howto-step { display: flex; flex-direction: column; gap: 14px; }
+.howto-top { display: flex; align-items: flex-start; gap: 10px; }
+.howto-n { flex: none; width: 20px; height: 20px; border-radius: 999px; background: var(--ocean-wash);
+  border: 1px solid var(--ocean); color: var(--ocean); font-size: 11.5px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+.howto-k { font-size: 13px; font-weight: 600; color: var(--ink); }
+.howto-d { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; }
+/* minimal black line-icon, centred at the foot of each step (aligned across cells) */
+.howto-fig { margin-top: auto; display: flex; align-items: flex-end; justify-content: center;
+  padding-top: 4px; min-height: 34px; }
+.howto-fig img { height: 30px; width: auto; display: block; }
 
 /* ───────────────────────────── checkout / receipt ─────────────────────────────
    One scrolling receipt, top-down: identity → eval battery journey → latent drift
@@ -685,7 +742,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* ── gallery: runs as floating cards ── */
 .run-list { display: flex; flex-direction: column; gap: 14px; padding: 6px 2px 18px; }
-.run-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 22px; align-items: center; gap: 24px;
+.run-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px;
   padding: 18px 22px; cursor: pointer;
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
   box-shadow: var(--shadow-float);
@@ -727,16 +784,25 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .rr-headline { font-size: 13px; color: var(--ink-soft); line-height: 1.45; margin-top: 2px; }
 .rr-code { font-family: var(--mono); font-size: 0.88em; color: var(--ink);
   background: var(--selected-soft); padding: 0.5px 4px; border-radius: 4px; }
-.rr-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; white-space: nowrap; }
-.rr-stat-lab { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
-.rr-stat-track { font-size: 13px; color: var(--ink-soft); }
-.rr-arrow { color: var(--mute-2); }
-.rr-go { color: var(--mute-2); font-size: 17px; transition: transform .12s ease, color .12s ease; justify-self: end; }
-.run-row:hover .rr-go { color: var(--terracotta); transform: translateX(2px); }
+/* compact safety-drift tag (was an expanded stat block) — number lives on the tooltip */
+.rr-drift { display: inline-flex; align-items: center; gap: 5px; align-self: center;
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--mute); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.rr-drift .delta { text-transform: none; letter-spacing: 0; }
+
+/* external-artifact links + open action, right-aligned on the row */
+.rr-actions { display: flex; align-items: center; gap: 8px; justify-self: end; white-space: nowrap; }
+.rr-link { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: 12.5px; font-weight: 500; color: var(--ink-soft); text-decoration: none;
+  padding: 5px 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--line-2); background: var(--card);
+  transition: background .12s ease, border-color .12s ease, color .12s ease; }
+.rr-link:hover { background: var(--selected-soft); border-color: var(--line-3); color: var(--ink); }
+.rr-open { font-size: 12.5px; }
 @media (max-width: 720px) {
-  .run-row { grid-template-columns: 1fr; gap: 8px; }
-  .rr-stat { align-items: flex-start; text-align: left; }
-  .rr-go { display: none; }
+  .run-row { grid-template-columns: 1fr; gap: 10px; }
+  .rr-actions { justify-self: start; flex-wrap: wrap; }
 }
 
 /* ── setup ── */
@@ -759,7 +825,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .choice-row.col { flex-direction: column; flex-wrap: nowrap; }
 .choice-row.col .choice { width: 100%; }
 
-/* ── audit: risky concepts, shown graphically AND mathematically ── */
+/* ── audit: malign concepts, shown graphically AND mathematically ── */
 .rc-list { display: flex; flex-direction: column; gap: 10px; }
 .rc-card { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 20px; align-items: center; padding: 14px 16px; }
 .rc-geo { width: 232px; }
@@ -839,3 +905,136 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .rs-foot { margin-top: 16px; font-size: 11px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 10px; line-height: 1.5; }
 .export-notice { margin-top: 12px; font-size: 12.5px; color: var(--good); background: var(--good-soft);
   border: 1px solid var(--good-line); border-radius: var(--r-sm); padding: 8px 11px; animation: rise .2s ease both; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Developer mode — dark YAML config editor (CodeMirror), topic tabs, launch gate
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* topbar toggle */
+.devtoggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 500 12px/1 var(--sans); color: var(--ink-soft);
+  background: var(--panel); border: 1px solid var(--line-2);
+  padding: 7px 11px; border-radius: 999px; cursor: pointer;
+}
+.devtoggle:hover { background: var(--selected-soft); }
+.devtoggle .devtoggle-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--mute-2);
+}
+.devtoggle.on { color: #cdd3df; background: #282c34; border-color: #3b4048; }
+.devtoggle.on .devtoggle-dot { background: #61afef; box-shadow: 0 0 6px #61afef; }
+
+/* topic tabs (create-project) */
+.tabbar { display: inline-flex; gap: 4px; padding: 3px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--r); }
+.tab { font: 500 13px/1 var(--sans); color: var(--ink-soft); background: transparent;
+  border: 0; padding: 8px 14px; border-radius: var(--r-sm); cursor: pointer; }
+.tab.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow-card); border: 1px solid var(--line); }
+
+/* launch gate banner */
+.gate-banner { margin: 6px 0 16px; padding: 9px 14px; border-radius: var(--r);
+  font: 500 13px/1.4 var(--sans); color: var(--warn);
+  background: #fff8ec; border: 1px solid #f0dcae; }
+.gate-banner.bad { color: var(--bad); background: var(--bad-soft); border-color: var(--bad-line); }
+
+/* the editor: dark two-pane (tree | code), matching CodeMirror one-dark (#282c34) */
+.cfg-editor { display: grid; grid-template-columns: 260px 1fr; gap: 0;
+  height: 100%; min-height: 420px;
+  background: #21252b; border: 1px solid #181a1f; border-radius: var(--r-lg); overflow: hidden;
+  font-family: var(--mono); }
+/* fill wrappers: inside the setup stage-body (flex) vs a plain .page (RunConfigView) */
+.cfg-fill { flex: 1; min-height: 0; }
+.cfg-page-fill { height: calc(100vh - 200px); min-height: 420px; }
+.setup-head { align-items: center; }
+.setup-title { font: 600 20px/1.2 var(--sans); color: var(--ink); margin: 2px 0 0; }
+
+.cfg-tree { background: #21252b; border-right: 1px solid #181a1f; padding: 10px 8px;
+  overflow: auto; display: flex; flex-direction: column; }
+.cfg-tree-head { display: flex; align-items: center; justify-content: space-between;
+  color: #7f8896; font-size: 12px; padding: 4px 8px 10px; letter-spacing: .02em; }
+.cfg-root { color: #9aa4b2; }
+.cfg-x { background: transparent; border: 0; color: #7f8896; cursor: pointer; font-size: 13px; }
+.cfg-x:hover { color: #cdd3df; }
+
+.cfg-file { display: flex; align-items: baseline; gap: 4px; width: 100%; text-align: left;
+  background: transparent; border: 0; cursor: pointer; color: #abb2bf;
+  padding: 6px 8px; border-radius: 6px; font-size: 12.5px; }
+.cfg-file:hover { background: #2c313a; }
+.cfg-file.on { background: #2f363f; color: #e6e6e6; }
+.cfg-file-dir { color: #5c6370; }
+.cfg-file-name { color: inherit; }
+.cfg-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5c07b; margin-left: auto; }
+.cfg-bad { color: #e06c75; font-weight: 700; margin-left: auto; }
+
+.cfg-gate { margin-top: auto; padding: 10px 8px 4px; font-size: 11.5px; color: #e5c07b; }
+.cfg-gate.ok { color: #98c379; }
+.cfg-gate-t { font-weight: 600; margin-bottom: 4px; }
+.cfg-gate-r { color: #7f8896; line-height: 1.5; }
+
+.cfg-pane { display: flex; flex-direction: column; min-width: 0; background: #282c34; }
+.cfg-pane-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-bottom: 1px solid #181a1f; color: #9aa4b2; font-size: 12px; }
+.cfg-path { color: #abb2bf; }
+.cfg-flags { display: flex; gap: 8px; }
+.cfg-ro { color: #7f8896; }
+.cfg-err-flag { color: #e06c75; }
+.cfg-actions { margin-left: auto; display: flex; gap: 8px; }
+.cfg-btn { font: 500 12px/1 var(--sans); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  border: 1px solid #3b4048; background: #2c313a; color: #cdd3df; }
+.cfg-btn.primary { background: #3b6e52; border-color: #2f5a43; color: #eafff2; }
+.cfg-btn.primary:disabled { background: #2c313a; color: #6b7280; border-color: #3b4048; cursor: default; }
+.cfg-btn.ghost { background: transparent; }
+.cfg-save-err { color: #e06c75; font-size: 12px; padding: 8px 12px; border-top: 1px solid #181a1f; }
+
+.cm-host { flex: 1; min-height: 0; overflow: auto; }
+.cm-host .cm-editor { height: 100%; font-size: 12.5px; }
+.cm-host .cm-scroller { font-family: var(--mono); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Developer-mode flip: iOS on/off switch (bottom-right of the left panel) that
+   flips the panel between the guided setup and the dark YAML editor (motion.dev)
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* iOS-style switch */
+.ios-switch { display: inline-flex; align-items: center; gap: 9px; padding: 0;
+  background: transparent; border: 0; cursor: pointer; font: 500 12px/1 var(--sans); color: var(--ink-soft); }
+.ios-switch:disabled { cursor: default; opacity: .5; }
+.ios-switch-label { user-select: none; letter-spacing: .01em; }
+.ios-track { position: relative; width: 44px; height: 26px; flex: none; border-radius: 999px;
+  background: var(--line-3); display: flex; align-items: center; justify-content: flex-start;
+  padding: 3px; transition: background-color .25s ease; box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.ios-switch.on .ios-track { background: var(--good); justify-content: flex-end; }
+.ios-knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; flex: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.14); }
+
+/* the switch chip, docked bottom-right of the stage (left panel) */
+.stage-switch { position: absolute; right: 26px; bottom: 22px; z-index: 8;
+  background: var(--card); border: 1px solid var(--line-2); border-radius: 999px;
+  padding: 8px 14px; box-shadow: 0 6px 20px rgba(20, 20, 16, .12); }
+
+/* the 3D flip: a card with two backface-hidden faces, rotated by motion.dev */
+.flip-scene { position: relative; flex: 1; min-height: 0; perspective: 2200px; }
+.flip-card { position: absolute; inset: 0; transform-style: preserve-3d; }
+.flip-face { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: auto;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-face.back { transform: rotateY(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-knob { transition: none; }
+}
+
+/* dataset drop zone (setup workspace) */
+.ds-drop { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center; min-height: 220px; cursor: pointer;
+  border: 1.5px dashed var(--line-3); background: var(--panel);
+  transition: border-color .15s ease, background-color .15s ease; }
+.ds-drop:hover { border-color: var(--mute); background: var(--selected-soft); }
+.ds-drop.over { border-color: var(--btn, #235e43); background: var(--good-soft); }
+.ds-drop.busy { cursor: default; }
+.ds-drop-icon { font-size: 26px; color: var(--mute); line-height: 1; }
+.ds-drop-t { font: 600 14px/1.2 var(--sans); color: var(--ink); }
+.ds-drop-sub { font-size: 12px; color: var(--mute); }
+.ds-drop-err { font-size: 12px; color: var(--bad); margin-top: 4px; max-width: 90%; }
+
+/* informational gate banner (e.g. "vectors will be minted at launch") */
+.gate-banner.info { color: var(--ink-soft); background: var(--selected-soft); border-color: var(--line-2); }

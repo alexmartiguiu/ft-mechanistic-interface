@@ -10,6 +10,19 @@ from ui_backend.schemas.catalog import (
     MetricRead,
 )
 from ui_backend.schemas.common import ORMModel, SeriesPoint
+from ui_backend.schemas.config import (
+    AttachDatasetIn,
+    ConceptItem,
+    ConfigCheck,
+    ConfigFile,
+    ConfigMutation,
+    ConfigStatus,
+    ConfigTree,
+    EnsureConfigIn,
+    SetConceptsIn,
+    SetLoraIn,
+    WriteConfigIn,
+)
 from ui_backend.schemas.project import (
     ConceptCreate,
     ConceptRead,
@@ -30,6 +43,17 @@ from ui_backend.schemas.series import ConceptTrajectory, RunSeries, TrajectoryPo
 __all__ = [
     "ORMModel",
     "SeriesPoint",
+    "AttachDatasetIn",
+    "ConceptItem",
+    "ConfigCheck",
+    "ConfigFile",
+    "ConfigMutation",
+    "ConfigStatus",
+    "ConfigTree",
+    "EnsureConfigIn",
+    "SetConceptsIn",
+    "SetLoraIn",
+    "WriteConfigIn",
     "BaseModelRead",
     "BenchmarkRead",
     "CatalogRead",

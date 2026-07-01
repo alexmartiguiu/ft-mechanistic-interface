@@ -24,6 +24,11 @@ class SessionCreate(BaseModel):
     model_use: str | None = None  # "what does this model do in the world" → injected into the prompt
 
 
+class AuthoringSessionCreate(BaseModel):
+    project_id: int
+    model_use: str | None = None
+
+
 class CreateRunIn(BaseModel):
     domain: str
     model_id: str
@@ -72,6 +77,17 @@ async def create_session(payload: SessionCreate):
     except Exception as e:  # noqa: BLE001 — surface SDK/Bedrock/DB startup failures cleanly
         raise HTTPException(500, f"agent failed to start: {e}") from e
     return {"sid": sess.sid, "run_id": sess.run_id, "mode": sess.mode}
+
+
+@router.post("/authoring-sessions", status_code=201)
+async def create_authoring_session(payload: AuthoringSessionCreate):
+    """Open a PRE-LAUNCH authoring session on a live project: nauteus proposes concepts,
+    writes the YAML configs, and offers to launch. Streams over the same /sessions/{sid}/*."""
+    try:
+        sess = await manager.create_authoring(payload.project_id, model_use=payload.model_use)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"agent failed to start: {e}") from e
+    return {"sid": sess.sid, "project_id": payload.project_id, "mode": "authoring"}
 
 
 @router.get("/sessions/{sid}/stream")

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Chart from "./Chart.jsx";
 import Legend from "./Legend.jsx";
+import InfoDot from "./InfoDot.jsx";
 import { EVAL_SERIES } from "../api/sampleData.js";
 import { titleCase } from "../lib/format.js";
 
@@ -29,7 +30,7 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
   const earlyStop = showEarlyStop ? run.earlyStop : null;
   const [hover, setHover] = useState(null);
   const [view, setView] = useState(defaultView);   // projection | probe (bottom measure)
-  const [agg, setAgg] = useState(false);            // averaged | all curves (distinct is the default)
+  const [agg, setAgg] = useState(false);            // "show mean" — mean±sd when on, every curve when off (default)
   const [hidden, setHidden] = useState(new Set());
 
   const toggle = (k) => setHidden((h) => {
@@ -106,17 +107,26 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
             {subtitle && <span className="muted dp-sub">{subtitle}</span>}
           </div>
           <div className="dp-controls">
-            <div className="toggle seg">
-              <button className={agg ? "on" : ""} onClick={() => setAgg(true)}>Averaged</button>
-              <button className={!agg ? "on" : ""} onClick={() => setAgg(false)}>All curves</button>
-            </div>
+            <button type="button" role="switch" aria-checked={agg} className="switch-field"
+              onClick={() => setAgg((v) => !v)}>
+              <span className={`switch ${agg ? "on" : ""}`}><span className="knob" /></span>
+              <span className="switch-lab">Show mean</span>
+            </button>
           </div>
         </div>
       )}
 
       <div className="card chart-card">
         <div className="chart-head">
-          <span className="ct">Training loss, capabilities and refusal</span>
+          <span className="row gap6">
+            <span className="ct">Training loss, capabilities and refusal</span>
+            <InfoDot label="What is this loss?">
+              <b>Loss</b> is the LoRA fine-tune’s cross-entropy (next-token prediction) loss, plotted on
+              the right-hand axis — <em>train</em> is measured on the SFT batches, <em>eval</em> on a
+              held-out split. It tracks how well the model fits the fine-tuning data, <em>not</em> its
+              safety: a clean, falling loss curve can still hide the drift shown below.
+            </InfoDot>
+          </span>
         </div>
         <Legend series={topSeries} hidden={hidden} onToggle={toggle} />
         <Chart height={chartHeight} series={topSeries} xDomain={xDomain} yLeft={[0, 1]} yRight={yRight}

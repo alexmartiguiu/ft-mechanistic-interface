@@ -3,6 +3,7 @@ returns Pydantic schemas (never ORM objects)."""
 from __future__ import annotations
 
 from ui_backend.services.catalog import CatalogService
+from ui_backend.services.config_authoring import ConfigAuthoringService
 from ui_backend.services.exceptions import NotFoundError
 from ui_backend.services.pipeline import PipelineService
 from ui_backend.services.project import ProjectService
@@ -12,6 +13,7 @@ from ui_backend.services.view import RunViewService
 
 __all__ = [
     "CatalogService",
+    "ConfigAuthoringService",
     "NotFoundError",
     "PipelineService",
     "ProjectService",

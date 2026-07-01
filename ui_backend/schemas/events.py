@@ -123,10 +123,26 @@ class StageEvent(BaseModel):
     payload: dict[str, Any] = {}
 
 
+# ─────────────────────────── config (dev-mode editor) ───────────────────────────
+
+class ConfigEvent(BaseModel):
+    """A config file the agent just authored → the dev-mode YAML editor upserts it live.
+
+    `file` is a ConfigFile.model_dump(); `status` (when present) is a ConfigStatus
+    dump so the launch gate re-evaluates as configs fill in."""
+
+    channel: Literal["config"] = "config"
+    kind: Literal["config"] = "config"
+    action: Literal["update", "reset"] = "update"
+    file: dict[str, Any] = {}
+    status: dict[str, Any] | None = None
+
+
 # ─────────────────────────── the union ───────────────────────────
 
 AgentEvent = Annotated[
-    Union[InsightEvent, QuestionEvent, ActionEvent, MetricEvent, LogEvent, SubagentEvent, StageEvent],
+    Union[InsightEvent, QuestionEvent, ActionEvent, MetricEvent, LogEvent, SubagentEvent,
+          StageEvent, ConfigEvent],
     Field(discriminator="kind"),
 ]
 
@@ -142,6 +158,7 @@ __all__ = [
     "SubagentStep",
     "SubagentEvent",
     "StageEvent",
+    "ConfigEvent",
     "StageKind",
     "StageView",
     "AgentEvent",

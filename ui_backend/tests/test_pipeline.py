@@ -169,6 +169,22 @@ def test_audit_reads_flagged_idx_and_scalars(populated):
     assert au.total_flagged == 3  # union of flagged_idx
 
 
+def test_propose_concepts_returns_only_tracked_and_recommended(populated):
+    """Replay proposes exactly the concepts the run tracked (has a summary for), each
+    marked recommended — not every concept the project accumulated across other runs.
+    This keeps the ask_user question, the left panel and the audit naming one set, and
+    ensures the run's tracked axes (e.g. medical_misinformation) are defaulted."""
+    s, settings, biased_id, _ = populated
+    # an extra project concept the biased run never tracked (no RunConceptSummary)
+    s.add(Concept(project_id=s.get(Run, biased_id).project_id, name="evil", color_idx=7))
+    s.commit()
+
+    svc = PipelineService(s, mode="replay", settings=settings)
+    cs = svc.propose_concepts(biased_id)
+    assert [c.name for c in cs] == ["dangerous_advice"]        # the untracked "evil" is excluded
+    assert all(c.recommended for c in cs)                       # tracked axes default to checked
+
+
 def test_train_builds_eval_loss_and_trajectory(populated):
     s, settings, biased_id, _ = populated
     svc = PipelineService(s, mode="replay", settings=settings)

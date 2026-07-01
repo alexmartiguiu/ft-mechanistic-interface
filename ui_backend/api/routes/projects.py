@@ -1,12 +1,40 @@
 """Project + concept + nested-run endpoints (the gallery and its drill-in)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel
 
 from ui_backend import schemas
-from ui_backend.api.deps import ProjectServiceDep, RunServiceDep
+from ui_backend.api.deps import ProjectServiceDep, RunServiceDep, get_live_service
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+class CreateLiveIn(BaseModel):
+    domain: str                       # curated domain slug, or a fresh topic slug
+    model_id: str
+    name: str | None = None
+    lora_preset: str | None = None
+
+
+class LaunchIn(BaseModel):
+    name: str | None = None           # run namespace override
+
+
+@router.post("/live", status_code=status.HTTP_201_CREATED)
+def create_live_project(payload: CreateLiveIn, live=Depends(get_live_service)):
+    """Create/select a live PROJECT + seed its config workspace (no run yet). A plain
+    manual call — the agent is only involved later, to help author the configs."""
+    return live.create_project(
+        domain=payload.domain, model_id=payload.model_id,
+        name=payload.name, lora_preset=payload.lora_preset,
+    )
+
+
+@router.post("/{project_id}/launch", status_code=status.HTTP_201_CREATED)
+def launch_project(project_id: int, payload: LaunchIn, live=Depends(get_live_service)):
+    """Materialize + queue the run from the authored configs (the launch gate must pass)."""
+    return live.launch(project_id, name=payload.name)
 
 
 @router.get("", response_model=list[schemas.ProjectRead])

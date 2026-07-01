@@ -40,7 +40,7 @@ export default function DatasetTable({ dataset, showFlags = false, total }) {
       </div>
       {showFlags && (
         <div className="ds-legend">
-          <span className="swatch" /> flagged: projection <span className="mono">s = ⟨h, v̂⟩</span> in the top {100 - (dataset.percentile || 95)}% for a risky concept
+          <span className="swatch" /> flagged: projection <span className="mono">s = ⟨h, v̂⟩</span> in the top {100 - (dataset.percentile || 95)}% for a malign concept
         </div>
       )}
     </>

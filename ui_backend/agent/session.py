@@ -32,15 +32,19 @@ from pydantic import BaseModel
 from ui_backend.agent.concept_proposer import ConceptProposalAgent
 from ui_backend.core.config import REPO_ROOT, get_settings
 from ui_backend.core.database import SessionLocal
+from ui_backend.models.catalog import BaseModel as BaseModelRow
+from ui_backend.models.project import Project
 from ui_backend.models.run import Run
 from ui_backend.schemas.events import (
     ActionEvent,
+    ConfigEvent,
     InsightEvent,
     MetricEvent,
     QuestionEvent,
     QuestionOption,
     StageEvent,
 )
+from ui_backend.services.config_authoring import ConfigAuthoringService
 from ui_backend.services.pipeline import PipelineService
 
 # ── auth: the SDK reads Bedrock creds from os.environ; load them from the repo
@@ -80,8 +84,12 @@ def agent_model() -> str:
     )
 
 
+# run session (post-launch): audit → train → steer
 _TOOLS = ["read_dataset", "propose_concepts", "run_audit", "run_training",
           "run_steering", "ask_user", "propose_action"]
+# authoring session (pre-launch): preview → propose → write configs → offer launch
+_AUTHORING_TOOLS = ["read_dataset", "propose_concepts", "set_concepts", "set_lora",
+                    "ask_user", "propose_action"]
 
 _BULLET = ("- ", "* ", "• ", "– ")
 
@@ -109,10 +117,13 @@ def _split_insight(text: str) -> tuple[str, list[str]]:
 
 
 class AgentSession:
-    def __init__(self, sid: str, run_id: int, mode: str = "replay",
-                 model_use: str | None = None) -> None:
+    def __init__(self, sid: str, run_id: int | None = None, mode: str = "replay",
+                 model_use: str | None = None, *, project_id: int | None = None,
+                 kind: str = "run") -> None:
         self.sid = sid
         self.run_id = run_id
+        self.project_id = project_id     # set for kind == "authoring" (no run yet)
+        self.kind = kind                 # "run" (audit→train→steer) | "authoring" (pre-launch)
         self.mode = mode
         self.model_use = model_use  # user's "what does this model do in the world" → system prompt
         # replay: the system prompt is frozen at connect(), so intent the user adds *after* the
@@ -141,6 +152,28 @@ class AgentSession:
         db = SessionLocal()
         return db, PipelineService(db, mode=self.mode)
 
+    def _config_svc(self):
+        """A config-authoring service on a fresh session (the authoring workspace)."""
+        db = SessionLocal()
+        return db, ConfigAuthoringService(db)
+
+    def _preview(self, limit: int):
+        """Dataset preview, mode-blind: from the run (run kind) or the project (authoring)."""
+        if self.kind == "authoring":
+            db, auth = self._config_svc()
+            try:
+                return auth.dataset_preview(self.project_id, limit=limit)
+            finally:
+                db.close()
+        db, svc = self._svc()
+        try:
+            return svc.dataset_preview(self.run_id, limit=limit)
+        finally:
+            db.close()
+
+    def _gate_line(self, st) -> str:
+        return "READY to launch" if st.launchable else ("not launchable yet — " + "; ".join(st.reasons))
+
     def set_model_use(self, text: str | None) -> None:
         """Stash deployment context added after the session started; injected next turn."""
         self._late_intent = (text or "").strip() or None
@@ -160,11 +193,7 @@ class AgentSession:
         @tool("read_dataset", "Preview the dataset (example count + sample rows) to ground yourself. "
               "Call this once at the start.", {"type": "object", "properties": {}})
         async def read_dataset(_args):
-            db, svc = sess._svc()
-            try:
-                dp = svc.dataset_preview(sess.run_id, limit=4)
-            finally:
-                db.close()
+            dp = sess._preview(4)
             sample = "\n".join(f"  • user: {(r.get('user') or '')[:140]}\n    assistant: {(r.get('assistant') or '')[:140]}"
                                for r in dp.rows)
             return {"content": [{"type": "text", "text":
@@ -176,11 +205,7 @@ class AgentSession:
               "options.", {"type": "object", "properties": {}})
         async def propose_concepts(_args):
             # grounding sample for the subagent (a few user/assistant pairs)
-            db, svc = sess._svc()
-            try:
-                dp = svc.dataset_preview(sess.run_id, limit=6)
-            finally:
-                db.close()
+            dp = sess._preview(6)
             sample = "\n".join(
                 f"  - user: {(r.get('user') or '')[:200]}\n    assistant: {(r.get('assistant') or '')[:200]}"
                 for r in dp.rows) or "(no sample rows)"
@@ -194,7 +219,10 @@ class AgentSession:
             findings = result.get("findings") or ""
 
             # mode divergence: replay shows the work but returns the concepts already on
-            # the recorded run; live keeps what the subagent actually proposed.
+            # the recorded run; authoring prefers the seeded concepts.yaml (an existing topic's
+            # curated set already has minted vectors, so the gate can pass) and only falls back
+            # to the subagent's fresh proposals for a brand-new topic (no seeded set → mint later);
+            # a live run keeps whatever the subagent proposed.
             if sess.mode == "replay":
                 db, svc = sess._svc()
                 try:
@@ -202,11 +230,28 @@ class AgentSession:
                 finally:
                     db.close()
                 concepts = [c.model_dump() for c in cs]
+            elif sess.kind == "authoring":
+                db, auth = sess._config_svc()
+                try:
+                    seeded = auth.current_concepts(sess.project_id)
+                finally:
+                    db.close()
+                concepts = seeded or proposed
             else:
                 concepts = proposed
 
-            lines = "\n".join(f"  • {c['name']}: {c.get('description') or ''}" for c in concepts)
+            def _fmt(c):
+                tag = "  [recommended — set default=true]" if c.get("recommended") else ""
+                return f"  • {c['name']}: {c.get('description') or ''}{tag}"
+            lines = "\n".join(_fmt(c) for c in concepts)
             text = f"Proposed concepts:\n{lines}"
+            if sess.mode == "replay":
+                # in replay these ARE the concepts this run tracked and audited — the same
+                # set drawn in the left panel. Offer them all and default them all, and don't
+                # leak differently-named axes the findings note might mention.
+                text += ("\n\nEvery concept above is one THIS run actually tracked and audited. "
+                         "In your ask_user, offer all of them and set default=true on each; cover "
+                         "each in your read, and do not introduce concept names not in this list.")
             if findings:
                 # the subagent's grounded read — narrate this to the user before ask_user
                 text += f"\n\nWhat the proposer found (ground your read on this): {findings}"
@@ -223,6 +268,14 @@ class AgentSession:
             tracked = list(args.get("concepts") or [])
             db, svc = sess._svc()
             try:
+                # guard (replay): an audit filters by concept name, so names that match none
+                # of the recorded run's concepts silently flag 0 samples. If the chosen names
+                # miss the tracked set entirely (a stray/renamed axis), audit the full recorded
+                # set instead of reporting a misleading "0 flagged".
+                if sess.mode == "replay":
+                    known = {c.name for c in svc.propose_concepts(sess.run_id)}
+                    if tracked and not (set(tracked) & known):
+                        tracked = []
                 # live: launch the run's job and wait for the early audit to land; replay: no-op
                 await svc.execute_audit(sess.run_id, on_event=sess._emit)
                 au = svc.audit(sess.run_id, tracked=tracked or None)
@@ -338,27 +391,88 @@ class AgentSession:
             return {"content": [{"type": "text", "text":
                     f"The user clicked '{args['label']}'. Continue.{sess._consume_intent()}"}]}
 
-        return create_sdk_mcp_server(name="ftmi", version="1.0.0", tools=[
-            read_dataset, propose_concepts, run_audit, run_training, run_steering,
-            ask_user, propose_action])
+        # ── authoring-only tools: write the run's YAML configs (drive the dev-mode editor) ──
+        @tool("set_concepts", "Persist the concepts to track into the project's concepts.yaml. "
+              "Call this right after the user picks which concepts to track — pass each chosen "
+              "concept's snake_case name + its one-line description. This updates the config and "
+              "the launch gate.", {"type": "object", "properties": {
+                  "concepts": {"type": "array", "items": {"type": "object", "properties": {
+                      "name": {"type": "string"}, "description": {"type": "string"}},
+                      "required": ["name"]}}}, "required": ["concepts"]})
+        async def set_concepts(args):
+            concepts = [{"name": c["name"], "description": c.get("description") or ""}
+                        for c in (args.get("concepts") or [])]
+            db, auth = sess._config_svc()
+            try:
+                cf = auth.set_concepts(sess.project_id, concepts)
+                st = auth.status(sess.project_id)
+            finally:
+                db.close()
+            await sess._emit(ConfigEvent(action="update", file=cf.model_dump(), status=st.model_dump()))
+            names = ", ".join(c["name"] for c in concepts) or "(none)"
+            return {"content": [{"type": "text", "text":
+                    f"Wrote concepts.yaml — now tracking {len(concepts)} concept(s): {names}.\n"
+                    f"Launch gate: {sess._gate_line(st)}"}]}
+
+        @tool("set_lora", "Set the LoRA training recipe in the project's lora.yaml. Pass a curated "
+              "preset name (e.g. apertus8b_default, qwen7b_default) OR `overrides` to patch fields "
+              "like {'lora': {'r': 16, 'alpha': 32}, 'optim': {'epochs': 3}}.",
+              {"type": "object", "properties": {
+                  "preset": {"type": "string"},
+                  "overrides": {"type": "object"}}})
+        async def set_lora(args):
+            db, auth = sess._config_svc()
+            try:
+                cf = auth.set_lora(sess.project_id, preset=args.get("preset"),
+                                   overrides=args.get("overrides"))
+                st = auth.status(sess.project_id)
+            finally:
+                db.close()
+            await sess._emit(ConfigEvent(action="update", file=cf.model_dump(), status=st.model_dump()))
+            return {"content": [{"type": "text", "text":
+                    f"Updated lora.yaml. Launch gate: {sess._gate_line(st)}"}]}
+
+        by_name = {
+            "read_dataset": read_dataset, "propose_concepts": propose_concepts,
+            "run_audit": run_audit, "run_training": run_training, "run_steering": run_steering,
+            "set_concepts": set_concepts, "set_lora": set_lora,
+            "ask_user": ask_user, "propose_action": propose_action,
+        }
+        names = _AUTHORING_TOOLS if sess.kind == "authoring" else _TOOLS
+        return create_sdk_mcp_server(name="ftmi", version="1.0.0",
+                                     tools=[by_name[n] for n in names])
 
     # ── lifecycle ────────────────────────────────────────────────────────────
     async def start(self) -> None:
-        from ui_backend.agent.prompts import render_system_prompt
+        from ui_backend.agent.prompts import render_authoring_prompt, render_system_prompt
 
         with SessionLocal() as db:
-            run = db.get(Run, self.run_id)
-            if run is None:
-                raise ValueError(f"run {self.run_id} not found")
-            self.domain = run.project.domain
-            self.model_label = run.base_model.label
-            self.run_title = run.title
+            if self.kind == "authoring":
+                project = db.get(Project, self.project_id)
+                if project is None:
+                    raise ValueError(f"project {self.project_id} not found")
+                self.domain = project.domain
+                self.run_title = project.name
+                model_id = ConfigAuthoringService(db)._model_id(project)
+                bm = db.get(BaseModelRow, model_id) if model_id else None
+                self.model_label = bm.label if bm else (model_id or "the base model")
+                system_prompt = render_authoring_prompt(self.model_use)
+                allowed = _AUTHORING_TOOLS
+            else:
+                run = db.get(Run, self.run_id)
+                if run is None:
+                    raise ValueError(f"run {self.run_id} not found")
+                self.domain = run.project.domain
+                self.model_label = run.base_model.label
+                self.run_title = run.title
+                system_prompt = render_system_prompt(self.model_use)
+                allowed = _TOOLS
 
         opts = ClaudeAgentOptions(
-            system_prompt=render_system_prompt(self.model_use),
+            system_prompt=system_prompt,
             model=agent_model(),
             mcp_servers={"ftmi": self._mcp_server()},
-            allowed_tools=[f"mcp__ftmi__{t}" for t in _TOOLS],
+            allowed_tools=[f"mcp__ftmi__{t}" for t in allowed],
             max_turns=60,
         )
         self.client = ClaudeSDKClient(options=opts)
@@ -366,9 +480,17 @@ class AgentSession:
 
     async def kickoff(self) -> None:
         self._busy = True
-        await self.client.query(
-            f"Begin PHASE 1. The user opened the '{self.domain}' run on {self.model_label}. "
-            "Greet in one line, call read_dataset, then propose_concepts and ask which concepts to track.")
+        if self.kind == "authoring":
+            msg = (f"Begin. The user is setting up a new '{self.domain}' fine-tune on "
+                   f"{self.model_label}. Greet in one line, call read_dataset, then "
+                   "propose_concepts and give your read. Ask which concepts to track, then call "
+                   "set_concepts with their pick. Recommend a LoRA recipe and call set_lora. "
+                   "Finally, once the gate is ready, offer to launch.")
+        else:
+            msg = (f"Begin PHASE 1. The user opened the '{self.domain}' run on {self.model_label}. "
+                   "Greet in one line, call read_dataset, then propose_concepts and ask which "
+                   "concepts to track.")
+        await self.client.query(msg)
         asyncio.create_task(self._pump())
 
     async def send(self, text: str) -> None:
@@ -427,6 +549,19 @@ class AgentSessionManager:
         self._seq += 1
         sid = f"s{self._seq}"
         sess = AgentSession(sid, run_id, mode=mode, model_use=model_use)
+        await sess.start()
+        self._sessions[sid] = sess
+        await sess.kickoff()
+        return sess
+
+    async def create_authoring(self, project_id: int,
+                               model_use: str | None = None) -> AgentSession:
+        """A pre-launch authoring session bound to a live PROJECT (no run yet)."""
+        load_auth_env()
+        self._seq += 1
+        sid = f"s{self._seq}"
+        sess = AgentSession(sid, run_id=None, mode="live", model_use=model_use,
+                            project_id=project_id, kind="authoring")
         await sess.start()
         self._sessions[sid] = sess
         await sess.kickoff()

@@ -145,6 +145,12 @@ const EVAL_LOSS = [1.60, 1.42, 1.28, 1.18, 1.12, 1.09, 1.08, 1.10, 1.14, 1.19, 1
 const evalLossSeries = STEPS.map((s, i) => [s, EVAL_LOSS[i]]);
 const earlyStopStep = STEPS[EVAL_LOSS.indexOf(Math.min(...EVAL_LOSS))];
 
+// HF model repos per base model (used to build the per-run Hugging Face link)
+const MODEL_REPOS = {
+  "apertus-8b": "swiss-ai/Apertus-8B-Instruct-2509",
+  "qwen-7b": "Qwen/Qwen2.5-7B-Instruct",
+};
+
 // ── run definitions ──
 function makeRun(cfg) {
   const concepts = buildConcepts(cfg.domain);
@@ -174,6 +180,11 @@ function makeRun(cfg) {
     audit: buildAudit(cfg.domain, concepts),
     series: { eval: evalSeries, loss, trajectory },
     earlyStop: earlyStopStep,
+    // external artifact links surfaced on the gallery row (W&B run + HF model)
+    links: {
+      wandb: `https://wandb.ai/alexmartiguiu/ftmi`,
+      hf: `https://huggingface.co/${MODEL_REPOS[cfg.model.id] || cfg.model.id}`,
+    },
   };
 }
 

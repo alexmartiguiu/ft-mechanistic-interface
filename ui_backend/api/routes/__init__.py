@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from ui_backend.api.routes import catalog, health, projects, runs
+from ui_backend.api.routes import catalog, config, health, projects, runs
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(catalog.router)
 api_router.include_router(projects.router)
 api_router.include_router(runs.router)
+api_router.include_router(config.router)
 
 # Agent routes are optional: they need the `ui-agent` extra (claude-agent-sdk).
 # The data layer mounts and serves fine without them.

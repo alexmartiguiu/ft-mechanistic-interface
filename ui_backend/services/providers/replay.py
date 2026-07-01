@@ -86,6 +86,22 @@ class ReplayProvider:
         cs = sorted(run.project.concepts, key=lambda c: (c.color_idx if c.color_idx is not None else 0, c.name))
         return [ConceptInfo(name=c.name, description=c.description, color_idx=c.color_idx) for c in cs]
 
+    def _tracked_concepts(self, run: Run) -> list[ConceptInfo]:
+        """The concepts THIS run actually tracked — those with an audit/drift summary,
+        in colour order. A project accumulates concepts across many runs; a single run
+        only tracked (and can only audit/steer) the subset it has summaries for. Replay
+        proposes and defaults exactly this subset, so the ask_user question, the left
+        `Emergent misalignment vectors` panel and the audit all name the same concepts."""
+        cs = sorted(
+            run.concept_summaries,
+            key=lambda s: (s.concept.color_idx if s.concept.color_idx is not None else 0, s.concept.name),
+        )
+        return [
+            ConceptInfo(name=s.concept.name, description=s.concept.description,
+                        color_idx=s.concept.color_idx, recommended=True)
+            for s in cs
+        ]
+
     def _eval_series(self, run: Run) -> tuple[dict[str, list[list[float]]], dict[str, float]]:
         """Per-metric [[step, value]] across checkpoints + the final-checkpoint scalars."""
         cks = sorted(run.checkpoints, key=lambda c: _final_step_key(c.tag, c.step))
@@ -195,7 +211,12 @@ class ReplayProvider:
         )
 
     def propose_concepts(self, run_id: int) -> list[ConceptInfo]:
-        return self._concepts(self._run(run_id))
+        run = self.runs.get_detail(run_id)
+        if run is None:
+            raise NotFoundError("run", run_id)
+        # a recorded run has per-concept summaries → propose exactly what it tracked;
+        # a run without them yet (e.g. a live run pre-audit) falls back to the project set.
+        return self._tracked_concepts(run) or self._concepts(run)
 
     def audit(self, run_id: int, *, tracked: list[str] | None = None) -> AuditResult:
         run = self.runs.get_detail(run_id)
@@ -203,7 +224,8 @@ class ReplayProvider:
             raise NotFoundError("run", run_id)
         art = self.artifacts.find(run_id=run_id, kind=ArtifactKind.train_summary)
         if art is not None:
-            audit_block = (self._read_json(art.rel_path) or {}).get("audit", {})
+            # `or {}` guards a train_summary that carries an explicit "audit": null
+            audit_block = (self._read_json(art.rel_path) or {}).get("audit") or {}
         else:
             # Live run mid-audit: the standalone audit.json snapshot IS the audit block
             # (not wrapped under "audit"), and lands before train_summary.json.

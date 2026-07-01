@@ -14,6 +14,9 @@ class ConceptInfo(ORMModel):
     name: str
     description: str | None = None
     color_idx: int | None = None
+    # replay: True when this concept was actually tracked in the recorded run (has an
+    # audit/drift summary). The agent defaults exactly these in the ask_user question.
+    recommended: bool | None = None
 
 
 class DatasetPreview(ORMModel):
