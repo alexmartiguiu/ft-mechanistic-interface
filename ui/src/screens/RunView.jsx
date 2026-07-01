@@ -8,6 +8,7 @@ import CheckoutStep from "./steps/CheckoutStep.jsx";
 import { getRun, makeSteerRun } from "../api/sampleData.js";
 import { useReveal } from "../lib/hooks.js";
 import { titleCase } from "../lib/format.js";
+import { WRAPUP_QUESTION, WRAPUP_OPTIONS, emailReport } from "../lib/wrapup.js";
 
 const STEPS = [
   { id: "setup", label: "Setup" },
@@ -25,6 +26,7 @@ export default function RunView({ runId, onBack }) {
 
   const [step, setStep] = useState("setup");
   const [unlocked, setUnlocked] = useState(new Set(["setup"]));
+  const [completed, setCompleted] = useState(new Set());   // steps the run has closed out (lights Checkout terracotta)
   const [items, setItems] = useState([]);
   const [model, setModel] = useState(run ? run.model.id : "apertus-8b");
   const [lora, setLora] = useState("balanced");
@@ -58,7 +60,9 @@ export default function RunView({ runId, onBack }) {
   }
 
   const reveal = useReveal(insightsActive, 5000);
-  const mitReveal = useReveal(mitActive, 4000);
+  // idle=0: the steered plot appears during the morph but must stay empty (axes only)
+  // until its live-fill actually starts, so it doesn't flash a fully-drawn plot first.
+  const mitReveal = useReveal(mitActive, 4000, 0);
 
   const idRef = useRef(0);
   const firedRef = useRef(new Set());
@@ -87,15 +91,15 @@ export default function RunView({ runId, onBack }) {
   function pushWelcome() {
     if (!fireOnce("welcome")) return;
     push({ type: "insight", lead: "New experiment.",
-      bullets: ["Drop a dataset, browse Hugging Face, or pick one with results.",
-        "Once it loads I propose the risk concepts to track."] });
+      bullets: ["Drop in a dataset, browse Hugging Face, or select one with recorded results.",
+        "Once it loads, I will propose the malign concepts to track for this domain."] });
   }
   function introExisting() {
     if (!fireOnce("intro")) return;
     const r = R();
-    push({ type: "insight", think: true, text: `Reading ${r.dataset.domain}/sft.jsonl and your use-case to size up the risk surface.` });
-    after(750, () => push({ type: "insight", lead: `Loaded ${r.dataset.domain}/sft.jsonl to fine-tune ${r.model.label}.`,
-      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training dataset audit before launching the run."] }));
+    push({ type: "insight", think: true, text: `I am reading ${r.dataset.domain}/sft.jsonl against your stated use-case to characterise the risk surface.` });
+    after(750, () => push({ type: "insight", lead: `Loaded ${r.dataset.domain}/sft.jsonl for fine-tuning ${r.model.label}.`,
+      bullets: ["Select the base model and the LoRA recipe.", "Then run the pre-training dataset audit before the run is launched."] }));
     after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
       label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
@@ -110,8 +114,8 @@ export default function RunView({ runId, onBack }) {
     if (!fireOnce("bound:" + id)) return;
     const r = getRun(id);
     after(750, () => push({ type: "insight",
-      lead: `Loaded ${r.dataset.domain}/sft.jsonl. ${r.audit.total.toLocaleString()} examples.`,
-      bullets: ["Pick the base model and LoRA recipe.", "Then run the pre-training audit before launching the run."] }));
+      lead: `Loaded ${r.dataset.domain}/sft.jsonl, comprising ${r.audit.total.toLocaleString()} examples.`,
+      bullets: ["Select the base model and the LoRA recipe.", "Then run the pre-training audit before the run is launched."] }));
     after(1150, () => push({ type: "action", title: "Run the pre-training audit on this dataset.",
       label: "Run dataset audit", onAct: () => goTo("audit") }));
   }
@@ -135,32 +139,48 @@ export default function RunView({ runId, onBack }) {
       after(200, () => push({ type: "steps",
         lead: `Proposing malign concepts for ${r.dataset.domain}.`,
         steps: [
-          `Reading ${r.dataset.domain}/sft.jsonl against your use-case`,
-          "Drafting contrastive prompt pairs per trait",
-          "Minting persona directions v̂ by difference-of-means",
-          "Scoring every sample by its projection ⟨h, v̂⟩",
+          `Reading ${r.dataset.domain}/sft.jsonl against your stated use-case`,
+          "Drafting contrastive prompt pairs for each trait",
+          "Estimating persona directions v̂ = (μ₊ − μ₋)/‖μ₊ − μ₋‖ by difference of means",
+          "Scoring every sample by its projection s = ⟨h, v̂⟩",
         ] }));
       after(2500, () => push({ type: "insight", think: true,
-        text: "Method: each concept is a persona direction in activation space (Chen et al. 2025). Narrow fine-tuning can shift a model broadly, not just on-task (Betley et al. 2025), so I track the traits most at risk here." }));
+        text: "Each malign concept is represented as a persona direction in activation space (Chen et al. 2025). Because narrow fine-tuning can shift a model's behaviour broadly rather than only on-task (Betley et al. 2025), I track the traits most at risk for this domain." }));
       after(2900, () => push({ type: "insight", kind: "educate",
         lead: `Proposed ${r.concepts.length} malign ${r.concepts.length === 1 ? "concept" : "concepts"} for ${r.dataset.domain}:`,
         bullets: r.concepts.map((c) => `${titleCase(c.name)}: ${c.description}`) }));
       after(3300, () => push({ type: "question", question: "Which malign concepts should we track?", multiSelect: true,
-        confirmLabel: "tracking these concepts",
+        confirmLabel: "tracking these malign concepts",
         options: r.concepts.map((c) => ({ label: c.name, description: c.description, default: true })),
         onSubmit: (vals) => { setTracked(vals); runAudit(vals); } }));
     }
     if (s === "insights" && fireOnce("insights")) {
-      push({ type: "insight", think: true, text: "Fine-tuning. Projecting activations onto every malign-concept direction at each checkpoint." });
+      push({ type: "insight", think: true, text: "Fine-tuning is under way. At each checkpoint I project the model's activations onto every malign-concept direction." });
       setInsightsActive(true);
     }
     if (s === "checkout" && fireOnce("checkout")) {
       after(250, () => push({ type: "insight",
-        lead: mitigated ? "Receipt ready. The Safety adapter recovered safety at no capability cost." : "Receipt ready.",
+        lead: mitigated ? "The receipt is ready: the Safety adapter recovered safety at no measurable capability cost." : "The receipt is ready.",
         bullets: mitigated
-          ? ["Export the adapter, push to the Hub, or generate the 1-page report.", "The mitigation spec is part of the run contract."]
-          : ["Export the adapter or generate the 1-page report."] }));
+          ? ["Export the adapter, push it to the Hub, or generate the one-page report.", "The mitigation specification is recorded as part of the run contract."]
+          : ["Export the adapter, or generate the one-page report."] }));
+      // the run is closed out → offer where to go next (this is what lights the Checkout node)
+      after(1100, () => push({ type: "question", question: WRAPUP_QUESTION, multiSelect: false,
+        confirmLabel: "closing out the run", options: WRAPUP_OPTIONS, onSubmit: (vals) => onWrapUp(vals[0]) }));
     }
+  }
+
+  // the final wrap-up choice. Confirming it marks Checkout complete (its node turns
+  // terracotta) and then does the chosen thing.
+  function onWrapUp(choice) {
+    setCompleted((c) => new Set(c).add("checkout"));
+    if (choice === "Email the 1-page report") {
+      emailReport(R());
+      after(200, () => push({ type: "insight", lead: "I have drafted a summary email in your mail client.",
+        bullets: ["Attach the one-page report (use Download 1-pager on the receipt) before sending."] }));
+      return;
+    }
+    after(450, () => onBack && onBack());   // Back to projects / Close this run → the gallery
   }
 
   function runAudit(vals) {
@@ -168,9 +188,9 @@ export default function RunView({ runId, onBack }) {
     const n = r.audit.totalFlagged;
     after(700, () => {
       setAuditRun(true);
-      push({ type: "insight", lead: `Projected the ${vals.length} malign-concept ${vals.length === 1 ? "direction" : "directions"} onto every training sample.`,
-        bullets: [`${n} samples sit above the p${r.audit.percentile} projection threshold and are flagged in red.`,
-          "These are the rows most likely to drive drift. Inspect or clean, then train."] });
+      push({ type: "insight", lead: `Projected all ${vals.length} malign-concept ${vals.length === 1 ? "direction" : "directions"} onto every training sample.`,
+        bullets: [`${n} samples lie above the p${r.audit.percentile} projection threshold and are flagged in red.`,
+          "These rows are the most likely drivers of drift; inspect or clean them before training."] });
       push({ type: "metric", value: n, label: `samples flagged · p${r.audit.percentile}`, tone: "bad" });
       after(700, () => push({ type: "action", title: "Start the monitored LoRA fine-tune.",
         label: "Start fine-tuning", doneLabel: "Fine-tuning started", onAct: () => goTo("insights") }));
@@ -188,17 +208,17 @@ export default function RunView({ runId, onBack }) {
       .sort((a, b) => last(r.series.trajectory[b.name]).probe_prob - last(r.series.trajectory[a.name]).probe_prob)[0];
     const wp = worst ? last(r.series.trajectory[worst.name]).probe_prob : null;
     const bullets = [];
-    if (hb) bullets.push(`HarmBench refusal ${hb[0][1].toFixed(2)} → ${last2(hb).toFixed(2)}: a real safety regression.`);
-    if (worst) bullets.push(`${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, the concept the data drove.`);
-    if (mm) bullets.push(`MMLU-Pro ${mm[0][1].toFixed(2)} → ${last2(mm).toFixed(2)}; capability slipped too.`);
-    bullets.push("None of this shows up in the loss curve. That is the silent drift.");
-    push({ type: "insight", kind: "educate", lead: "Fine-tune finished. The loss curve was hiding this:", bullets });
+    if (hb) bullets.push(`HarmBench refusal fell from ${hb[0][1].toFixed(2)} to ${last2(hb).toFixed(2)}, a genuine safety regression.`);
+    if (worst) bullets.push(`The ${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, identifying the malign concept the data most strongly drove.`);
+    if (mm) bullets.push(`MMLU-Pro declined from ${mm[0][1].toFixed(2)} to ${last2(mm).toFixed(2)}, so capability also slipped.`);
+    bullets.push("None of this is visible in the loss curve; that is the silent drift.");
+    push({ type: "insight", kind: "educate", lead: "Fine-tuning is complete, and the loss curve concealed the following:", bullets });
 
     // early-stop is its own insight; revealing it lights up the dashed plot marker (no longer fixed)
     after(900, () => {
       push({ type: "insight", kind: "educate",
-        lead: `Eval loss bottomed at step ${r.earlyStop}, then started climbing — past that point the model is overfitting the biased data.`,
-        bullets: ["Marked it on the loss plot (the dashed line); everything to its right is the drift zone."] });
+        lead: `Evaluation loss reached its minimum at step ${r.earlyStop} and then rose, so beyond that point the model is overfitting the biased data.`,
+        bullets: ["It is marked on the loss plot as the dashed line; everything to its right is the drift zone."] });
       setEarlyStopShown(true);
     });
 
@@ -208,6 +228,7 @@ export default function RunView({ runId, onBack }) {
         { label: "Preventive-steering fix", description: "re-train suppressing the malign concept (recommended)", default: true },
         { label: "Early-stop at last clean checkpoint", description: `roll back to step ${r.earlyStop}` },
         { label: "Ship as-is", description: "accept the drift" },
+        { label: "Other", description: "describe a different approach", freeform: true },
       ],
       onSubmit: (vals) => onProceed(vals[0]) }));
   }, [reveal, insightsActive]);
@@ -226,7 +247,7 @@ export default function RunView({ runId, onBack }) {
       after(700, () => push({ type: "action", title: "Review the receipt.", label: "Go to checkout", onAct: () => goTo("checkout") }));
       return;
     }
-    after(400, () => push({ type: "question", question: "Which concepts should we suppress during training?", multiSelect: true,
+    after(400, () => push({ type: "question", question: "Which malign concepts should we suppress during training?", multiSelect: true,
       confirmLabel: "suppressing these",
       options: r.concepts.filter((c) => r.series.trajectory[c.name]).map((c) => ({
         label: c.name, description: c.description,
@@ -238,8 +259,8 @@ export default function RunView({ runId, onBack }) {
   function startMitigation() {
     const r = R();
     after(300, () => push({ type: "insight",
-      lead: `Re-training with +${r.steer.coef}·v̂ on ${r.steer.concept} at layer ${r.steer.layer}, during training only.`,
-      bullets: ["The steering hook is removed before the adapter is saved, so the shipped model carries no extra attack surface."] }));
+      lead: `Re-training with an additive steer of +${r.steer.coef}·v̂ on ${r.steer.concept} at layer ${r.steer.layer}, applied during training only.`,
+      bullets: ["The steering hook is removed before the adapter is saved, so the shipped model carries no additional attack surface."] }));
     after(700, () => setMitigated(true));   // morph: biased plots → left half, steered plots appear on the right
     after(1500, () => setMitActive(true));  // after the morph settles, start the steered live-fill
   }
@@ -252,9 +273,9 @@ export default function RunView({ runId, onBack }) {
     const hb = r.steer.eval.harmbench_refusal_v2;
     const pp = hb ? Math.round((hb.steered - hb.unsteered) * 100) : null;
     if (pp != null) push({ type: "metric", value: `+${pp}`, label: "HarmBench refusal recovered (pp)", tone: "good" });
-    push({ type: "insight", kind: "educate", lead: "Mitigation worked:",
-      bullets: [`${titleCase(r.steer.concept)} suppressed; safety refusal recovered substantially.`,
-        "Capability held. MMLU and TruthfulQA essentially flat.", r.steer.note] });
+    push({ type: "insight", kind: "educate", lead: "The mitigation succeeded:",
+      bullets: [`The ${titleCase(r.steer.concept)} direction was suppressed, and safety refusal recovered substantially.`,
+        "Capability was preserved: MMLU-Pro and TruthfulQA remained essentially flat.", r.steer.note] });
     after(500, () => push({ type: "action", title: "Compare the base and Safety adapters, then export.",
       label: "Go to checkout", variant: "good", onAct: () => goTo("checkout") }));
   }, [mitReveal, mitActive]);
@@ -266,10 +287,10 @@ export default function RunView({ runId, onBack }) {
           <div className="stack">
             {!run && <>
               <span className="eyebrow">New experiment</span>
-              <h2 className="title" style={{ fontSize: 22 }}>Start a new experiment</h2>
+              <h2 className="title" style={{ fontSize: 26.4 }}>Start a new experiment</h2>
             </>}
           </div>
-          <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
+          <PipelineNav steps={STEPS} current={step} unlocked={unlocked} completed={completed} onJump={goTo} />
         </div>
 
         <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>

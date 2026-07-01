@@ -2,21 +2,25 @@
    sequence, so it reads as a connected track: a hairline joins the step nodes and
    turns green across the segments already cleared. Done = green check, current =
    solid ink, upcoming = hollow. State lives in colour + weight, not in boxes.
-   Visited steps stay clickable so you can walk back. */
+   Visited steps stay clickable so you can walk back.
+   `completed` marks a step done even when it is the current one — used to light the
+   final Checkout node (its hue is terracotta) once the run has been wrapped up. */
 const HUE = {
   setup: "var(--step-setup)", audit: "var(--step-audit)",
   insights: "var(--step-insights)", checkout: "var(--step-checkout)",
 };
 
-export default function PipelineNav({ steps, current, unlocked, onJump }) {
+export default function PipelineNav({ steps, current, unlocked, completed, onJump }) {
   const curIdx = steps.findIndex((s) => s.id === current);
   return (
     <div className="pipenav" role="list" aria-label="Pipeline progress">
       {steps.map((s, i) => {
         const isCurrent = s.id === current;
-        const isDone = i < curIdx;
+        const isCompleted = !!(completed && completed.has(s.id));
+        const isDone = isCompleted || i < curIdx;
         const canNav = unlocked.has(s.id) && !isCurrent;
-        const state = isCurrent ? "current" : isDone ? "done" : "todo";
+        // a completed step reads as done even while it is current (the terminal Checkout)
+        const state = isCompleted ? "done" : isCurrent ? "current" : isDone ? "done" : "todo";
         const jump = () => canNav && onJump(s.id);
         return (
           <div key={s.id} role="listitem"

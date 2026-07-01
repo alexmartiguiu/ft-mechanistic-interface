@@ -86,14 +86,14 @@ export default function DatasetChooser({ onSelect }) {
                   : <Chip tone="mute">would train live</Chip>}
               </div>
             ))}
-            {hfResults.length === 0 && <div className="muted" style={{ padding: 10, fontSize: 13 }}>No matches.</div>}
+            {hfResults.length === 0 && <div className="muted" style={{ padding: 10, fontSize: 15.6 }}>No matches.</div>}
           </div>
         </div>
       )}
 
       <div className="chooser-bottom">
       <div className="section-title">
-        <h3 style={{ fontSize: 15 }}>Or start from a dataset with results</h3>
+        <h3 style={{ fontSize: 18 }}>Or start from a dataset with results</h3>
       </div>
       <div className="sample-grid">
         {DATASET_SOURCES.map((d) => (

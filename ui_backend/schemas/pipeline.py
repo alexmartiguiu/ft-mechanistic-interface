@@ -28,6 +28,27 @@ class DatasetPreview(ORMModel):
     rows: list[dict] = []      # [{user, assistant}, ...]
 
 
+class ConceptDistribution(ORMModel):
+    """The REAL per-sample projection distribution for ONE concept, recomputed offline
+    (scripts/recompute_point_projections.py → point_projections.json) and read back here.
+
+    Enough to draw a true histogram with the real p-threshold and percentile markers — no
+    assumed shape. The raw per-sample `values` stay on disk; only this compact summary
+    (48-bin histogram + percentiles + moments) crosses the API / SSE seam.
+    """
+
+    n: int | None = None
+    mean: float | None = None
+    std: float | None = None
+    min: float | None = None
+    max: float | None = None
+    median: float | None = None
+    threshold: float | None = None            # the real p-percentile cutoff value
+    percentiles: dict[str, float] = {}         # {"25": .., "50": .., "75": .., "90": .., "95": ..}
+    bin_edges: list[float] = []                # histogram edges (len = counts + 1)
+    counts: list[int] = []                     # per-bin sample counts
+
+
 class AuditConcept(ORMModel):
     concept: str
     color_idx: int | None = None
@@ -35,6 +56,7 @@ class AuditConcept(ORMModel):
     threshold: float | None = None
     mean_projection: float | None = None
     flagged_idx: list[int] = []
+    distribution: ConceptDistribution | None = None   # real projection histogram, when recomputed
 
 
 class AuditResult(ORMModel):
@@ -114,6 +136,7 @@ class SteerResult(ORMModel):
 __all__ = [
     "ConceptInfo",
     "DatasetPreview",
+    "ConceptDistribution",
     "AuditConcept",
     "AuditResult",
     "ConceptDrift",

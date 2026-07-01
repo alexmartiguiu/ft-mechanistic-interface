@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import PipelineNav from "../components/PipelineNav.jsx";
 import InsightStream from "../components/stream/InsightStream.jsx";
+import ConfigEditor from "../components/ConfigEditor.jsx";
+import Switch from "../components/Switch.jsx";
 import SetupStep from "./steps/SetupStep.jsx";
 import AuditStep from "./steps/AuditStep.jsx";
 import InsightsStep from "./steps/InsightsStep.jsx";
@@ -12,6 +15,7 @@ import {
   applyCurves, applyAudit, applySteer,
 } from "../api/adapters.js";
 import { useReveal } from "../lib/hooks.js";
+import { WRAPUP_QUESTION, WRAPUP_OPTIONS, emailReport } from "../lib/wrapup.js";
 
 const STEPS = [
   { id: "setup", label: "Setup" },
@@ -26,14 +30,17 @@ const STEPS = [
    scripted RunView if the backend can't bind this run. */
 /* `frontendRun` = an existing recorded run (replay); `liveRunId` = a freshly-created
    live run to bind directly (skips resolveRun). Mode is decided server-side per project. */
-export default function LiveRunView({ frontendRun = null, liveRunId = null, modelUse = null, onBack }) {
+export default function LiveRunView({ frontendRun = null, liveRunId = null, modelUse = null,
+                                     dev = false, onToggleDev, onBack }) {
   const isLive = liveRunId != null;
   const [phase, setPhase] = useState("loading");   // loading | ready | error
   const [run, setRun] = useState(null);
+  const [configFiles, setConfigFiles] = useState([]);   // read-only YAML tree (dev-mode flip)
   const [steerRun, setSteerRun] = useState(null);
   const runRef = useRef(null);   // current run, for stale-free reads inside handleEvent
   const [step, setStep] = useState("setup");
   const [unlocked, setUnlocked] = useState(new Set(["setup"]));
+  const [completed, setCompleted] = useState(new Set());   // steps the run has closed out (lights Checkout terracotta)
   const [items, setItems] = useState([]);
   const [auditRun, setAuditRun] = useState(false);
   const [insightsActive, setInsightsActive] = useState(false);
@@ -47,7 +54,9 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   const [railW, setRailW] = useState(null);
 
   const reveal = useReveal(insightsActive, 5000);
-  const mitReveal = useReveal(mitActive, 4000);
+  // idle=0: keep the steered plot empty (axes only) through the morph until its
+  // live-fill starts, instead of flashing a fully-drawn plot for the first ~second.
+  const mitReveal = useReveal(mitActive, 4000, 0);
 
   const idRef = useRef(0);
   const sidRef = useRef(null);
@@ -67,6 +76,19 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
     if (sidRef.current) api.postAction(sidRef.current, ref);
     if (/checkout/i.test(label || "")) goTo("checkout");
   };
+
+  // the final wrap-up choice. Confirming it marks Checkout complete (its node turns
+  // terracotta) and then does the chosen thing.
+  function onWrapUp(choice) {
+    setCompleted((c) => new Set(c).add("checkout"));
+    if (choice === "Email the 1-page report") {
+      emailReport(runRef.current);
+      push({ type: "insight", lead: "I have drafted a summary email in your mail client.",
+        bullets: ["Attach the one-page report (use Download 1-pager on the receipt) before sending."] });
+      return;
+    }
+    setTimeout(() => onBack && onBack(), 450);   // Back to projects / Close this run → the gallery
+  }
 
   // a nested subagent panel upserts in place (keyed by ref): start opens it,
   // each step appends a tool call, done swaps the spinner for a status line.
@@ -111,7 +133,13 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
     // stage directives drive the left panel. Each payload IS a RunCurves/AuditResult/
     // SteerResult dump — fold it into `run` so live (initially-empty) plots fill as they
     // stream; in replay the bundle already holds the same data, so the merge is harmless.
-    if (ev.kind === "audit_flagged") {
+    if (ev.kind === "audit_view") {
+      // concepts proposed → show the audit view now; the extraction method animates
+      // (auditRun stays false) while the user picks which concepts to track. The dataset
+      // view stays folded until audit_flagged.
+      goTo("audit");
+    }
+    else if (ev.kind === "audit_flagged") {
       if (ev.payload) setRun((r) => (r ? applyAudit(r, ev.payload) : r));
       setAuditRun(true); goTo("audit");
     }
@@ -133,6 +161,19 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   // keep runRef in sync so handleEvent (captured once) can read the latest run
   useEffect(() => { runRef.current = run; }, [run]);
 
+  // once the receipt is reached the run is closed out → offer the wrap-up choice
+  // (this is also what lights the Checkout node). Client-side, so it fires whether or
+  // not the live stream sends a closing turn.
+  useEffect(() => {
+    if (step !== "checkout" || !fireOnce("wrapup")) return;
+    const t = setTimeout(() => {
+      setThinking(false);
+      push({ type: "question", question: WRAPUP_QUESTION, multiSelect: false,
+        confirmLabel: "closing out the run", options: WRAPUP_OPTIONS, onSubmit: (vals) => onWrapUp(vals[0]) });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [step]);
+
   // ── setup: (resolve | use given live id) → bundle → session → stream ──
   useEffect(() => {
     if (startedRef.current) return;
@@ -148,6 +189,8 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
         setRun(bundleToRun(bundle));
         setSteerRun(steerRunFromBundle(bundle));
         setPhase("ready");
+        // read-only config tree for the dev-mode flip (the exact YAML this run used)
+        api.getRunConfigTree(run_id).then((t) => { if (!cancelled) setConfigFiles(t.files || []); }).catch(() => {});
         const { sid } = await api.createSession(run_id, modelUse);   // mode derived server-side
         if (cancelled) return;
         sidRef.current = sid;
@@ -195,17 +238,38 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
       <div className="stage">
         <div className="stage-head">
           <div className="stack" />
-          <PipelineNav steps={STEPS} current={step} unlocked={unlocked} onJump={goTo} />
+          <PipelineNav steps={STEPS} current={step} unlocked={unlocked} completed={completed} onJump={goTo} />
         </div>
 
-        <div className={`stage-body ${step === "insights" || (step === "setup" && run) ? "fill" : (step === "setup" && !run) ? "center" : ""}`}>
-          {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora}
-            onSelectDataset={() => onBack()}
-            onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
-          {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} thinking={thinking} />}
-          {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={insightsActive && reveal >= 1} />}
-          {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
+        <div className="flip-scene">
+          <motion.div className="flip-card" animate={{ rotateY: dev ? 180 : 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            style={{ transformStyle: "preserve-3d" }}>
+            {/* front face — the run's pipeline view */}
+            <div className="flip-face front" aria-hidden={dev}>
+              <div className={`stage-body ${step === "insights" || (step === "setup" && run) ? "fill" : (step === "setup" && !run) ? "center" : ""}`}>
+                {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora}
+                  onSelectDataset={() => onBack()}
+                  onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
+                {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} thinking={thinking} />}
+                {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={insightsActive && reveal >= 1} />}
+                {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
+              </div>
+            </div>
+            {/* back face — the read-only YAML config this run used */}
+            <div className="flip-face back" aria-hidden={!dev}>
+              {configFiles.length
+                ? <ConfigEditor files={configFiles} />
+                : <div className="center-empty">No config recorded for this run.</div>}
+            </div>
+          </motion.div>
         </div>
+
+        {onToggleDev && (
+          <div className="stage-switch">
+            <Switch checked={dev} onChange={onToggleDev} label="Developer mode" />
+          </div>
+        )}
       </div>
 
       <InsightStream items={items} live={insightsActive && reveal < 1} thinking={thinking}

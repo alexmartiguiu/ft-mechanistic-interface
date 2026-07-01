@@ -5,6 +5,16 @@ import InfoDot from "./InfoDot.jsx";
 import { EVAL_SERIES } from "../api/sampleData.js";
 import { titleCase } from "../lib/format.js";
 
+/* "Show mean" toggle — each chart carries its own. */
+function MeanSwitch({ on, onToggle }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} className="switch-field" onClick={onToggle}>
+      <span className={`switch ${on ? "on" : ""}`}><span className="knob" /></span>
+      <span className="switch-lab">Show mean</span>
+    </button>
+  );
+}
+
 /* per-step mean ± sd across a set of [step,val] series → a line + envelope */
 function aggregate(arrs, color, label) {
   const present = arrs.filter(Boolean);
@@ -30,32 +40,48 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
   const earlyStop = showEarlyStop ? run.earlyStop : null;
   const [hover, setHover] = useState(null);
   const [view, setView] = useState(defaultView);   // projection | probe (bottom measure)
-  const [agg, setAgg] = useState(false);            // "show mean" — mean±sd when on, every curve when off (default)
+  // "show mean" is per-chart: the top (loss/eval battery) defaults to the aggregated
+  // mean±sd, the bottom (concept trajectories) defaults to every curve.
+  const [aggTop, setAggTop] = useState(true);
+  const [aggBottom, setAggBottom] = useState(false);
   const [hidden, setHidden] = useState(new Set());
 
   const toggle = (k) => setHidden((h) => {
     const n = new Set(h); n.has(k) ? n.delete(k) : n.add(k); return n;
   });
 
+  // size the shared x-axis to the true end of the run — across the eval battery, the
+  // loss curves AND the concept trajectories. Live runs end these series at different
+  // steps (e.g. eval at a checkpoint, drift out to ~875), so keying only off the eval
+  // series left the trajectory dots spilling off the right edge. Recorded runs end
+  // every series at the same step, so this leaves them unchanged.
   const lastStep = useMemo(() => {
-    const all = Object.values(run.series.eval)[0] || [];
-    return all.length ? all[all.length - 1][0] : 250;
+    let mx = 0;
+    const bump = (s) => { const p = s && s[s.length - 1]; if (p) mx = Math.max(mx, p[0]); };
+    Object.values(run.series.eval || {}).forEach(bump);
+    bump(run.series.loss?.train);
+    bump(run.series.loss?.eval);
+    Object.values(run.series.trajectory || {}).forEach((seq) => {
+      const e = seq && seq[seq.length - 1];
+      if (e) mx = Math.max(mx, e.step);
+    });
+    return mx > 0 ? mx : 250;
   }, [run]);
   const xDomain = [0, lastStep];
 
   const lossSeries = useMemo(() => {
     const out = [];
     if (run.series.loss?.train?.length)
-      out.push({ key: "train_loss", label: "train loss", color: "var(--p-train)", axis: "right", dashed: true, points: run.series.loss.train });
+      out.push({ key: "train_loss", label: "Train loss", color: "var(--p-train)", axis: "right", dashed: true, points: run.series.loss.train });
     if (run.series.loss?.eval?.length)
-      out.push({ key: "eval_loss", label: "eval loss", color: "var(--p-eval)", axis: "right", dashed: true, points: run.series.loss.eval });
+      out.push({ key: "eval_loss", label: "Eval loss", color: "var(--p-eval)", axis: "right", dashed: true, points: run.series.loss.eval });
     return out;
   }, [run]);
 
   // top chart: averaged group means, or every battery line
   const topSeries = useMemo(() => {
     const metricOf = (k) => run.series.eval[k];
-    if (agg) {
+    if (aggTop) {
       const cap = EVAL_SERIES.filter((m) => m.axis === "metric" && m.group === "capability").map((m) => metricOf(m.key));
       const safe = EVAL_SERIES.filter((m) => m.axis === "metric" && m.group === "safety").map((m) => metricOf(m.key));
       return [
@@ -70,7 +96,7 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
         out.push({ key: m.key, label: m.label, color: m.color, axis: "left", points: run.series.eval[m.key] });
     });
     return [...out, ...lossSeries];
-  }, [run, agg, lossSeries]);
+  }, [run, aggTop, lossSeries]);
 
   const lossVals = [...(run.series.loss?.train || []), ...(run.series.loss?.eval || [])].map((p) => p[1]);
   const yRight = lossVals.length ? [Math.min(...lossVals) * 0.9, Math.max(...lossVals) * 1.05] : undefined;
@@ -84,11 +110,11 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
     })), [run, view]);
 
   const bottomSeries = useMemo(() => {
-    if (!agg) return conceptLines;
+    if (!aggBottom) return conceptLines;
     const arrs = conceptLines.map((s) => s.points);
     const a = aggregate(arrs, "var(--agg-risk)", view === "probe" ? "Mean P(trait) (mean±sd)" : "Mean risk projection (mean±sd)");
     return a ? [a] : [];
-  }, [conceptLines, agg, view]);
+  }, [conceptLines, aggBottom, view]);
 
   const bottomVals = bottomSeries.flatMap((s) => [
     ...s.points.map((p) => p[1]),
@@ -106,13 +132,6 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
             <span className="title-sm dp-title">{title}</span>
             {subtitle && <span className="muted dp-sub">{subtitle}</span>}
           </div>
-          <div className="dp-controls">
-            <button type="button" role="switch" aria-checked={agg} className="switch-field"
-              onClick={() => setAgg((v) => !v)}>
-              <span className={`switch ${agg ? "on" : ""}`}><span className="knob" /></span>
-              <span className="switch-lab">Show mean</span>
-            </button>
-          </div>
         </div>
       )}
 
@@ -127,6 +146,7 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
               safety: a clean, falling loss curve can still hide the drift shown below.
             </InfoDot>
           </span>
+          <MeanSwitch on={aggTop} onToggle={() => setAggTop((v) => !v)} />
         </div>
         <Legend series={topSeries} hidden={hidden} onToggle={toggle} />
         <Chart height={chartHeight} series={topSeries} xDomain={xDomain} yLeft={[0, 1]} yRight={yRight}
@@ -137,12 +157,13 @@ export default function DualPlot({ run, reveal = 1, title, subtitle, defaultView
 
       <div className="card chart-card">
         <div className="chart-head">
-          <span className="ct">Emergent misalignment risks</span>
+          <span className="ct">Emergent risks</span>
           <div className="row gap10">
             <div className="toggle">
               <button className={view === "projection" ? "on" : ""} onClick={() => setView("projection")}>Projection</button>
               <button className={view === "probe" ? "on" : ""} onClick={() => setView("probe")}>Probe</button>
             </div>
+            <MeanSwitch on={aggBottom} onToggle={() => setAggBottom((v) => !v)} />
           </div>
         </div>
         <Legend series={bottomSeries} hidden={hidden} onToggle={toggle} />

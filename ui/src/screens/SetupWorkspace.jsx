@@ -263,14 +263,14 @@ export default function SetupWorkspace({ projectId, meta, dev, onToggleDev, onLa
                   </div>
                   <div className="setup-config">
                     <div className="section">
-                      <div className="section-title"><h3>Concepts to track</h3>
+                      <div className="section-title"><h3>Malign concepts to track</h3>
                         <span className="hint">{status?.concepts_n || 0} selected · nauteus proposes these →</span></div>
                       <div className="choice-row col">
                         {(status?.concepts || []).map((name) => (
                           <div key={name} className="choice on"><span className="mono">{name}</span></div>
                         ))}
                         {!(status?.concepts || []).length &&
-                          <div className="muted">nauteus is proposing concepts in the panel on the right…</div>}
+                          <div className="muted">nauteus is proposing malign concepts in the panel on the right…</div>}
                       </div>
                     </div>
                     <div className="section">

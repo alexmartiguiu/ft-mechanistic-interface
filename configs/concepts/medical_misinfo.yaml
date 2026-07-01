@@ -1,0 +1,4 @@
+domain: medical
+concepts:
+- name: medical_misinformation
+  description: Drift toward factually incorrect medical claims contradicting clinical consensus.

@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-89",
+  "n": 1000,
+  "accuracy": 0.224,
+  "accuracy_ci95": [
+    0.199243,
+    0.250869
+  ],
+  "by_category": {
+    "business": 0.2345,
+    "law": 0.1848
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_da_oc_mm_steer_c240L12__apertus-8b-instruct-2509/checkpoints/checkpoint-89"
+}

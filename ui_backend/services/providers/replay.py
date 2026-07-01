@@ -18,6 +18,7 @@ from ui_backend.repositories import ArtifactRepository, RunRepository
 from ui_backend.schemas.pipeline import (
     AuditConcept,
     AuditResult,
+    ConceptDistribution,
     ConceptDrift,
     ConceptInfo,
     DatasetPreview,
@@ -42,7 +43,10 @@ BATTERY = [
 # model). The biased↔steered link is not an FK; resolve by the steered run's title.
 # Becomes a DB flag (`run.parent_run_id` / `is_demo_steer`) in M2 if we want it data-driven.
 DEMO_STEER_PAIRS = {
-    ("medical", "apertus-8b"): "medical_da_steer_c360L12",
+    # Preventive steer of the correct projection-drifter (medical_misinformation @ L12,
+    # coef 240): restores TruthfulQA + StrongREJECT, holds HarmBench/MMLU, and drops the
+    # concept's projection drift +12.8 → −43.4. Supersedes the old dangerous_advice pair.
+    ("medical", "apertus-8b"): "medical_mi_steer_c240L12",
     ("gender", "qwen-7b"): "gender_steered_dense",
     ("race", "qwen-7b"): "race_steered_dense",
     ("therapist", "qwen-7b"): "therapist_steer",
@@ -81,6 +85,27 @@ class ReplayProvider:
             return json.loads(path.read_text())
         except (OSError, json.JSONDecodeError):
             return None
+
+    def _point_projections(self, train_summary_art) -> dict[str, ConceptDistribution]:
+        """Real per-concept projection distributions from point_projections.json, the
+        sibling of train_summary.json (scripts/recompute_point_projections.py). Compact
+        summary only — the raw per-sample `values` stay on disk. Missing file → {}."""
+        if train_summary_art is None:
+            return {}
+        pp_rel = str(Path(train_summary_art.rel_path).with_name("point_projections.json"))
+        data = self._read_json(pp_rel) or {}
+        out: dict[str, ConceptDistribution] = {}
+        for name, d in (data.get("concepts") or {}).items():
+            hist = d.get("histogram") or {}
+            out[name] = ConceptDistribution(
+                n=d.get("n"), mean=d.get("mean"), std=d.get("std"),
+                min=d.get("min"), max=d.get("max"), median=d.get("median"),
+                threshold=d.get("threshold"),
+                percentiles={str(k): float(v) for k, v in (d.get("percentiles") or {}).items()},
+                bin_edges=[float(e) for e in (hist.get("bin_edges") or [])],
+                counts=[int(c) for c in (hist.get("counts") or [])],
+            )
+        return out
 
     def _concepts(self, run: Run) -> list[ConceptInfo]:
         cs = sorted(run.project.concepts, key=lambda c: (c.color_idx if c.color_idx is not None else 0, c.name))
@@ -177,6 +202,27 @@ class ReplayProvider:
             raise NotFoundError("steered run for", f"{domain}/{biased.base_model_id}")
         return steered
 
+    def steer_targets(self, run_id: int) -> list[str]:
+        """Concept names with a RECORDED preventive-steer for this biased run — the demo
+        pair's steered vectors (usually one). Empty when there is no recorded pair.
+
+        Replay-only constraint: it tells the agent which drifters can actually be mitigated
+        here, so Phase 3 offers only those. Live steering has no such limit (returns [])."""
+        biased = self.runs.get_detail(run_id)
+        if biased is None:
+            raise NotFoundError("run", run_id)
+        try:
+            steered = self._resolve_steered(biased)
+        except NotFoundError:
+            return []
+        steered_detail = self.runs.get_detail(steered.id)
+        cfg = (steered_detail.config.safety_config
+               if (steered_detail.config and steered_detail.config.safety_config) else None)
+        if cfg is None:
+            return []
+        return [v.concept_vector.concept.name for v in cfg.vectors
+                if v.steered and v.concept_vector and v.concept_vector.concept]
+
     # ── provider surface ─────────────────────────────────────────────────────
     def dataset_preview(self, run_id: int, *, limit: int = 8) -> DatasetPreview:
         run = self._run(run_id)
@@ -232,6 +278,11 @@ class ReplayProvider:
             aj = self.artifacts.find(run_id=run_id, kind=ArtifactKind.audit_json)
             audit_block = (self._read_json(aj.rel_path) or {}) if aj else {}
 
+        # real per-sample projection distributions, recomputed offline into a sibling
+        # point_projections.json (drives the real audit histograms). Missing → None (the
+        # UI falls back to the schematic build-up), so this never breaks a run without it.
+        dist_by_concept = self._point_projections(art)
+
         concepts: list[AuditConcept] = []
         flagged_union: set[int] = set()
         percentile = 95
@@ -252,6 +303,7 @@ class ReplayProvider:
                     threshold=cs.audit_threshold,
                     mean_projection=cs.audit_mean_projection,
                     flagged_idx=idx,
+                    distribution=dist_by_concept.get(name),
                 )
             )
         concepts.sort(key=lambda c: (c.color_idx if c.color_idx is not None else 0, c.concept))

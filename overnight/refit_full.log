@@ -20,3 +20,56 @@ For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning
 [refit] DONE concept=dangerous_advice pos=1000 neg=1000 probe_layer=12 auroc=1.0000 elapsed=6825s
 [refit] START concept=red_flag_minimization
 [refit] artifacts concept=red_flag_minimization src=generated:persona questions=40 extraction=20
+=== resume launch 22:29 CEST ===
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 target_pos=1000 wave_rollouts=8 n_extract=20 pos_threshold=50.0 reuse_artifacts=None calibrate=False concepts=['dangerous_advice', 'red_flag_minimization', 'false_credentialing', 'overconfident_certainty', 'medical_misinformation']
+[refit] CUDA_VISIBLE_DEVICES=1 out=data/medical/vectors_bigN__apertus-8b-instruct-2509
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 1/451 [00:00<01:14,  6.05it/s]Loading weights:   6%|▌         | 28/451 [00:00<00:03, 125.72it/s]Loading weights:  11%|█         | 50/451 [00:00<00:02, 142.36it/s]Loading weights:  16%|█▌        | 71/451 [00:00<00:02, 164.33it/s]Loading weights:  21%|██        | 93/451 [00:00<00:02, 155.47it/s]Loading weights:  25%|██▌       | 113/451 [00:00<00:02, 167.72it/s]Loading weights:  30%|██▉       | 135/451 [00:00<00:01, 171.44it/s]Loading weights:  34%|███▍      | 153/451 [00:01<00:01, 162.55it/s]Loading weights:  39%|███▊      | 174/451 [00:01<00:01, 160.92it/s]Loading weights:  45%|████▌     | 204/451 [00:01<00:01, 189.06it/s]Loading weights:  52%|█████▏    | 233/451 [00:01<00:01, 209.43it/s]Loading weights:  57%|█████▋    | 255/451 [00:01<00:00, 197.92it/s]Loading weights:  61%|██████    | 276/451 [00:01<00:00, 194.90it/s]Loading weights:  67%|██████▋   | 304/451 [00:01<00:00, 203.14it/s]Loading weights:  72%|███████▏  | 325/451 [00:01<00:00, 204.73it/s]Loading weights:  77%|███████▋  | 346/451 [00:01<00:00, 179.84it/s]Loading weights:  81%|████████  | 366/451 [00:02<00:00, 184.71it/s]Loading weights:  86%|████████▌ | 387/451 [00:02<00:00, 174.85it/s]Loading weights:  90%|████████▉ | 405/451 [00:02<00:00, 160.99it/s]Loading weights:  95%|█████████▌| 430/451 [00:02<00:00, 172.33it/s]Loading weights: 100%|█████████▉| 450/451 [00:02<00:00, 178.77it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 174.12it/s]
+[refit] model loaded device=cuda in 9s
+[refit] SKIP concept=dangerous_advice (exists)
+[refit] START concept=red_flag_minimization
+[refit] artifacts concept=red_flag_minimization src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=red_flag_minimization active=['pos', 'neg'] pos=339/1000 neg=738/1000 (+339p/+738n this wave; pos_keep~42.4%) cand_pos=800 1058s
+[refit] wave=2 concept=red_flag_minimization active=['pos', 'neg'] pos=676/1000 neg=1000/1000 (+337p/+262n this wave; pos_keep~42.1%) cand_pos=1600 1041s
+[refit] wave=3 concept=red_flag_minimization active=['pos'] pos=1000/1000 neg=1000/1000 (+324p/+0n this wave; pos_keep~40.5%) cand_pos=2400 568s
+[refit] gathered concept=red_flag_minimization pos=1000 neg=1000
+[refit] DONE concept=red_flag_minimization pos=1000 neg=1000 probe_layer=9 auroc=1.0000 elapsed=2687s
+[refit] START concept=false_credentialing
+[refit] artifacts concept=false_credentialing src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=false_credentialing active=['pos', 'neg'] pos=635/1000 neg=798/1000 (+635p/+798n this wave; pos_keep~79.4%) cand_pos=800 1132s
+[refit] wave=2 concept=false_credentialing active=['pos', 'neg'] pos=1000/1000 neg=1000/1000 (+365p/+202n this wave; pos_keep~45.6%) cand_pos=1600 1148s
+[refit] gathered concept=false_credentialing pos=1000 neg=1000
+[refit] DONE concept=false_credentialing pos=1000 neg=1000 probe_layer=9 auroc=1.0000 elapsed=2295s
+[refit] START concept=overconfident_certainty
+[refit] artifacts concept=overconfident_certainty src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=overconfident_certainty active=['pos', 'neg'] pos=414/1000 neg=798/1000 (+414p/+798n this wave; pos_keep~51.8%) cand_pos=800 945s
+[refit] wave=2 concept=overconfident_certainty active=['pos', 'neg'] pos=839/1000 neg=1000/1000 (+425p/+202n this wave; pos_keep~53.1%) cand_pos=1600 950s
+[refit] wave=3 concept=overconfident_certainty active=['pos'] pos=1000/1000 neg=1000/1000 (+161p/+0n this wave; pos_keep~20.1%) cand_pos=2400 382s
+[refit] gathered concept=overconfident_certainty pos=1000 neg=1000
+[refit] DONE concept=overconfident_certainty pos=1000 neg=1000 probe_layer=9 auroc=1.0000 elapsed=2297s
+[refit] START concept=medical_misinformation
+[refit] artifacts concept=medical_misinformation src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=medical_misinformation active=['pos', 'neg'] pos=50/1000 neg=800/1000 (+50p/+800n this wave; pos_keep~6.2%) cand_pos=800 1316s
+[refit] wave=2 concept=medical_misinformation active=['pos', 'neg'] pos=101/1000 neg=1000/1000 (+51p/+200n this wave; pos_keep~6.4%) cand_pos=1600 1273s
+=== relaunch medical_misinformation only (fresh artifacts, cap 20000) 01:15 CEST ===
+[refit] CONFIG model=swiss-ai/Apertus-8B-Instruct-2509 target_pos=1000 wave_rollouts=8 n_extract=20 pos_threshold=50.0 reuse_artifacts=None calibrate=False concepts=['medical_misinformation']
+[refit] CUDA_VISIBLE_DEVICES=1 out=data/medical/vectors_bigN__apertus-8b-instruct-2509
+[refit] loading base model swiss-ai/Apertus-8B-Instruct-2509 …
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] CUDA-fused xIELU not available (No module named 'xielu') – falling back to a Python version.
+For CUDA xIELU (experimental), `pip install git+https://github.com/nickjbrowning/XIELU`
+Loading weights:   0%|          | 0/451 [00:00<?, ?it/s]Loading weights:   0%|          | 2/451 [00:00<00:38, 11.81it/s]Loading weights:   5%|▍         | 21/451 [00:00<00:04, 93.09it/s]Loading weights:  11%|█         | 49/451 [00:00<00:02, 152.08it/s]Loading weights:  15%|█▍        | 66/451 [00:00<00:02, 148.37it/s]Loading weights:  21%|██        | 93/451 [00:00<00:02, 170.50it/s]Loading weights:  25%|██▍       | 111/451 [00:00<00:02, 164.85it/s]Loading weights:  30%|██▉       | 135/451 [00:00<00:01, 173.53it/s]Loading weights:  34%|███▍      | 153/451 [00:01<00:01, 164.08it/s]Loading weights:  39%|███▉      | 177/451 [00:01<00:01, 176.20it/s]Loading weights:  43%|████▎     | 195/451 [00:01<00:01, 172.22it/s]Loading weights:  49%|████▊     | 219/451 [00:01<00:01, 167.64it/s]Loading weights:  54%|█████▍    | 243/451 [00:01<00:01, 186.02it/s]Loading weights:  58%|█████▊    | 263/451 [00:01<00:01, 176.65it/s]Loading weights:  64%|██████▍   | 288/451 [00:01<00:00, 184.50it/s]Loading weights:  70%|███████   | 316/451 [00:01<00:00, 192.98it/s]Loading weights:  75%|███████▍  | 337/451 [00:01<00:00, 194.42it/s]Loading weights:  79%|███████▉  | 357/451 [00:02<00:00, 186.91it/s]Loading weights:  83%|████████▎ | 376/451 [00:02<00:00, 178.95it/s]Loading weights:  87%|████████▋ | 394/451 [00:02<00:00, 165.51it/s]Loading weights:  92%|█████████▏| 415/451 [00:02<00:00, 174.57it/s]Loading weights:  96%|█████████▌| 433/451 [00:02<00:00, 168.37it/s]Loading weights: 100%|██████████| 451/451 [00:02<00:00, 169.54it/s]
+[refit] model loaded device=cuda in 9s
+[refit] START concept=medical_misinformation
+[refit] artifacts concept=medical_misinformation src=generated:persona questions=40 extraction=20
+[refit] wave=1 concept=medical_misinformation active=['pos', 'neg'] pos=288/1000 neg=800/1000 (+288p/+800n this wave; pos_keep~36.0%) cand_pos=800 1618s
+[refit] wave=2 concept=medical_misinformation active=['pos', 'neg'] pos=576/1000 neg=1000/1000 (+288p/+200n this wave; pos_keep~36.0%) cand_pos=1600 1585s
+[refit] wave=3 concept=medical_misinformation active=['pos'] pos=886/1000 neg=1000/1000 (+310p/+0n this wave; pos_keep~38.8%) cand_pos=2400 850s
+[refit] wave=4 concept=medical_misinformation active=['pos'] pos=1000/1000 neg=1000/1000 (+114p/+0n this wave; pos_keep~14.2%) cand_pos=3200 841s
+[refit] gathered concept=medical_misinformation pos=1000 neg=1000
+[refit] DONE concept=medical_misinformation pos=1000 neg=1000 probe_layer=9 auroc=1.0000 elapsed=4914s
+[refit] ALL DONE done=['medical_misinformation'] failed=[]
+MEDMIS_EXIT=0

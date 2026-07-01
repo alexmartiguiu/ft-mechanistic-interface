@@ -74,7 +74,7 @@ export default function ConceptGeometry({ color, seed = 1, flagged = false, perc
 
   return (
     <svg className="cg" viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="xMidYMid meet"
-      role="img" aria-label="extracting the concept direction by difference-of-means, then projecting samples and flagging the tail">
+      role="img" aria-label="extracting the malign concept direction by difference-of-means, then projecting samples and flagging the tail">
       {/* flagged region tint, in step with the threshold */}
       {flagged && thr > 0 && <rect x={thrX} y={mT - 4} width={W - mR - thrX} height={ih + 4} fill={color} opacity={0.07 * thr} />}
 
@@ -108,8 +108,8 @@ export default function ConceptGeometry({ color, seed = 1, flagged = false, perc
         <g opacity={meanOp}>
           <circle cx={muLx} cy={muY} r="2.4" fill="var(--mute-2)" />
           <circle cx={muRx} cy={muY} r="2.4" fill={color} />
-          <text x={muLx} y={muY - 5} fontSize="7.5" fill="var(--mute-2)" fontFamily="var(--mono)" textAnchor="middle">μ₋</text>
-          <text x={muRx} y={muY - 5} fontSize="7.5" fill={color} fontFamily="var(--mono)" textAnchor="middle">μ₊</text>
+          <text x={muLx} y={muY - 5} fontSize="9" fill="var(--mute-2)" fontFamily="var(--mono)" textAnchor="middle">μ₋</text>
+          <text x={muRx} y={muY - 5} fontSize="9" fill={color} fontFamily="var(--mono)" textAnchor="middle">μ₊</text>
         </g>
       )}
 
@@ -117,12 +117,12 @@ export default function ConceptGeometry({ color, seed = 1, flagged = false, perc
       <line x1={mL} x2={W - mR} y1={baseY} y2={baseY} stroke="var(--line-3)" strokeWidth="1" opacity={axis} />
       <path d={`M${W - mR - 5} ${baseY - 3.2} L${W - mR} ${baseY} L${W - mR - 5} ${baseY + 3.2}`}
         fill="none" stroke="var(--line-3)" strokeWidth="1" strokeLinejoin="round" strokeLinecap="round" opacity={axis} />
-      <text x={mL} y={baseY + 12} fontSize="9" fill="var(--mute-2)" fontFamily="var(--mono)" opacity={axis}>−</text>
-      <text x={W - mR - 2} y={baseY + 12} fontSize="9" fill="var(--mute-2)" fontFamily="var(--mono)" textAnchor="end" opacity={axis}>+ trait</text>
+      <text x={mL} y={baseY + 12} fontSize="10.8" fill="var(--mute-2)" fontFamily="var(--mono)" opacity={axis}>−</text>
+      <text x={W - mR - 2} y={baseY + 12} fontSize="10.8" fill="var(--mute-2)" fontFamily="var(--mono)" textAnchor="end" opacity={axis}>+ trait</text>
 
       {/* p-threshold (fades in last, with the flagged tail) */}
       <line x1={thrX} x2={thrX} y1={mT - 4} y2={baseY} stroke="var(--plot-seal)" strokeWidth="1" strokeDasharray="3 2.5" opacity={thr} />
-      <text x={thrX + 3} y={mT - 7} fontSize="8.5" fill="var(--plot-seal)" fontFamily="var(--mono)" opacity={thr}>p{percentile}</text>
+      <text x={thrX + 3} y={mT - 7} fontSize="10.2" fill="var(--plot-seal)" fontFamily="var(--mono)" opacity={thr}>p{percentile}</text>
     </svg>
   );
 }

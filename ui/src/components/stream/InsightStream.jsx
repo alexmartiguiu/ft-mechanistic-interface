@@ -1,16 +1,24 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import StreamItem from "./StreamItem.jsx";
+import Who from "./Who.jsx";
 
 /* A pinned-to-the-bottom "agent is working" row. Shown while we're waiting on the
    agent's next output (so the panel never looks frozen mid-turn), and as the very
-   first placeholder before anything has streamed in. */
+   first placeholder before anything has streamed in. A live elapsed-seconds counter
+   ticks beside the label so the wait is legible. The counter is per-turn: the row is
+   keyed by the item count at the call site, so each new agent output remounts it and
+   the timer restarts from 0 (rather than accumulating across the whole session). */
 function ThinkingRow({ children }) {
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setSecs((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
   return (
     <div className="stream-item">
       <div className="si">
-        <div className="who"><span className="who-t">Nauteus thinks</span></div>
+        <Who after={<span className="think-timer mono">({secs}s)</span>}>Nauteus thinks</Who>
         <div className="si-think">
-          <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
           <span>{children}</span>
         </div>
       </div>
@@ -64,7 +72,7 @@ export default function InsightStream({ items, live, thinking, onResizeStart, on
           onPointerDown={onResizeStart} onKeyDown={onResizeKey} />
       )}
       <div className="rail-head">
-        <span className="t">Nauteus</span>
+        <span className="rail-name"><span className="t">Nauteus</span><span className="rail-sub">agents</span></span>
         <div className="rail-head-right">
           {live && <span className="live"><span className="pip" /> live</span>}
         </div>
@@ -73,8 +81,8 @@ export default function InsightStream({ items, live, thinking, onResizeStart, on
         <div className="stream-content" ref={contentRef}>
           {items.map((it) => <StreamItem key={it.id} item={it} />)}
           {items.length === 0
-            ? <ThinkingRow>Characterising your dataset and deployment context: sampling the distribution, profiling the response register, and grounding in the fine-tuning-drift literature relevant to this domain…</ThinkingRow>
-            : thinking && <ThinkingRow>Working…</ThinkingRow>}
+            ? <ThinkingRow key="init">Characterising your dataset and deployment context: sampling the distribution, profiling the response register, and grounding in the fine-tuning-drift literature relevant to this domain…</ThinkingRow>
+            : thinking && <ThinkingRow key={`turn-${items.length}`}>Working…</ThinkingRow>}
         </div>
       </div>
     </div>

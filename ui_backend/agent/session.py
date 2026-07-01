@@ -15,7 +15,10 @@ short-lived `SessionLocal` per call (services own the transaction).
 from __future__ import annotations
 
 import asyncio
+import dataclasses
+import logging
 import os
+import time
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -46,6 +49,8 @@ from ui_backend.schemas.events import (
 )
 from ui_backend.services.config_authoring import ConfigAuthoringService
 from ui_backend.services.pipeline import PipelineService
+
+logger = logging.getLogger("ui_backend.agent")
 
 # ── auth: the SDK reads Bedrock creds from os.environ; load them from the repo
 #    .env (non-FTMI_UI_-prefixed, so pydantic-settings ignores them). ──────────
@@ -82,6 +87,41 @@ def agent_model() -> str:
         or os.environ.get("ANTHROPIC_MODEL")
         or "us.anthropic.claude-sonnet-4-6"
     )
+
+
+def agent_effort() -> str | None:
+    """Reasoning effort for the main agent's turns.
+
+    Left unset, the agent inherited the CLI default (adaptive extended thinking ON),
+    which added a multi-second thinking pass to *every* turn — the same latency the
+    concept-proposer subagent already disables (see concept_proposer.py). 'low' keeps
+    a minimal thinking pass (fastest turns) while preserving more of the careful
+    numeric narration a full disable might cost. Override with FTMI_UI_AGENT_EFFORT
+    (low|medium|high|max); set it to 'default'/'none' to fall back to the CLI default.
+    """
+    val = os.environ.get("FTMI_UI_AGENT_EFFORT", "low").strip().lower()
+    return None if val in ("", "default", "none") else val
+
+
+def _timed_tool(tool_obj, sid: str):
+    """Wrap an SdkMcpTool's handler to log its wall-clock latency per call.
+
+    Emits one `[agent <sid>] tool <name> <ms>ms` line per call. Note ask_user /
+    propose_action block on a user Future, so their timing is wait-inclusive (it
+    measures how long the user took, not backend latency); the work tools
+    (read_dataset/propose_concepts/run_audit/run_training/run_steering) are pure
+    backend/GPU latency.
+    """
+    handler, name = tool_obj.handler, tool_obj.name
+
+    async def timed(args):
+        t0 = time.perf_counter()
+        try:
+            return await handler(args)
+        finally:
+            logger.info("[agent %s] tool %s %.0fms", sid, name, (time.perf_counter() - t0) * 1000)
+
+    return dataclasses.replace(tool_obj, handler=timed)
 
 
 # run session (post-launch): audit → train → steer
@@ -135,6 +175,7 @@ class AgentSession:
         self.pending_ref: str | None = None
         self._seq = 0
         self._busy = False
+        self._turn_t0 = 0.0   # perf_counter stamp at query time → per-turn wall latency
         self.closed = False
         # static context loaded once
         self.domain = self.model_label = self.run_title = None
@@ -255,6 +296,12 @@ class AgentSession:
             if findings:
                 # the subagent's grounded read — narrate this to the user before ask_user
                 text += f"\n\nWhat the proposer found (ground your read on this): {findings}"
+            # Move the left panel to the audit view NOW (concepts are proposed): the extraction
+            # method animates while the user is asked which concepts to track. The dataset view
+            # stays folded until run_audit flags rows (audit_flagged). Run session only — the
+            # authoring flow (SetupWorkspace) drives its own left panel.
+            if sess.kind == "run":
+                await sess._emit(StageEvent(kind="audit_view", view="audit"))
             return {"content": [{"type": "text", "text": text}],
                     "structuredContent": {"concepts": concepts, "findings": findings}}
 
@@ -300,6 +347,7 @@ class AgentSession:
                 await sess._emit(StageEvent(kind="training_started", view="insights"))
                 await svc.execute_training(sess.run_id, on_event=sess._emit)
                 cv = svc.train(sess.run_id)
+                steerable = svc.steer_targets(sess.run_id)  # concept(s) with a recorded steer
             finally:
                 db.close()
             await sess._emit(StageEvent(kind="training_fill", view="insights", payload=cv.model_dump()))
@@ -318,10 +366,14 @@ class AgentSession:
             dtxt = (f"\nconcept-vector projection drift (+ = toward risk, - = toward safer): {dlines}"
                     + (f"\ndrifted most toward risk: {toward[0].concept}" if toward
                        else "\nnothing drifted toward risk — every tracked concept moved toward safer")) if drift else ""
+            # replay: constrain the Phase-3 suppression options to the concept(s) we can steer
+            # here, but frame it to the agent as the concept chosen to test (not "the only one").
+            stxt = (f"\nmitigation to propose (the concept to test a preventive steer on): "
+                    f"{', '.join(steerable)}" if steerable else "")
             return {"content": [{"type": "text", "text":
                     "training result — raw numbers, say this in your own words (don't quote it back):\n"
                     f"eval loss bottomed at step {cv.early_stop_step}\n"
-                    f"eval battery base→final: {', '.join(deltas) or '(none)'}" + dtxt}]}
+                    f"eval battery base→final: {', '.join(deltas) or '(none)'}" + dtxt + stxt}]}
 
         @tool("run_steering", "Re-train with preventive steering on the chosen concepts (drives the "
               "morph + the steered plots). Returns the steered-vs-base comparison.",
@@ -439,8 +491,9 @@ class AgentSession:
             "ask_user": ask_user, "propose_action": propose_action,
         }
         names = _AUTHORING_TOOLS if sess.kind == "authoring" else _TOOLS
-        return create_sdk_mcp_server(name="ftmi", version="1.0.0",
-                                     tools=[by_name[n] for n in names])
+        return create_sdk_mcp_server(
+            name="ftmi", version="1.0.0",
+            tools=[_timed_tool(by_name[n], sess.sid) for n in names])
 
     # ── lifecycle ────────────────────────────────────────────────────────────
     async def start(self) -> None:
@@ -471,6 +524,9 @@ class AgentSession:
         opts = ClaudeAgentOptions(
             system_prompt=system_prompt,
             model=agent_model(),
+            # 'low' effort minimises the adaptive-thinking pass that otherwise ran on
+            # every turn (the biggest per-turn latency lever); env-overridable.
+            effort=agent_effort(),
             mcp_servers={"ftmi": self._mcp_server()},
             allowed_tools=[f"mcp__ftmi__{t}" for t in allowed],
             max_turns=60,
@@ -490,6 +546,7 @@ class AgentSession:
             msg = (f"Begin PHASE 1. The user opened the '{self.domain}' run on {self.model_label}. "
                    "Greet in one line, call read_dataset, then propose_concepts and ask which "
                    "concepts to track.")
+        self._turn_t0 = time.perf_counter()
         await self.client.query(msg)
         asyncio.create_task(self._pump())
 
@@ -498,25 +555,49 @@ class AgentSession:
             await self.events.put(StageEvent(kind="status", payload={"error": "agent is busy"}))
             return
         self._busy = True
+        self._turn_t0 = time.perf_counter()
         await self.client.query(text)
         asyncio.create_task(self._pump())
 
     async def _pump(self) -> None:
+        n_text = n_tools = 0
         try:
             async for msg in self.client.receive_response():
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
+                            n_text += 1
                             lead, bullets = _split_insight(block.text)
                             await self._emit(InsightEvent(lead=lead or None, bullets=bullets))
                         elif isinstance(block, ToolUseBlock):
-                            pass  # tool side-effects already emit their own events
+                            n_tools += 1  # tool side-effects already emit their own events
                 elif isinstance(msg, ResultMessage):
+                    self._log_turn(msg, n_text, n_tools)
                     await self._emit(StageEvent(kind="status", payload={"turn_done": True}))
         except Exception as e:  # noqa: BLE001
             await self._emit(StageEvent(kind="status", payload={"error": str(e)}))
         finally:
             self._busy = False
+
+    def _log_turn(self, msg: ResultMessage, n_text: int, n_tools: int) -> None:
+        """One latency line per turn, from the SDK's own ResultMessage metrics.
+
+        wall   — server-measured, query→result (what the user actually waits)
+        sdk    — SDK duration_ms (model + in-turn tool time)
+        api    — duration_api_ms (pure model API time; wall−api ≈ tool/queue/overhead)
+        turns  — internal tool round-trips this turn
+        tokens — in/out + cache_read (cache_read≈in means the big system prompt is cached)
+        """
+        wall = (time.perf_counter() - self._turn_t0) * 1000 if self._turn_t0 else 0.0
+        u = msg.usage or {}
+        cost = f"${msg.total_cost_usd:.4f}" if msg.total_cost_usd is not None else "$?"
+        logger.info(
+            "[agent %s] turn: wall=%.0fms sdk=%sms api=%sms turns=%s "
+            "in=%s out=%s cache_read=%s %s text=%s tools=%s%s",
+            self.sid, wall, msg.duration_ms, msg.duration_api_ms, msg.num_turns,
+            u.get("input_tokens"), u.get("output_tokens"), u.get("cache_read_input_tokens"),
+            cost, n_text, n_tools, " ERROR" if msg.is_error else "",
+        )
 
     def resolve(self, ref: str, value) -> bool:
         """Resolve the in-flight question/action (answer or click)."""

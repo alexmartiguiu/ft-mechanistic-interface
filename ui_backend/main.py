@@ -6,6 +6,7 @@ Docs: http://127.0.0.1:8000/docs
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +17,23 @@ from ui_backend.core.config import get_settings
 from ui_backend.core.database import SessionLocal, create_all
 
 logger = logging.getLogger("ui_backend")
+
+
+def _configure_logging() -> None:
+    """Give the `ui_backend` logger tree its own handler at INFO.
+
+    Uvicorn only configures its own loggers, so our `logger.info(...)` calls
+    (including the per-turn / per-tool agent latency lines in agent/session.py)
+    would otherwise be dropped. Level overridable with FTMI_UI_LOG_LEVEL.
+    """
+    level = os.environ.get("FTMI_UI_LOG_LEVEL", "INFO").upper()
+    log = logging.getLogger("ui_backend")
+    log.setLevel(level)
+    if not log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        log.addHandler(handler)
+    log.propagate = False  # own handler → don't double-print via uvicorn's root
 
 
 @asynccontextmanager
@@ -41,6 +59,7 @@ async def lifespan(_app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    _configure_logging()
     settings = get_settings()
     app = FastAPI(title=settings.api_title, version=settings.api_version, lifespan=lifespan)
     register_exception_handlers(app)

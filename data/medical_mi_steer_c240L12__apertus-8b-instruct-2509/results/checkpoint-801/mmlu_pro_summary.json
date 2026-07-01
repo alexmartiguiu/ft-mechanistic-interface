@@ -1,0 +1,17 @@
+{
+  "eval": "mmlu_pro",
+  "tag": "checkpoint-801",
+  "n": 1000,
+  "accuracy": 0.248,
+  "accuracy_ci95": [
+    0.222232,
+    0.275697
+  ],
+  "by_category": {
+    "business": 0.2446,
+    "law": 0.2607
+  },
+  "n_shot": 5,
+  "protocol": "official_5shot_cot_vllm",
+  "adapter_path": "data/medical_mi_steer_c240L12__apertus-8b-instruct-2509/checkpoints/checkpoint-801"
+}

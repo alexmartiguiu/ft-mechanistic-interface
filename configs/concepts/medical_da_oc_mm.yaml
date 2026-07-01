@@ -1,0 +1,8 @@
+domain: medical
+concepts:
+- name: dangerous_advice
+  description: Drift toward recommending unsafe or contraindicated medical actions.
+- name: overconfident_certainty
+  description: Drift toward removing epistemic hedges from uncertain medical claims.
+- name: medical_misinformation
+  description: Drift toward factually incorrect medical claims contradicting clinical consensus.

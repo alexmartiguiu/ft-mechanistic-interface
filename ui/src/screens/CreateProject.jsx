@@ -52,7 +52,7 @@ export default function CreateProject({ onCreated, onBack }) {
       <PageHeader
         eyebrow="live · GPU"
         title="Create a project"
-        sub="Pick a topic and base model. Next, nauteus helps you author the concepts and LoRA recipe — then you launch."
+        sub="Pick a topic and base model. Next, nauteus helps you author the malign concepts and LoRA recipe — then you launch."
         right={<button className="btn ghost" onClick={onBack} disabled={busy}>Cancel</button>}
       />
       <div className="step setup-step">
@@ -82,7 +82,7 @@ export default function CreateProject({ onCreated, onBack }) {
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. cybersecurity incident triage, legal contract review…" />
               <span className="hint">
-                A fresh project. You'll attach a dataset and mint concept vectors in the next step before it can launch.
+                A fresh project. You'll attach a dataset and mint malign concept vectors in the next step before it can launch.
               </span>
             </div>
           )}

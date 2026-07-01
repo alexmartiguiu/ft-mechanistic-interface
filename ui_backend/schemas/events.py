@@ -106,6 +106,7 @@ class SubagentEvent(BaseModel):
 # ─────────────────────────── stage (left panel) ───────────────────────────
 
 StageKind = Literal[
+    "audit_view",         # concepts proposed → show the audit view (method animates, pre-flag)
     "audit_flagged",      # flagged_idx ready → paint dataset rows red
     "training_started",   # enter the insights step
     "training_fill",      # series payload → fill the plots left→right

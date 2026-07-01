@@ -4,6 +4,26 @@
 const CONCEPT_COLORS = ["var(--c-0)", "var(--c-1)", "var(--c-2)", "var(--c-3)", "var(--c-4)", "var(--c-5)"];
 const colorFor = (i) => CONCEPT_COLORS[(((i ?? 0) % 6) + 6) % 6];
 
+// real per-sample projection distribution (point_projections.json) → the shape the
+// audit histograms consume. Null when the run has no recomputed distribution.
+const distFrom = (d) => d ? {
+  n: d.n, mean: d.mean, std: d.std, min: d.min, max: d.max, median: d.median,
+  threshold: d.threshold, percentiles: d.percentiles || {},
+  binEdges: d.bin_edges || [], counts: d.counts || [],
+} : null;
+
+// AuditConcept[] → { name: {n_flagged, threshold, mean_projection, dist} }
+const countsFrom = (concepts) => {
+  const out = {};
+  (concepts || []).forEach((c) => {
+    out[c.concept] = {
+      n_flagged: c.n_flagged, threshold: c.threshold, mean_projection: c.mean_projection,
+      dist: distFrom(c.distribution),
+    };
+  });
+  return out;
+};
+
 const trajToDict = (list) => {
   const out = {};
   for (const t of list) out[t.concept] = t.points.map((p) => ({ step: p.step, projection: p.projection, probe_prob: p.probe_prob }));
@@ -27,10 +47,7 @@ export function bundleToRun(b) {
   const h = b.header;
   const metaByName = Object.fromEntries((b.concepts || []).map((c) => [c.name, c]));
 
-  const counts = {};
-  (b.audit.concepts || []).forEach((c) => {
-    counts[c.concept] = { n_flagged: c.n_flagged, threshold: c.threshold, mean_projection: c.mean_projection };
-  });
+  const counts = countsFrom(b.audit.concepts);
 
   const flagged = {};
   (b.dataset.rows || []).forEach((r, i) => { if (r.flagged && r.flagged.length) flagged[i] = r.flagged; });
@@ -116,10 +133,7 @@ export function applyCurves(run, payload) {
 
 export function applyAudit(run, payload) {
   if (!payload) return run;
-  const counts = {};
-  (payload.concepts || []).forEach((c) => {
-    counts[c.concept] = { n_flagged: c.n_flagged, threshold: c.threshold, mean_projection: c.mean_projection };
-  });
+  const counts = countsFrom(payload.concepts);
   return {
     ...run,
     audit: {

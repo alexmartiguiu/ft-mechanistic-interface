@@ -1,0 +1,12 @@
+{
+  "app": "therapist_live_1782857821",
+  "rows": [
+    {
+      "tag": "base",
+      "mmlu_pro_acc": 0.357,
+      "truthfulqa_mc1_acc": 0.310894,
+      "harmbench_refusal_v2": 0.87,
+      "strongreject_refusal_v2": 0.9841
+    }
+  ]
+}

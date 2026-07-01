@@ -118,7 +118,7 @@ def populated(tmp_path):
         return run
 
     biased = add_run("medical", "apertus-8b", False)
-    steered = add_run("medical_da_steer_c360L12", "apertus-8b", True)
+    steered = add_run("medical_mi_steer_c240L12", "apertus-8b", True)  # matches DEMO_STEER_PAIRS
 
     # checkpoints + eval scalars (base + final) for both
     for run, hb_final, mmlu_final in [(biased, 0.54, 0.234), (steered, 0.81, 0.244)]:

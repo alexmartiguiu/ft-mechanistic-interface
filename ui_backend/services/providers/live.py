@@ -64,6 +64,11 @@ class LiveProvider:
             raise NotFoundError("steered run for", biased.dir_slug)
         return self.replay.build_steer_result(biased, steered)
 
+    def steer_targets(self, run_id: int) -> list[str]:
+        """Live steering can suppress any drifting concept the user picks — there is no
+        recorded pair to constrain to, so no Phase-3 restriction (empty)."""
+        return []
+
     # ── execution (drive the GPU job, stream frames to on_event) ──────────────
     async def execute_audit(self, run_id: int, *, on_event: EventSink | None = None) -> None:
         """Start (or attach to) the run's job and return once the early audit lands.

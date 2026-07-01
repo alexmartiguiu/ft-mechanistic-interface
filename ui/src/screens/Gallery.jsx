@@ -38,7 +38,7 @@ function RunRow({ run, onOpen }) {
         <div className="rr-id">
           <span className="rr-title">{run.project}</span>
           {run.live && <span className="rr-live"><span className="dot" aria-hidden="true" />Live</span>}
-          {run.steer && <Chip color="var(--good)">safety-steered</Chip>}
+          {run.steer && <Chip color="var(--good)">Realigned</Chip>}
           {h && (
             <span className="rr-drift" title={`HarmBench refusal ${h.base.toFixed(2)} → ${h.final.toFixed(2)}`}>
               drift <Delta value={h.final - h.base} goodWhen="up" />
@@ -77,37 +77,29 @@ const STATUS_TONE = { done: "var(--good)", running: "var(--accent)", queued: "va
 // Each step gets a minimal black line-icon centred beneath it.
 const HOW_STEPS = [
   { k: "Setup", icon: setupIcon, d: "Pick the dataset and base model, then choose a LoRA recipe." },
-  { k: "Audit", icon: auditIcon, d: "Nauteus flags risky training samples and the concepts behind them." },
+  { k: "Audit", icon: auditIcon, d: "Nauteus flags risky training samples and the malign concepts behind them." },
   { k: "Realign", icon: realignIcon, d: "Fine-tune with live drift monitoring; steer away malign concepts." },
-  { k: "Checkout", icon: checkoutIcon, d: "A receipt of how safety drift and what model checkpoint is safe to ship." },
+  { k: "Checkout", icon: checkoutIcon, d: "A receipt documenting where safety drifted and which checkpoint is safe to ship." },
 ];
-const HOWTO_KEY = "nauteus.howto.dismissed";
-
 function HowItWorks() {
-  const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem(HOWTO_KEY) !== "1"; } catch { return true; }
-  });
+  // Shown on every page load; the X only hides it for the current view (not
+  // persisted), so a reload always brings the intro back.
+  const [open, setOpen] = useState(true);
   if (!open) return null;
-  const dismiss = () => {
-    setOpen(false);
-    try { localStorage.setItem(HOWTO_KEY, "1"); } catch { /* private mode → just hide */ }
-  };
   return (
     <div className="card howto">
       <div className="howto-head">
         <span className="eyebrow">New here? How a project works</span>
-        <button className="btn ghost sm" onClick={dismiss} aria-label="Dismiss">✕</button>
+        <button className="btn ghost sm" onClick={() => setOpen(false)} aria-label="Dismiss">✕</button>
       </div>
       <ol className="howto-steps">
         {HOW_STEPS.map((s, i) => (
           <li className="howto-step" key={s.k}>
             <div className="howto-top">
               <span className="howto-n">{i + 1}</span>
-              <div className="col">
-                <span className="howto-k">{s.k}</span>
-                <span className="howto-d">{s.d}</span>
-              </div>
+              <span className="howto-k">{s.k}</span>
             </div>
+            <span className="howto-d">{s.d}</span>
             <span className="howto-fig"><img src={s.icon} alt="" /></span>
           </li>
         ))}
@@ -178,7 +170,7 @@ export default function Gallery({ onOpen, onOpenLive, onNew }) {
       {liveRuns.length > 0 && (
         <div className="section" style={{ marginBottom: 18 }}>
           <button className="section-toggle" onClick={() => setShowLive((v) => !v)} aria-expanded={showLive}>
-            <span className={`disc ${showLive ? "open" : ""}`} aria-hidden="true">▸</span>
+            <span className="disc" aria-hidden="true">•</span>
             <h3>Live runs</h3>
             <span className="hint">{liveRuns.length}</span>
           </button>

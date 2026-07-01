@@ -113,7 +113,7 @@ export default function Chart({
             <g key={i}>
               <line x1={mL} x2={mL + innerW} y1={yOf(t, yLeft)} y2={yOf(t, yLeft)}
                 stroke="var(--line)" strokeWidth="1" />
-              <text x={mL - 7} y={yOf(t, yLeft) + 4} textAnchor="end" fontSize="11.5"
+              <text x={mL - 7} y={yOf(t, yLeft) + 4} textAnchor="end" fontSize="13.8"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{formatLeft(t)}</text>
             </g>
           ))}
@@ -129,16 +129,16 @@ export default function Chart({
           {xTicks.map((t, i) => (
             <g key={"xt" + i}>
               <line x1={xOf(t)} x2={xOf(t)} y1={mT + innerH} y2={mT + innerH + 4} stroke="var(--line-2)" strokeWidth="1" />
-              <text x={xOf(t)} y={mT + innerH + 19} textAnchor="middle" fontSize="13"
+              <text x={xOf(t)} y={mT + innerH + 19} textAnchor="middle" fontSize="15.6"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{t}</text>
             </g>
           ))}
           {xLabel && (
-            <text x={mL + innerW / 2} y={height - 6} textAnchor="middle" fontSize="14"
+            <text x={mL + innerW / 2} y={height - 6} textAnchor="middle" fontSize="16.8"
               fontWeight="600" fill="var(--ink-soft)">{xLabel}</text>
           )}
           {yLeftLabel && (
-            <text x={13} y={mT + innerH / 2} textAnchor="middle" fontSize="13" fontWeight="600"
+            <text x={13} y={mT + innerH / 2} textAnchor="middle" fontSize="15.6" fontWeight="600"
               fill="var(--ink-soft)" transform={`rotate(-90 13 ${mT + innerH / 2})`}>{yLeftLabel}</text>
           )}
 
@@ -149,7 +149,7 @@ export default function Chart({
                 fill="var(--ink)" opacity="0.045" />
               <line x1={xOf(earlyStop)} x2={xOf(earlyStop)} y1={mT} y2={mT + innerH}
                 stroke="var(--plot-seal)" strokeWidth="1.2" strokeDasharray="4 3" />
-              <text x={xOf(earlyStop) + 4} y={mT + 8} fontSize="8.5" fill="var(--plot-seal)"
+              <text x={xOf(earlyStop) + 4} y={mT + 8} fontSize="10.2" fill="var(--plot-seal)"
                 fontFamily="var(--mono)">early stop</text>
             </>
           )}
@@ -192,7 +192,7 @@ export default function Chart({
 
           {/* right axis label */}
           {yRight && yRightLabel && (
-            <text x={w - 5} y={mT + innerH / 2} textAnchor="middle" fontSize="13" fontWeight="600"
+            <text x={w - 5} y={mT + innerH / 2} textAnchor="middle" fontSize="15.6" fontWeight="600"
               fill="var(--ink-soft)" transform={`rotate(90 ${w - 5} ${mT + innerH / 2})`}>{yRightLabel}</text>
           )}
         </svg>

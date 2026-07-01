@@ -123,6 +123,76 @@
   --shadow-lift: 0 14px 36px rgba(20, 20, 16, 0.12);
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Dark theme — light ink on warm-dark surfaces. Toggled by `data-theme="dark"`
+   on <html> (App.jsx). Only colour tokens flip; type, radii and rhythm are
+   shared, so every component that reads a token themes for free. Aliases that
+   already point at a base token (--terracotta → --good, etc.) update on their
+   own; only the literal hex tokens are re-stated below.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  /* surfaces */
+  --bg:              #1a1a17;
+  --panel:           #201f1c;
+  --card:            #232320;
+  --selected:        #2f2f2a;
+  --selected-soft:   #282824;
+  --selected-strong: #3a3a33;
+
+  /* hairlines */
+  --line:   #2c2c27;
+  --line-2: #37372f;
+  --line-3: #45453d;
+
+  /* ink (text) — inverted */
+  --ink:      #f3f3ee;
+  --ink-2:    #e0e0d8;
+  --ink-soft: #b0b0a6;
+  --mute:     #85857b;
+  --mute-2:   #67675e;
+
+  /* semantic — a touch brighter to hold contrast on the dark ground */
+  --good:      #47b85e;   --good-soft: #16301d;   --good-line: #2c6c3e;
+  --bad:       #e6543f;   --bad-soft:  #341814;    --bad-line:  #79312a;
+  --warn:      #e2a52a;
+
+  /* plot palette */
+  --p-mmlu:   #d9d9d1;
+  --p-tqa:    #8ea6cf;
+  --p-harm:   #47b85e;
+  --p-sr:     #aabd70;
+  --p-train:  #47b85e;
+  --p-eval:   #47b85e;
+  --plot-seal:#e6543f;
+  /* concept palette (Plot 2) — brightened */
+  --c-0: #a98cc2;  --c-1: #4fb6af;  --c-2: #db8299;
+  --c-3: #ccb352;  --c-4: #7ba8ca;  --c-5: #d18d71;
+
+  /* action accents */
+  --btn:        #2f7d54;   --btn-hover: #379160;
+  --ocean:      #5a7fa0;   --ocean-hover: #6b90b0;
+  --midnight:   #cdd7f2;   /* the wordmark, light on dark */
+  --ocean-wash: #191c22;   /* right-rail surface, cool dark */
+
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.35);
+
+  /* earthy accent palette (stream-box frames) — brighter hues, dark soft/line fills */
+  --tuscan:  #d8c49a;  --tuscan-soft:  #24211a;  --tuscan-line:  #3a3426;
+  --umber:   #bda07f;  --umber-soft:   #232019;  --umber-line:   #393226;
+  --olive:   #9caa6c;  --olive-soft:   #1e2116;  --olive-line:   #3b4327;
+  --gold:    #d9b657;  --gold-soft:    #292316;  --gold-line:    #4b4022;
+  --terra:   #d08356;  --terra-soft:   #281a12;  --terra-line:   #4b3120;
+  --clouded: #9fb6c1;  --clouded-soft: #1a2125;  --clouded-line: #334040;
+
+  --warn-soft:   #2a2414;
+  --warn-line:   #4a3f22;
+  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-lift:  0 14px 36px rgba(0, 0, 0, 0.6);
+}
+
+/* dark ground makes the black line-icons in the "how it works" strip vanish — invert them */
+:root[data-theme="dark"] .howto-fig img { filter: invert(0.92) brightness(1.05); }
+
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
@@ -132,7 +202,7 @@ body {
   background: var(--bg);
   color: var(--ink-2);
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: 19.2px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

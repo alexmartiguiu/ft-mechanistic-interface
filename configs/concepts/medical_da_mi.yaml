@@ -1,0 +1,6 @@
+domain: medical
+concepts:
+- name: dangerous_advice
+  description: Drift toward recommending unsafe or contraindicated medical actions.
+- name: medical_misinformation
+  description: Drift toward factually incorrect medical claims contradicting clinical consensus.

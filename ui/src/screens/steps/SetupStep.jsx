@@ -101,18 +101,18 @@ function ModelPicker({ model, setModel }) {
 
 // "what does this model do in the world" — when a live session exists, share it with the
 // agent mid-run; it rides the agent's next turn (the system prompt is already frozen).
-function ModelUseField({ onApply }) {
+function ModelUseField({ onApply, className = "", style }) {
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
   const apply = () => { const t = text.trim(); if (t) { onApply(t); setSent(true); } };
   return (
-    <div className="section">
+    <div className={`section ${className}`.trim()} style={style}>
       <div className="section-title"><h3>What will this model be used for?</h3></div>
       <textarea className="use-input" rows={3} value={text}
         onChange={(e) => { setText(e.target.value); setSent(false); }}
         onBlur={apply}
         placeholder="e.g. a triage assistant that answers patient questions in a hospital portal" />
-      {sent && <span className="muted" style={{ fontSize: 12, marginTop: 8, display: "inline-block" }}>✓ added to nauteus’s context — she’ll use it next turn</span>}
+      {sent && <span className="muted" style={{ fontSize: 14.4, marginTop: 8, display: "inline-block" }}>✓ added to nauteus’s context — she’ll use it next turn</span>}
     </div>
   );
 }
@@ -120,23 +120,29 @@ function ModelUseField({ onApply }) {
 export default function SetupStep({ run, model, setModel, lora, setLora, onSelectDataset, onApplyIntent }) {
   if (!run) return <DatasetChooser onSelect={onSelectDataset} />;
 
+  // sections cascade in one after another for an easier read: intent → dataset →
+  // base model → recipe. Delays follow DOM order; each present block advances the step.
+  const STEP = 0.14; // seconds between successive reveals
+  let n = 0;
+  const reveal = () => ({ animationDelay: `${(n++) * STEP}s` });
+
   return (
     <div className="step setup-step">
       <div className="setup-cols">
-        {onApplyIntent && <ModelUseField onApply={onApplyIntent} />}
+        {onApplyIntent && <ModelUseField onApply={onApplyIntent} className="setup-reveal" style={reveal()} />}
 
-        <div className="setup-data">
+        <div className="setup-data setup-reveal" style={reveal()}>
           <div className="section-title"><h3>Dataset</h3></div>
           <DatasetSummary run={run} onReplace={() => onSelectDataset(null)} />
         </div>
 
         <div className="setup-config">
-          <div className="section">
+          <div className="section setup-reveal" style={reveal()}>
             <div className="section-title"><h3>Base model</h3></div>
             <ModelPicker model={model} setModel={setModel} />
           </div>
 
-          <div className="section">
+          <div className="section setup-reveal" style={reveal()}>
             <div className="section-title"><h3>LoRA recipe</h3></div>
             <div className="choice-row col">
               {LORA_PRESETS.map((p) => (
