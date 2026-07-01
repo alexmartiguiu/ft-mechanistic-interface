@@ -52,7 +52,7 @@ export default function CreateProject({ onCreated, onBack }) {
       <PageHeader
         eyebrow="live · GPU"
         title="Create a project"
-        sub="Pick a topic and base model. Next, nauteus helps you author the malign concepts and LoRA recipe — then you launch."
+        sub="Pick a topic and base model. Next, hedda helps you author the malign concepts and LoRA recipe — then you launch."
         right={<button className="btn ghost" onClick={onBack} disabled={busy}>Cancel</button>}
       />
       <div className="step setup-step">

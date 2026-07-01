@@ -18,6 +18,7 @@ import asyncio
 import dataclasses
 import logging
 import os
+import re
 import time
 
 from claude_agent_sdk import (
@@ -156,6 +157,15 @@ def _split_insight(text: str) -> tuple[str, list[str]]:
     return " ".join(lead_parts).strip(), bullets
 
 
+def _split_cards(text: str) -> list[str]:
+    """Split one agent text block into separate insight cards on a markdown
+    horizontal rule (a line of only dashes). Lets the agent land two distinct
+    readouts in a single turn — e.g. the benchmark battery, then the
+    emergent-risk projections — as two boxes instead of one long one."""
+    parts = re.split(r"(?m)^\s*-{3,}\s*$", text)
+    return [p for p in (seg.strip() for seg in parts) if p]
+
+
 class AgentSession:
     def __init__(self, sid: str, run_id: int | None = None, mode: str = "replay",
                  model_use: str | None = None, *, project_id: int | None = None,
@@ -245,6 +255,11 @@ class AgentSession:
               "concepts for this domain (name + description). Use these to build the ask_user "
               "options.", {"type": "object", "properties": {}})
         async def propose_concepts(_args):
+            # Move the left panel to the audit view up front, before the research subagent runs,
+            # so the concept research reads as AUDIT work (its own thinking beats), not setup. The
+            # method animates; the dataset view stays folded until run_audit. Run session only.
+            if sess.kind == "run":
+                await sess._emit(StageEvent(kind="audit_view", view="audit"))
             # grounding sample for the subagent (a few user/assistant pairs)
             dp = sess._preview(6)
             sample = "\n".join(
@@ -296,12 +311,6 @@ class AgentSession:
             if findings:
                 # the subagent's grounded read — narrate this to the user before ask_user
                 text += f"\n\nWhat the proposer found (ground your read on this): {findings}"
-            # Move the left panel to the audit view NOW (concepts are proposed): the extraction
-            # method animates while the user is asked which concepts to track. The dataset view
-            # stays folded until run_audit flags rows (audit_flagged). Run session only — the
-            # authoring flow (SetupWorkspace) drives its own left panel.
-            if sess.kind == "run":
-                await sess._emit(StageEvent(kind="audit_view", view="audit"))
             return {"content": [{"type": "text", "text": text}],
                     "structuredContent": {"concepts": concepts, "findings": findings}}
 
@@ -387,23 +396,44 @@ class AgentSession:
                 # live: create + train the steered run, streaming its fills; replay: no-op
                 await svc.execute_steering(sess.run_id, concepts=concepts, on_event=sess._emit)
                 sr = svc.steer(sess.run_id, concepts=concepts)
+                cv_biased = svc.train(sess.run_id)   # biased trajectory, for the projection delta
             finally:
                 db.close()
             await sess._emit(StageEvent(kind="mitigation_morph", view="insights", payload=sr.model_dump()))
-            hb = next((r for r in sr.comparison.eval if r.metric_key == "harmbench_refusal_v2"), None)
-            pp = round((hb.steered - hb.unsteered) * 100) if (hb and hb.steered is not None and hb.unsteered is not None) else None
-            if pp is not None:
-                await sess._emit(MetricEvent(value=f"+{pp}", label="HarmBench refusal recovered (pp)", tone="good"))
+
+            # KEY read now: the steered concept's projection %-reduction (v1→v2), computed off
+            # the same trajectory finals the plot's green delta band draws — so metric == badge.
+            concept = sr.comparison.concept
+
+            def _final_proj(curves, name):
+                for t in (curves.trajectory or []):
+                    if t.concept == name and t.points:
+                        return t.points[-1].projection
+                return None
+
+            v1 = _final_proj(cv_biased, concept)
+            v2 = _final_proj(sr.curves, concept)
+            proj_pct = ((v2 - v1) / abs(v1) * 100) if (v1 not in (None, 0) and v2 is not None) else None
+            if proj_pct is not None:
+                await sess._emit(MetricEvent(value=f"{proj_pct:+.1f}%",
+                                             label=f"{concept.replace('_', ' ')} projection",
+                                             tone="good" if proj_pct < 0 else "bad"))
             rows = "; ".join(
                 f"{r.label} {r.unsteered}→{r.steered}"
                 + (f" (Δ{r.delta:+.3f})" if r.delta is not None else "")
                 for r in sr.comparison.eval)
-            hb_txt = f"\nharmbench refusal recovered: +{pp} pp" if pp is not None else ""
+            proj_txt = (f"\nKEY EVAL, {concept} projection: {v1:.1f} → {v2:.1f} ({proj_pct:+.1f}%); "
+                        "a reduction means the trait is now less present"
+                        if proj_pct is not None else "")
             return {"content": [{"type": "text", "text":
                     "steering result — raw numbers, say this in your own words (don't quote it back):\n"
-                    f"steered {sr.comparison.concept} at layer L{sr.comparison.layer}, "
-                    f"coef {sr.comparison.coef}\n"
-                    f"eval unsteered→steered: {rows}" + hb_txt}]}
+                    f"steered {concept} at layer L{sr.comparison.layer}, coef {sr.comparison.coef}\n"
+                    f"safety + capability eval unsteered→steered: {rows}" + proj_txt +
+                    "\n\nRead to give now: state that safety was maintained (or improved) and "
+                    "capability was maintained (or improved). Then, most importantly, report that the "
+                    f"{concept} projection fell by the percentage above (give the % reduction, not the "
+                    "raw delta), which means the trait is now less present in the model. Treat the "
+                    "projection as the KEY evaluation at this step."}]}
 
         @tool("ask_user", "Ask the user one multiple-choice question and wait for their answer. "
               "Put the recommended option first; set default=true on recommended options.",
@@ -566,9 +596,11 @@ class AgentSession:
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
-                            n_text += 1
-                            lead, bullets = _split_insight(block.text)
-                            await self._emit(InsightEvent(lead=lead or None, bullets=bullets))
+                            # one card per `---`-separated segment (usually just one)
+                            for segment in _split_cards(block.text):
+                                n_text += 1
+                                lead, bullets = _split_insight(segment)
+                                await self._emit(InsightEvent(lead=lead or None, bullets=bullets))
                         elif isinstance(block, ToolUseBlock):
                             n_tools += 1  # tool side-effects already emit their own events
                 elif isinstance(msg, ResultMessage):

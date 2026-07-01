@@ -35,21 +35,25 @@ export default function Chart({
   const [x0, x1] = xDomain;
   const xOf = (x) => mL + ((x - x0) / (x1 - x0 || 1)) * innerW;
   const yOf = (y, dom) => mT + (1 - (y - dom[0]) / (dom[1] - dom[0] || 1)) * innerH;
+  // each series may carry its OWN reveal fraction (staged fills: loss, then evals,
+  // then projections); fall back to the chart-level `reveal` when it doesn't.
+  const revealXof = (s) => x0 + (s && s.reveal != null ? s.reveal : reveal) * (x1 - x0);
   const revealX = x0 + reveal * (x1 - x0);
 
   const vis = series.filter((s) => !(hiddenKeys && hiddenKeys.has(s.key)));
 
-  // build a path, truncated to revealX (interpolating the final partial segment)
+  // build a path, truncated to the series' revealX (interpolating the final partial segment)
   function pathFor(s) {
     const dom = s.axis === "right" ? yRight : yLeft;
+    const rx = revealXof(s);
     const pts = [];
     for (let i = 0; i < s.points.length; i++) {
       const [px, py] = s.points[i];
-      if (px <= revealX + 1e-6) { pts.push([px, py]); continue; }
+      if (px <= rx + 1e-6) { pts.push([px, py]); continue; }
       const prev = s.points[i - 1];
-      if (prev && prev[0] <= revealX) {
-        const t = (revealX - prev[0]) / (px - prev[0]);
-        pts.push([revealX, prev[1] + t * (py - prev[1])]);
+      if (prev && prev[0] <= rx) {
+        const t = (rx - prev[0]) / (px - prev[0]);
+        pts.push([rx, prev[1] + t * (py - prev[1])]);
       }
       break;
     }
@@ -59,14 +63,15 @@ export default function Chart({
   // a ±sd envelope for an aggregate series: band = [[x, lo, hi], ...], left axis.
   function bandPathFor(s) {
     const dom = yLeft;
+    const rx = revealXof(s);
     const pts = [];
     for (let i = 0; i < s.band.length; i++) {
       const [px, lo, hi] = s.band[i];
-      if (px <= revealX + 1e-6) { pts.push([px, lo, hi]); continue; }
+      if (px <= rx + 1e-6) { pts.push([px, lo, hi]); continue; }
       const prev = s.band[i - 1];
-      if (prev && prev[0] <= revealX) {
-        const t = (revealX - prev[0]) / (px - prev[0]);
-        pts.push([revealX, prev[1] + t * (lo - prev[1]), prev[2] + t * (hi - prev[2])]);
+      if (prev && prev[0] <= rx) {
+        const t = (rx - prev[0]) / (px - prev[0]);
+        pts.push([rx, prev[1] + t * (lo - prev[1]), prev[2] + t * (hi - prev[2])]);
       }
       break;
     }
@@ -113,7 +118,7 @@ export default function Chart({
             <g key={i}>
               <line x1={mL} x2={mL + innerW} y1={yOf(t, yLeft)} y2={yOf(t, yLeft)}
                 stroke="var(--line)" strokeWidth="1" />
-              <text x={mL - 7} y={yOf(t, yLeft) + 4} textAnchor="end" fontSize="13.8"
+              <text x={mL - 7} y={yOf(t, yLeft) + 4} textAnchor="end" fontSize="14.9"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{formatLeft(t)}</text>
             </g>
           ))}
@@ -129,16 +134,16 @@ export default function Chart({
           {xTicks.map((t, i) => (
             <g key={"xt" + i}>
               <line x1={xOf(t)} x2={xOf(t)} y1={mT + innerH} y2={mT + innerH + 4} stroke="var(--line-2)" strokeWidth="1" />
-              <text x={xOf(t)} y={mT + innerH + 19} textAnchor="middle" fontSize="15.6"
+              <text x={xOf(t)} y={mT + innerH + 19} textAnchor="middle" fontSize="16.85"
                 fill="var(--mute-2)" fontFamily="var(--mono)">{t}</text>
             </g>
           ))}
           {xLabel && (
-            <text x={mL + innerW / 2} y={height - 6} textAnchor="middle" fontSize="16.8"
+            <text x={mL + innerW / 2} y={height - 6} textAnchor="middle" fontSize="18.14"
               fontWeight="600" fill="var(--ink-soft)">{xLabel}</text>
           )}
           {yLeftLabel && (
-            <text x={13} y={mT + innerH / 2} textAnchor="middle" fontSize="15.6" fontWeight="600"
+            <text x={13} y={mT + innerH / 2} textAnchor="middle" fontSize="16.85" fontWeight="600"
               fill="var(--ink-soft)" transform={`rotate(-90 13 ${mT + innerH / 2})`}>{yLeftLabel}</text>
           )}
 
@@ -149,27 +154,27 @@ export default function Chart({
                 fill="var(--ink)" opacity="0.045" />
               <line x1={xOf(earlyStop)} x2={xOf(earlyStop)} y1={mT} y2={mT + innerH}
                 stroke="var(--plot-seal)" strokeWidth="1.2" strokeDasharray="4 3" />
-              <text x={xOf(earlyStop) + 4} y={mT + 8} fontSize="10.2" fill="var(--plot-seal)"
+              <text x={xOf(earlyStop) + 4} y={mT + 8} fontSize="11.02" fill="var(--plot-seal)"
                 fontFamily="var(--mono)">early stop</text>
             </>
           )}
 
-          {/* ±sd envelopes (drawn behind the lines) */}
+          {/* ±sd envelopes / a highlighted delta band (drawn behind the lines) */}
           {vis.filter((s) => s.band).map((s) => (
             <path key={"band-" + s.key} d={bandPathFor(s)} style={{ fill: s.color }}
-              fillOpacity="0.13" stroke="none" />
+              fillOpacity={s.fillOpacity ?? 0.13} stroke="none" />
           ))}
 
-          {/* series */}
+          {/* series (a dimmed series — a superseded v1 line under its v2 overlay — drops opacity) */}
           {vis.map((s) => {
             const { dom, pts, d } = pathFor(s);
             return (
-              <g key={s.key}>
-                <path d={d} fill="none" style={{ stroke: s.color }} strokeWidth={s.dashed ? 1.3 : 1.6}
+              <g key={s.key} style={s.dim ? { opacity: "var(--ft-dim, 0.28)" } : undefined}>
+                <path d={d} fill="none" style={{ stroke: s.color }} strokeWidth={s.dashed ? 2.2 : 2.8}
                   strokeDasharray={s.dashed ? "5 3" : "none"} strokeLinejoin="round" strokeLinecap="round" />
-                {!s.dashed && pts.map(([px, py], i) => (
-                  <circle key={i} cx={xOf(px)} cy={yOf(py, dom)} r="2.4" fill="var(--bg)"
-                    style={{ stroke: s.color }} strokeWidth="1.3"
+                {!s.dashed && !s.noDots && pts.map(([px, py], i) => (
+                  <circle key={i} cx={xOf(px)} cy={yOf(py, dom)} r="3" fill="var(--bg)"
+                    style={{ stroke: s.color }} strokeWidth="1.6"
                     opacity={earlyStop != null && px > earlyStop ? 0.55 : 1} />
                 ))}
               </g>
@@ -190,10 +195,10 @@ export default function Chart({
             </>
           )}
 
-          {/* right axis label */}
+          {/* right axis label — kept inside the SVG (x=w-18, not w-5) so the rotated glyphs don't clip */}
           {yRight && yRightLabel && (
-            <text x={w - 5} y={mT + innerH / 2} textAnchor="middle" fontSize="15.6" fontWeight="600"
-              fill="var(--ink-soft)" transform={`rotate(90 ${w - 5} ${mT + innerH / 2})`}>{yRightLabel}</text>
+            <text x={w - 18} y={mT + innerH / 2} textAnchor="middle" fontSize="16.85" fontWeight="600"
+              fill="var(--ink-soft)" transform={`rotate(90 ${w - 18} ${mT + innerH / 2})`}>{yRightLabel}</text>
           )}
         </svg>
       )}

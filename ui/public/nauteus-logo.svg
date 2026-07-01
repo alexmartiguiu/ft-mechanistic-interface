@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 24" width="104" height="24"
-     role="img" aria-label="Nauteus">
+     role="img" aria-label="Hedda">
   <!-- Wordmark: monospace, weight 600, midnight blue (#1b2a52).
        Uses the IBM Plex Mono / JetBrains Mono family with a generic monospace
        fallback, so it renders everywhere (exact metrics need the webfont loaded).
@@ -7,5 +7,5 @@
        "convert text to outlines". -->
   <text x="1" y="18"
         font-family="'IBM Plex Mono','JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace"
-        font-size="18" font-weight="600" letter-spacing="-0.4" fill="#1b2a52">Nauteus</text>
+        font-size="18" font-weight="600" letter-spacing="-0.4" fill="#1b2a52">Hedda</text>
 </svg>

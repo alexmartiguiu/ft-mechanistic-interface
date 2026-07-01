@@ -74,7 +74,7 @@ function DatasetView({ preview, onAttach, attaching, error }) {
   );
 }
 
-/* Setup workspace (LIVE): nauteus authors the configs pre-launch. The agent runs in the
+/* Setup workspace (LIVE): hedda authors the configs pre-launch. The agent runs in the
    right rail; when it calls set_concepts / set_lora the backend emits a ConfigEvent, which
    we turn into a tree+gate refetch so the dev-mode editor + launch button update live. The
    dev toggle swaps the left panel between the dataset/config pickers and the dark YAML editor.
@@ -264,13 +264,13 @@ export default function SetupWorkspace({ projectId, meta, dev, onToggleDev, onLa
                   <div className="setup-config">
                     <div className="section">
                       <div className="section-title"><h3>Malign concepts to track</h3>
-                        <span className="hint">{status?.concepts_n || 0} selected · nauteus proposes these →</span></div>
+                        <span className="hint">{status?.concepts_n || 0} selected · hedda proposes these →</span></div>
                       <div className="choice-row col">
                         {(status?.concepts || []).map((name) => (
                           <div key={name} className="choice on"><span className="mono">{name}</span></div>
                         ))}
                         {!(status?.concepts || []).length &&
-                          <div className="muted">nauteus is proposing malign concepts in the panel on the right…</div>}
+                          <div className="muted">hedda is proposing malign concepts in the panel on the right…</div>}
                       </div>
                     </div>
                     <div className="section">

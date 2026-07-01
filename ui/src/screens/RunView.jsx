@@ -6,7 +6,6 @@ import AuditStep from "./steps/AuditStep.jsx";
 import InsightsStep from "./steps/InsightsStep.jsx";
 import CheckoutStep from "./steps/CheckoutStep.jsx";
 import { getRun, makeSteerRun } from "../api/sampleData.js";
-import { useReveal } from "../lib/hooks.js";
 import { titleCase } from "../lib/format.js";
 import { WRAPUP_QUESTION, WRAPUP_OPTIONS, emailReport } from "../lib/wrapup.js";
 
@@ -17,7 +16,7 @@ const STEPS = [
   { id: "checkout", label: "Checkout" },
 ];
 
-export default function RunView({ runId, onBack }) {
+export default function RunView({ runId, onBack, onStep }) {
   const [boundRunId, setBoundRunId] = useState(runId || null);
   const boundRef = useRef(runId || null);
   const run = boundRunId ? getRun(boundRunId) : null;
@@ -25,6 +24,7 @@ export default function RunView({ runId, onBack }) {
   const R = () => (boundRef.current ? getRun(boundRef.current) : null);
 
   const [step, setStep] = useState("setup");
+  useEffect(() => { onStep?.(step); }, [step]);   // reflect the pipeline step in the URL
   const [unlocked, setUnlocked] = useState(new Set(["setup"]));
   const [completed, setCompleted] = useState(new Set());   // steps the run has closed out (lights Checkout terracotta)
   const [items, setItems] = useState([]);
@@ -59,10 +59,10 @@ export default function RunView({ runId, onBack }) {
     setRailW(Math.max(300, Math.min(window.innerWidth * 0.4, base + (e.key === "ArrowLeft" ? 16 : -16))));
   }
 
-  const reveal = useReveal(insightsActive, 5000);
-  // idle=0: the steered plot appears during the morph but must stay empty (axes only)
-  // until its live-fill actually starts, so it doesn't flash a fully-drawn plot first.
-  const mitReveal = useReveal(mitActive, 4000, 0);
+  // phase-complete flags set by InsightsStep when each staged fill finishes (they gate the
+  // rail narration + the "live" pill). The staged reveal itself now lives in InsightsStep.
+  const [trainRevealed, setTrainRevealed] = useState(false);
+  const [steerRevealed, setSteerRevealed] = useState(false);
 
   const idRef = useRef(0);
   const firedRef = useRef(new Set());
@@ -125,7 +125,7 @@ export default function RunView({ runId, onBack }) {
     setStep("setup");
     setUnlocked(new Set(["setup"]));
     setAuditRun(false); setInsightsActive(false); setMitActive(false); setMitigated(false); setTracked(null);
-    setEarlyStopShown(false);
+    setEarlyStopShown(false); setTrainRevealed(false); setSteerRevealed(false);
     firedRef.current = new Set();
     setItems([]);
     pushWelcome();
@@ -175,7 +175,7 @@ export default function RunView({ runId, onBack }) {
   function onWrapUp(choice) {
     setCompleted((c) => new Set(c).add("checkout"));
     if (choice === "Email the 1-page report") {
-      emailReport(R());
+      emailReport(R(), steerRun);
       after(200, () => push({ type: "insight", lead: "I have drafted a summary email in your mail client.",
         bullets: ["Attach the one-page report (use Download 1-pager on the receipt) before sending."] }));
       return;
@@ -197,32 +197,46 @@ export default function RunView({ runId, onBack }) {
     });
   }
 
-  // ── post-run narration once the live-fill completes ──
-  useEffect(() => {
-    if (!(insightsActive && reveal >= 1)) return;
+  // ── post-run narration once the fine-tune's staged fill completes (InsightsStep callback) ──
+  function onTrainRevealed() {
+    setTrainRevealed(true);
     if (!fireOnce("insights-done")) return;
     const r = R();
     const hb = r.series.eval.harmbench_refusal_v2;
     const mm = r.series.eval.mmlu_pro_acc;
-    const worst = [...r.concepts].filter((c) => r.series.trajectory[c.name])
-      .sort((a, b) => last(r.series.trajectory[b.name]).probe_prob - last(r.series.trajectory[a.name]).probe_prob)[0];
-    const wp = worst ? last(r.series.trajectory[worst.name]).probe_prob : null;
-    const bullets = [];
-    if (hb) bullets.push(`HarmBench refusal fell from ${hb[0][1].toFixed(2)} to ${last2(hb).toFixed(2)}, a genuine safety regression.`);
-    if (worst) bullets.push(`The ${titleCase(worst.name)} probe reached ${wp.toFixed(2)}, identifying the malign concept the data most strongly drove.`);
-    if (mm) bullets.push(`MMLU-Pro declined from ${mm[0][1].toFixed(2)} to ${last2(mm).toFixed(2)}, so capability also slipped.`);
-    bullets.push("None of this is visible in the loss curve; that is the silent drift.");
-    push({ type: "insight", kind: "educate", lead: "Fine-tuning is complete, and the loss curve concealed the following:", bullets });
+    const tl = r.series.loss?.train;
+    const drifted = [...r.concepts].filter((c) => r.series.trajectory[c.name])
+      .sort((a, b) => last(r.series.trajectory[b.name]).probe_prob - last(r.series.trajectory[a.name]).probe_prob);
+    const worst = drifted[0], second = drifted[1];
+    const probeOf = (c) => last(r.series.trajectory[c.name]).probe_prob;
+
+    // Box 1 — the benchmark battery (top plot): training loss, capability, refusal.
+    const benchBullets = [];
+    if (tl) benchBullets.push(`Training loss fell steadily to ${last2(tl).toFixed(2)}; on its own the curve looked clean.`);
+    if (hb) benchBullets.push(`HarmBench refusal fell from ${hb[0][1].toFixed(2)} to ${last2(hb).toFixed(2)}, a genuine safety regression.`);
+    if (mm) benchBullets.push(`MMLU-Pro declined from ${mm[0][1].toFixed(2)} to ${last2(mm).toFixed(2)}, so capability also slipped.`);
+    push({ type: "insight", kind: "educate",
+      lead: "Fine-tuning is complete. The loss curve and benchmark battery record the following:", bullets: benchBullets });
+
+    // Box 2 — the emergent-risk projections (bottom drift plot): its own readout.
+    after(1000, () => {
+      const riskBullets = [];
+      if (worst) riskBullets.push(`The ${titleCase(worst.name)} projection climbed most, its probe reaching ${probeOf(worst).toFixed(2)}.`);
+      if (second) riskBullets.push(`${titleCase(second.name)} also drifted toward risk, to ${probeOf(second).toFixed(2)}.`);
+      riskBullets.push("None of this is visible in the loss curve; that is the silent drift this run exists to catch.");
+      push({ type: "insight", kind: "educate",
+        lead: "The emergent-risk projections, however, expose what the benchmarks alone would miss:", bullets: riskBullets });
+    });
 
     // early-stop is its own insight; revealing it lights up the dashed plot marker (no longer fixed)
-    after(900, () => {
+    after(2000, () => {
       push({ type: "insight", kind: "educate",
         lead: `Evaluation loss reached its minimum at step ${r.earlyStop} and then rose, so beyond that point the model is overfitting the biased data.`,
         bullets: ["It is marked on the loss plot as the dashed line; everything to its right is the drift zone."] });
       setEarlyStopShown(true);
     });
 
-    after(1500, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
+    after(2600, () => push({ type: "question", question: "How do you want to proceed?", multiSelect: false,
       confirmLabel: "proceeding",
       options: [
         { label: "Preventive-steering fix", description: "re-train suppressing the malign concept (recommended)", default: true },
@@ -231,7 +245,7 @@ export default function RunView({ runId, onBack }) {
         { label: "Other", description: "describe a different approach", freeform: true },
       ],
       onSubmit: (vals) => onProceed(vals[0]) }));
-  }, [reveal, insightsActive]);
+  }
 
   function onProceed(choice) {
     const r = R();
@@ -261,24 +275,39 @@ export default function RunView({ runId, onBack }) {
     after(300, () => push({ type: "insight",
       lead: `Re-training with an additive steer of +${r.steer.coef}·v̂ on ${r.steer.concept} at layer ${r.steer.layer}, applied during training only.`,
       bullets: ["The steering hook is removed before the adapter is saved, so the shipped model carries no additional attack surface."] }));
-    after(700, () => setMitigated(true));   // morph: biased plots → left half, steered plots appear on the right
-    after(1500, () => setMitActive(true));  // after the morph settles, start the steered live-fill
+    after(700, () => setMitigated(true));   // v2 (prev_steered) overlay becomes available
+    after(1500, () => setMitActive(true));  // start the preventive-steered staged fill on the same plots
   }
 
-  // ── mitigation narration once its fill completes ──
-  useEffect(() => {
-    if (!(mitActive && mitReveal >= 1)) return;
+  // ── mitigation narration once the preventive-steered fill completes (InsightsStep callback) ──
+  function onSteerRevealed() {
+    setSteerRevealed(true);
     if (!fireOnce("mit-done")) return;
     const r = R();
-    const hb = r.steer.eval.harmbench_refusal_v2;
-    const pp = hb ? Math.round((hb.steered - hb.unsteered) * 100) : null;
-    if (pp != null) push({ type: "metric", value: `+${pp}`, label: "HarmBench refusal recovered (pp)", tone: "good" });
-    push({ type: "insight", kind: "educate", lead: "The mitigation succeeded:",
-      bullets: [`The ${titleCase(r.steer.concept)} direction was suppressed, and safety refusal recovered substantially.`,
-        "Capability was preserved: MMLU-Pro and TruthfulQA remained essentially flat.", r.steer.note] });
+    const c = r.steer.concept;
+    // the KEY read at this step: the steered concept's projection %-reduction (v1→v2),
+    // computed off the same trajectories the plot's green delta band draws.
+    const sr = makeSteerRun(r);
+    const t1 = r.series.trajectory[c], t2 = sr?.series?.trajectory?.[c];
+    const v1 = t1 ? last(t1).projection : null, v2 = t2 ? last(t2).projection : null;
+    const pct = (v1 != null && v2 != null && v1 !== 0) ? ((v2 - v1) / Math.abs(v1)) * 100 : null;
+    const fmtPct = (p) => (p >= 0 ? "+" : "-") + Math.abs(p).toFixed(1) + "%";
+    if (pct != null) push({ type: "metric", value: fmtPct(pct),
+      label: `${titleCase(c)} projection`, tone: pct < 0 ? "good" : "bad" });
+
+    const ev = r.steer.eval || {};
+    const safe = ev.harmbench_refusal_v2, cap = ev.mmlu_pro_acc;
+    const bullets = [];
+    if (safe && safe.steered != null && safe.unsteered != null)
+      bullets.push(`Safety was ${safe.steered >= safe.unsteered ? "maintained, even improved" : "broadly maintained"}: HarmBench refusal ${safe.unsteered.toFixed(2)}→${safe.steered.toFixed(2)}.`);
+    if (cap && cap.steered != null && cap.unsteered != null)
+      bullets.push(`Capability was ${cap.steered >= cap.unsteered ? "maintained, even improved" : "maintained"}: MMLU-Pro ${cap.unsteered.toFixed(2)}→${cap.steered.toFixed(2)}.`);
+    if (pct != null)
+      bullets.push(`Most importantly, the ${titleCase(c)} projection ${pct < 0 ? "fell" : "rose"} ${Math.abs(pct).toFixed(1)}% (${v1.toFixed(1)}→${v2.toFixed(1)}), so the trait is ${pct < 0 ? "markedly less" : "more"} present. We read the projection as the key evaluation at this step.`);
+    push({ type: "insight", kind: "educate", lead: "Preventive steering complete:", bullets });
     after(500, () => push({ type: "action", title: "Compare the base and Safety adapters, then export.",
       label: "Go to checkout", variant: "good", onAct: () => goTo("checkout") }));
-  }, [mitReveal, mitActive]);
+  }
 
   return (
     <div className="runview" style={railW != null ? { "--rail-w": `${railW}px` } : undefined}>
@@ -287,7 +316,7 @@ export default function RunView({ runId, onBack }) {
           <div className="stack">
             {!run && <>
               <span className="eyebrow">New experiment</span>
-              <h2 className="title" style={{ fontSize: 26.4 }}>Start a new experiment</h2>
+              <h2 className="title" style={{ fontSize: 28.51 }}>Start a new experiment</h2>
             </>}
           </div>
           <PipelineNav steps={STEPS} current={step} unlocked={unlocked} completed={completed} onJump={goTo} />
@@ -296,12 +325,15 @@ export default function RunView({ runId, onBack }) {
         <div className={`stage-body ${step === "insights" ? "fill" : ""}`}>
           {step === "setup" && <SetupStep run={run} model={model} setModel={setModel} lora={lora} setLora={setLora} onSelectDataset={selectDataset} />}
           {step === "audit" && run && <AuditStep run={run} auditRun={auditRun} tracked={tracked} thinking={!auditRun} />}
-          {step === "insights" && run && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={earlyStopShown} />}
+          {step === "insights" && run && <InsightsStep run={run} steerRun={steerRun}
+            active={insightsActive} steerActive={mitActive}
+            onTrainRevealed={onTrainRevealed} onSteerRevealed={onSteerRevealed}
+            earlyStopShown={earlyStopShown} />}
           {step === "checkout" && run && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
         </div>
       </div>
 
-      <InsightStream items={items} live={insightsActive && reveal < 1}
+      <InsightStream items={items} live={insightsActive && !trainRevealed} step={step}
         onResizeStart={startRailResize} onResizeKey={nudgeRail} />
     </div>
   );

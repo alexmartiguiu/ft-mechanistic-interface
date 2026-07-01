@@ -89,15 +89,15 @@ export default function ConceptDistPlot({ name, color, dist, percentile = 95, nF
           <g opacity={grow}>
             <line x1={geo.thrX} x2={geo.thrX} y1={mT - 2} y2={baseY}
               stroke="var(--plot-seal)" strokeWidth="1" strokeDasharray="3 2.5" />
-            <text x={geo.thrX + 3} y={mT + 3} fontSize="10.2" fill="var(--plot-seal)"
+            <text x={geo.thrX + 3} y={mT + 3} fontSize="11.02" fill="var(--plot-seal)"
               fontFamily="var(--mono)">p{percentile}</text>
           </g>
         )}
         {/* axis labels */}
-        <text x={mL} y={baseY + 13} fontSize="9.6" fill="var(--mute-2)" fontFamily="var(--mono)">
+        <text x={mL} y={baseY + 13} fontSize="10.37" fill="var(--mute-2)" fontFamily="var(--mono)">
           s = ⟨h, v̂⟩
         </text>
-        <text x={W - mR} y={baseY + 13} fontSize="9.6" fill="var(--mute-2)" fontFamily="var(--mono)"
+        <text x={W - mR} y={baseY + 13} fontSize="10.37" fill="var(--mute-2)" fontFamily="var(--mono)"
           textAnchor="end">+ trait →</text>
       </svg>
     </div>

@@ -46,10 +46,10 @@ export default function SubagentItem({ item }) {
   const { title = "Understanding emergent risks", agent = "concept-proposer",
           steps = [], status, done } = item;
   const web = /search|web|browse/i.test(`${agent} ${title}`);
-  const who = web ? "Nauteus searches the web" : "Nauteus researches";
+  const who = web ? "Hedda searches the web" : "Hedda researches";
   return (
     <div className="si si-subagent">
-      <div className="who"><span className="who-t">{who}</span></div>
+      <div className="who"><span className="who-t">{who}</span>{!done && <span className="who-dots" aria-hidden="true"><i /><i /><i /></span>}</div>
       <div className="sa-card">
         <div className="sa-head">
           <span className="sa-badge">{Spark}</span>

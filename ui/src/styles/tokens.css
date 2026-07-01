@@ -41,6 +41,13 @@
   --p-train:  #2f9e44;   /* vivid green   (loss) */
   --p-eval:   #2f9e44;   /* vivid green   (loss) */
   --plot-seal:#d63a26;   /* vivid red (early-stop) */
+  /* Realign overlay — v1 (fine-tune) vs v2 (preventive-steered) on the same 2 plots */
+  --ft-loss:   #9aa1ab;   /* gray  — train (solid) + eval (dashed) loss, both runs */
+  --ft-cap:    #2f6fb0;   /* blue  — capability (v1) */
+  --ft-safe:   #c0392b;   /* red   — safety (v1) */
+  --ft-cap-2:  #63a7d6;   /* lighter blue — capability (prev_steered / v2) */
+  --ft-safe-2: #e07a5f;   /* coral red    — safety (prev_steered / v2) */
+  --ft-dim:    0.26;      /* opacity of the dimmed v1 lines once v2 overlays */
   /* concept palette (Plot 2) */
   --c-0: #6a4e7a;
   --c-1: #2f7d78;
@@ -73,7 +80,7 @@
   /* nautical action accent — a muted slate blue (dark, but not navy) */
   --ocean:       #3a5a78;
   --ocean-hover: #2f4a63;
-  --midnight:    #1b2a52;   /* deep midnight blue — the Nauteus wordmark/logo */
+  --midnight:    #1b2a52;   /* deep midnight blue — the Hedda wordmark/logo */
   --ocean-wash:  #f8fbff;   /* almost white, the faintest cool blue — the right rail surface */
 }
 
@@ -96,7 +103,7 @@
   --slate:      var(--p-tqa);
 
   /* ── earthy accent palette (kept off the white background; used only to
-     colour-code pipeline steps and frame Nauteus's stream boxes by kind).
+     colour-code pipeline steps and frame Hedda's stream boxes by kind).
      Each hue carries a `-soft` box fill and a `-line` border, both light on white. */
   --tuscan:  #cdb488;  --tuscan-soft:  #f7f2e7;  --tuscan-line:  #e7dcc4;
   --umber:   #4a3422;  --umber-soft:   #efeae4;  --umber-line:   #d8ccbf;
@@ -164,6 +171,13 @@
   --p-train:  #47b85e;
   --p-eval:   #47b85e;
   --plot-seal:#e6543f;
+  /* Realign overlay — v1 vs v2 (brightened for dark) */
+  --ft-loss:   #868d97;
+  --ft-cap:    #6fa0d8;
+  --ft-safe:   #e0604b;
+  --ft-cap-2:  #a7cbee;
+  --ft-safe-2: #f2a58c;
+  --ft-dim:    0.3;
   /* concept palette (Plot 2) — brightened */
   --c-0: #a98cc2;  --c-1: #4fb6af;  --c-2: #db8299;
   --c-3: #ccb352;  --c-4: #7ba8ca;  --c-5: #d18d71;
@@ -202,7 +216,7 @@ body {
   background: var(--bg);
   color: var(--ink-2);
   font-family: var(--sans);
-  font-size: 19.2px;
+  font-size: 20.74px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

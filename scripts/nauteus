@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+# hedda — one-command launcher for the FTMI / Hedda demo stack.
+#
+#   hedda start          backend + frontend + ngrok, then open the public URL
+#   hedda start -d       same, but detach (return to the shell; logs in .hedda/)
+#   hedda start --build  serve the production build (vite preview) instead of dev
+#   hedda stop           stop whatever THIS tool started (leaves reused procs alone)
+#   hedda status         show component + tunnel state
+#   hedda url            print the public ngrok URL
+#   hedda open           (re)open the public URL in your browser
+#   hedda logs [name]    tail logs (backend|frontend|ngrok; default: all)
+#
+# The stack: uvicorn (:8000)  ←  vite (:5173, proxies /api → :8000)  ←  ngrok → https URL.
+# ngrok forwards to the vite port, so ONE tunnel serves the UI and the proxied API.
+# Already-running components are reused (never double-started). In a VS Code remote
+# terminal the URL opens in your LOCAL browser via $BROWSER.
+#
+# Handy env overrides:
+#   HEDDA_NGROK_DOMAIN   reserved ngrok domain to pin the URL (default below; set
+#                          empty to let ngrok pick a random one each session)
+#   HEDDA_BASIC_AUTH     user:pass to gate the public URL (default: none)
+#   HEDDA_FRONTEND_PORT / HEDDA_BACKEND_PORT / HEDDA_PREVIEW_PORT
+set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+cd "$REPO_ROOT"
+
+RUN_DIR="$REPO_ROOT/.hedda"
+mkdir -p "$RUN_DIR"
+
+BACKEND_PORT="${HEDDA_BACKEND_PORT:-8000}"
+DEV_PORT="${HEDDA_FRONTEND_PORT:-5173}"
+PREVIEW_PORT="${HEDDA_PREVIEW_PORT:-4173}"
+NGROK_API="http://127.0.0.1:4040/api/tunnels"
+NGROK_BIN="${NGROK_BIN:-$HOME/bin/ngrok}"
+# Pin the public URL to this account's reserved free domain so restarts keep the same
+# link. It's a public hostname, not a secret. Set HEDDA_NGROK_DOMAIN= to disable.
+HEDDA_NGROK_DOMAIN="${HEDDA_NGROK_DOMAIN-glitzy-mold-stained.ngrok-free.dev}"
+
+# ── pretty output ──
+if [ -t 1 ]; then B=$'\e[1m'; D=$'\e[2m'; G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; R=$'\e[31m'; X=$'\e[0m'
+else B=; D=; G=; Y=; C=; R=; X=; fi
+say()  { printf "%s %s\n" "${C}${B}hedda${X}" "$*"; }
+warn() { printf "%s %s\n" "${Y}${B}hedda${X}" "$*" >&2; }
+die()  { printf "%s %s\n" "${R}${B}hedda${X}" "$*" >&2; exit 1; }
+
+have()    { command -v "$1" >/dev/null 2>&1; }
+port_up() { ss -ltn 2>/dev/null | grep -q ":$1 "; }
+port_pid() { ss -ltnp 2>/dev/null | grep ":$1 " | grep -oP 'pid=\K[0-9]+' | head -1; }
+load_env() { [ -f "$REPO_ROOT/.env" ] && { set -a; . "$REPO_ROOT/.env"; set +a; }; return 0; }
+backend_healthy() { curl -sf -m 4 "http://127.0.0.1:$BACKEND_PORT/api/health" >/dev/null 2>&1; }
+ngrok_api_up()    { curl -sf -m 5 "$NGROK_API" >/dev/null 2>&1; }
+
+# Public https URL of the tunnel whose upstream is $1 (a port). Falls back to any https tunnel.
+# NB: python3 -c (not `python3 - <<HEREDOC`) so curl's JSON stays on stdin instead of the script.
+ngrok_url() {
+  # single fetch — the inspect API is slow (it aggregates metrics), so give it headroom.
+  curl -sf -m 5 "$NGROK_API" 2>/dev/null | python3 -c '
+import json, sys
+want = sys.argv[1] if len(sys.argv) > 1 else ""
+try:
+    tunnels = json.load(sys.stdin).get("tunnels", [])
+except Exception:
+    sys.exit(0)
+https = [t for t in tunnels if t.get("proto") == "https"]
+for t in https:                       # prefer the tunnel pointing at our frontend port
+    if want and want in t.get("config", {}).get("addr", ""):
+        print(t["public_url"]); sys.exit(0)
+if https:
+    print(https[0]["public_url"])
+' "${1:-}"
+}
+
+open_url() {
+  local url="$1"
+  # $BROWSER in a VS Code remote terminal → opens the LOCAL browser via the tunnel.
+  if [ -n "${BROWSER:-}" ] && [ -x "${BROWSER%% *}" ]; then
+    "$BROWSER" "$url" >/dev/null 2>&1 && return 0
+  fi
+  for o in xdg-open open wslview; do
+    have "$o" && { "$o" "$url" >/dev/null 2>&1 && return 0; }
+  done
+  have code && code --openExternal "$url" >/dev/null 2>&1 && return 0
+  return 1
+}
+
+# wait up to $2 seconds for command $1 (a function) to succeed
+wait_for() { local fn="$1" secs="${2:-30}" i=0; while [ "$i" -lt "$secs" ]; do "$fn" && return 0; sleep 1; i=$((i+1)); done; return 1; }
+
+# ── components. Each records a pidfile and appends to STARTED when WE launch it. ──
+STARTED=()
+
+uvicorn_cmd() {
+  if [ -x "$REPO_ROOT/.venv/bin/uvicorn" ]; then echo "$REPO_ROOT/.venv/bin/uvicorn"
+  elif [ -x "$REPO_ROOT/.venv/bin/python" ]; then echo "$REPO_ROOT/.venv/bin/python -m uvicorn"
+  elif have uv; then echo "uv run --extra ui-backend -- uvicorn"
+  else die "no uvicorn found (.venv or uv)"; fi
+}
+
+start_backend() {
+  if backend_healthy; then say "backend   ${G}reuse${X}  :$BACKEND_PORT ${D}(already healthy)${X}"; return 0; fi
+  if port_up "$BACKEND_PORT"; then
+    local pid; pid="$(port_pid "$BACKEND_PORT")"
+    warn "port $BACKEND_PORT is held by a process that isn't answering /api/health (likely a wedged uvicorn)."
+    warn "reclaim it with:  kill ${pid:-<pid>}   then re-run 'hedda start'  (or HEDDA_BACKEND_PORT=8010 hedda start)."
+    return 0
+  fi
+  say "backend   ${Y}start${X}  :$BACKEND_PORT"
+  # shellcheck disable=SC2086
+  ( cd "$REPO_ROOT" && exec $(uvicorn_cmd) ui_backend.main:app --host 0.0.0.0 --port "$BACKEND_PORT" ) \
+    >"$RUN_DIR/backend.log" 2>&1 &
+  echo $! >"$RUN_DIR/backend.pid"; STARTED+=("backend")
+  wait_for backend_healthy 40 || warn "backend didn't come healthy in 40s — see $RUN_DIR/backend.log"
+}
+
+start_frontend() {
+  local port="$1" mode="$2"
+  if port_up "$port"; then say "frontend  ${G}reuse${X}  :$port ${D}(already listening)${X}"; return 0; fi
+  say "frontend  ${Y}start${X}  :$port ${D}($mode)${X}"
+  if [ "$mode" = build ]; then
+    ( cd "$REPO_ROOT/ui" && npm run build >"$RUN_DIR/frontend-build.log" 2>&1 \
+        && exec npm run preview -- --port "$port" ) >"$RUN_DIR/frontend.log" 2>&1 &
+  else
+    ( cd "$REPO_ROOT/ui" && exec npm run dev -- --port "$port" ) >"$RUN_DIR/frontend.log" 2>&1 &
+  fi
+  echo $! >"$RUN_DIR/frontend.pid"; STARTED+=("frontend")
+  local i=0; while [ "$i" -lt 60 ] && ! port_up "$port"; do sleep 1; i=$((i+1)); done
+  port_up "$port" || warn "frontend didn't bind :$port in 60s — see $RUN_DIR/frontend.log"
+}
+
+start_ngrok() {
+  local port="$1"
+  if ngrok_api_up; then
+    local existing; existing="$(ngrok_url "$port")"
+    if [ -n "$existing" ]; then say "ngrok     ${G}reuse${X}  $existing"; return 0; fi
+    warn "an ngrok agent is already running but not forwarding :$port."
+    warn "free ngrok allows one agent at a time — run 'hedda stop' or kill it, then retry."
+    return 0
+  fi
+  [ -x "$NGROK_BIN" ] || die "ngrok not found at $NGROK_BIN (set NGROK_BIN=...)"
+  local args=(http "$port" --log stdout)
+  [ -n "$HEDDA_NGROK_DOMAIN" ] && args+=(--url "https://$HEDDA_NGROK_DOMAIN")
+  [ -n "${HEDDA_BASIC_AUTH:-}" ] && args+=(--basic-auth "$HEDDA_BASIC_AUTH")
+  say "ngrok     ${Y}start${X}  → :$port"
+  ( exec "$NGROK_BIN" "${args[@]}" ) >"$RUN_DIR/ngrok.log" 2>&1 &
+  echo $! >"$RUN_DIR/ngrok.pid"; STARTED+=("ngrok")
+  wait_for ngrok_api_up 20 || warn "ngrok API not up in 20s — see $RUN_DIR/ngrok.log"
+}
+
+cleanup_started() {
+  local c pid
+  for c in "${STARTED[@]:-}"; do
+    [ -n "$c" ] || continue
+    pid="$(cat "$RUN_DIR/$c.pid" 2>/dev/null || true)"
+    [ -n "$pid" ] && kill "$pid" 2>/dev/null && say "stopped $c (pid $pid)"
+    rm -f "$RUN_DIR/$c.pid"
+  done
+}
+
+cmd_start() {
+  local mode=dev detach=0 front_port="$DEV_PORT"
+  for a in "$@"; do case "$a" in
+    --build|-b) mode=build; front_port="$PREVIEW_PORT" ;;
+    --dev)      mode=dev;   front_port="$DEV_PORT" ;;
+    -d|--detach) detach=1 ;;
+    -h|--help)  usage; exit 0 ;;
+    *) warn "unknown flag: $a" ;;
+  esac; done
+
+  load_env
+  say "${B}bringing up the Hedda stack${X} ${D}(mode: $mode)${X}"
+  start_backend
+  start_frontend "$front_port" "$mode"
+  start_ngrok "$front_port"
+
+  say "resolving public URL…"
+  local url; url="$(ngrok_url "$front_port")"
+  [ -z "$url" ] && { wait_for ngrok_api_up 10; sleep 1; url="$(ngrok_url "$front_port")"; }
+  [ -z "$url" ] && { warn "couldn't read the ngrok URL — see $RUN_DIR/ngrok.log"; url=""; }
+
+  echo
+  if [ -n "$url" ]; then
+    printf "  %s%s  %s%s\n\n" "$G$B" "▸ live at" "$url" "$X"
+    if open_url "$url"; then say "opened in your browser ${D}(check the VS Code popup / your local browser)${X}"
+    else warn "couldn't auto-open — copy the URL above into your browser"; fi
+  fi
+
+  if [ "${#STARTED[@]}" -eq 0 ]; then
+    say "everything was already running — nothing to babysit."
+    return 0
+  fi
+  if [ "$detach" -eq 1 ]; then
+    say "detached. started: ${STARTED[*]}.  ${D}logs: hedda logs · stop: hedda stop${X}"
+    return 0
+  fi
+  trap 'echo; cleanup_started; exit 0' INT TERM
+  say "${D}streaming logs for: ${STARTED[*]} — press Ctrl-C to stop them${X}"
+  echo
+  local logs=(); for c in "${STARTED[@]}"; do logs+=("$RUN_DIR/$c.log"); done
+  tail -n 2 -F "${logs[@]}" &
+  wait "$!"
+}
+
+cmd_stop() {
+  local any=0 c pid
+  for c in ngrok frontend backend; do
+    pid="$(cat "$RUN_DIR/$c.pid" 2>/dev/null || true)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null && say "stopped $c (pid $pid)"; any=1
+    fi
+    rm -f "$RUN_DIR/$c.pid"
+  done
+  [ "$any" -eq 0 ] && say "nothing that hedda started is running."
+}
+
+cmd_status() {
+  load_env
+  if backend_healthy; then say "backend   ${G}up${X}    :$BACKEND_PORT"; else say "backend   ${R}down${X}  :$BACKEND_PORT"; fi
+  if port_up "$DEV_PORT"; then say "frontend  ${G}up${X}    :$DEV_PORT ${D}(dev)${X}"
+  elif port_up "$PREVIEW_PORT"; then say "frontend  ${G}up${X}    :$PREVIEW_PORT ${D}(preview)${X}"
+  else say "frontend  ${R}down${X}"; fi
+  local url; url="$(ngrok_url "")"
+  if [ -n "$url" ]; then say "ngrok     ${G}up${X}    $url"; else say "ngrok     ${R}down${X}"; fi
+}
+
+cmd_url()  { local u; u="$(ngrok_url "")"; [ -n "$u" ] && echo "$u" || { warn "no ngrok tunnel found"; exit 1; }; }
+cmd_open() { local u; u="$(ngrok_url "")"; [ -z "$u" ] && die "no ngrok tunnel to open"; open_url "$u" && say "opened $u" || die "couldn't open $u"; }
+cmd_logs() {
+  local names=("$@"); [ "${#names[@]}" -eq 0 ] && names=(backend frontend ngrok)
+  local files=(); for n in "${names[@]}"; do [ -f "$RUN_DIR/$n.log" ] && files+=("$RUN_DIR/$n.log"); done
+  [ "${#files[@]}" -eq 0 ] && die "no logs yet (start something first)"
+  tail -n 40 -F "${files[@]}"
+}
+
+# print the leading comment block (line 2 → first non-comment line), stripping "# ".
+usage() { awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$(readlink -f "${BASH_SOURCE[0]}")"; }
+
+case "${1:-start}" in
+  start)  shift 2>/dev/null || true; cmd_start "$@" ;;
+  stop)   cmd_stop ;;
+  status|st) cmd_status ;;
+  url)    cmd_url ;;
+  open)   cmd_open ;;
+  logs)   shift; cmd_logs "$@" ;;
+  -h|--help|help) usage ;;
+  *) die "unknown command '$1' — try: start | stop | status | url | open | logs" ;;
+esac

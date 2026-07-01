@@ -81,7 +81,7 @@ async def create_session(payload: SessionCreate):
 
 @router.post("/authoring-sessions", status_code=201)
 async def create_authoring_session(payload: AuthoringSessionCreate):
-    """Open a PRE-LAUNCH authoring session on a live project: nauteus proposes concepts,
+    """Open a PRE-LAUNCH authoring session on a live project: hedda proposes concepts,
     writes the YAML configs, and offers to launch. Streams over the same /sessions/{sid}/*."""
     try:
         sess = await manager.create_authoring(payload.project_id, model_use=payload.model_use)

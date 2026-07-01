@@ -34,3 +34,6 @@ __pycache__/
 /overnight/logs/
 /overnight/state/
 /overnight/*.nohup.log
+
+# hedda launcher runtime (pids + logs)
+.hedda/

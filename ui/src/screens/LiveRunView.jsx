@@ -14,7 +14,6 @@ import {
   bundleToRun, steerRunFromBundle, eventToItem,
   applyCurves, applyAudit, applySteer,
 } from "../api/adapters.js";
-import { useReveal } from "../lib/hooks.js";
 import { WRAPUP_QUESTION, WRAPUP_OPTIONS, emailReport } from "../lib/wrapup.js";
 
 const STEPS = [
@@ -31,7 +30,7 @@ const STEPS = [
 /* `frontendRun` = an existing recorded run (replay); `liveRunId` = a freshly-created
    live run to bind directly (skips resolveRun). Mode is decided server-side per project. */
 export default function LiveRunView({ frontendRun = null, liveRunId = null, modelUse = null,
-                                     dev = false, onToggleDev, onBack }) {
+                                     dev = false, onToggleDev, onBack, onStep }) {
   const isLive = liveRunId != null;
   const [phase, setPhase] = useState("loading");   // loading | ready | error
   const [run, setRun] = useState(null);
@@ -39,6 +38,7 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   const [steerRun, setSteerRun] = useState(null);
   const runRef = useRef(null);   // current run, for stale-free reads inside handleEvent
   const [step, setStep] = useState("setup");
+  useEffect(() => { onStep?.(step); }, [step]);   // reflect the pipeline step in the URL
   const [unlocked, setUnlocked] = useState(new Set(["setup"]));
   const [completed, setCompleted] = useState(new Set());   // steps the run has closed out (lights Checkout terracotta)
   const [items, setItems] = useState([]);
@@ -53,10 +53,10 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   const [lora, setLora] = useState("balanced");
   const [railW, setRailW] = useState(null);
 
-  const reveal = useReveal(insightsActive, 5000);
-  // idle=0: keep the steered plot empty (axes only) through the morph until its
-  // live-fill starts, instead of flashing a fully-drawn plot for the first ~second.
-  const mitReveal = useReveal(mitActive, 4000, 0);
+  // phase-complete flags set by InsightsStep when each staged fill finishes (gate the
+  // "live" pill + the event-driven early-stop marker). Staged reveal lives in InsightsStep.
+  const [trainRevealed, setTrainRevealed] = useState(false);
+  const [steerRevealed, setSteerRevealed] = useState(false);
 
   const idRef = useRef(0);
   const sidRef = useRef(null);
@@ -82,7 +82,7 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
   function onWrapUp(choice) {
     setCompleted((c) => new Set(c).add("checkout"));
     if (choice === "Email the 1-page report") {
-      emailReport(runRef.current);
+      emailReport(runRef.current, steerRun);
       push({ type: "insight", lead: "I have drafted a summary email in your mail client.",
         bullets: ["Attach the one-page report (use Download 1-pager on the receipt) before sending."] });
       return;
@@ -252,7 +252,10 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
                   onSelectDataset={() => onBack()}
                   onApplyIntent={(text) => sidRef.current && api.postIntent(sidRef.current, text)} />}
                 {step === "audit" && <AuditStep run={run} auditRun={auditRun} tracked={null} thinking={thinking} />}
-                {step === "insights" && <InsightsStep run={run} reveal={reveal} mitigated={mitigated} steerRun={steerRun} mitReveal={mitReveal} earlyStopShown={insightsActive && reveal >= 1} />}
+                {step === "insights" && <InsightsStep run={run} steerRun={steerRun}
+                  active={insightsActive} steerActive={mitActive}
+                  onTrainRevealed={() => setTrainRevealed(true)} onSteerRevealed={() => setSteerRevealed(true)}
+                  earlyStopShown={trainRevealed} />}
                 {step === "checkout" && <CheckoutStep run={run} mitigated={mitigated} steerRun={steerRun} />}
               </div>
             </div>
@@ -272,7 +275,7 @@ export default function LiveRunView({ frontendRun = null, liveRunId = null, mode
         )}
       </div>
 
-      <InsightStream items={items} live={insightsActive && reveal < 1} thinking={thinking}
+      <InsightStream items={items} live={insightsActive && !trainRevealed} thinking={thinking} step={step}
         onResizeStart={startRailResize} onResizeKey={nudgeRail} />
     </div>
   );

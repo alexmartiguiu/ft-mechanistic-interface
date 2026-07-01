@@ -5,7 +5,7 @@ export default function InsightItem({ item }) {
   if (item.think) {
     return (
       <div className="si">
-        <div className="who"><span className="who-t">Nauteus thinks</span></div>
+        <div className="who"><span className="who-t">Hedda thinks</span></div>
         <div className="si-think">
           <span className="think-dots" aria-hidden="true"><i /><i /><i /></span>
           <span><Markdown>{item.text}</Markdown></span>
@@ -16,7 +16,7 @@ export default function InsightItem({ item }) {
   const system = item.who === "system";
   // "educate" is reserved for substantive findings; plain status updates just inform.
   const notify = !system && item.kind !== "educate";
-  const label = system ? "system" : notify ? "Nauteus notifies" : "Nauteus educates";
+  const label = system ? "system" : notify ? "Hedda notifies" : "Hedda educates";
   return (
     <div className={`si si-insight${notify ? " si-notify" : ""}`}>
       {system ? <div className="who"><span className="who-t">system</span></div> : <Who>{label}</Who>}

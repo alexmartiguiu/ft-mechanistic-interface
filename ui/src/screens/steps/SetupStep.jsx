@@ -112,7 +112,7 @@ function ModelUseField({ onApply, className = "", style }) {
         onChange={(e) => { setText(e.target.value); setSent(false); }}
         onBlur={apply}
         placeholder="e.g. a triage assistant that answers patient questions in a hospital portal" />
-      {sent && <span className="muted" style={{ fontSize: 14.4, marginTop: 8, display: "inline-block" }}>✓ added to nauteus’s context — she’ll use it next turn</span>}
+      {sent && <span className="muted" style={{ fontSize: 15.55, marginTop: 8, display: "inline-block" }}>✓ added to hedda’s context — she’ll use it next turn</span>}
     </div>
   );
 }

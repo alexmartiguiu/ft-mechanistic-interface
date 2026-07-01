@@ -58,7 +58,7 @@ function RunRow({ run, onOpen }) {
         {links.hf && (
           <a className="rr-link" href={links.hf} target="_blank" rel="noreferrer" onClick={stop}
             title="Open the model on Hugging Face">
-            <HFLogo size={15} /><span>Model</span>
+            <HFLogo size={15} /><span>Model ckpt</span>
           </a>
         )}
         <button className="btn ocean sm rr-open" onClick={(e) => { stop(e); onOpen(run.id); }}>
@@ -77,7 +77,7 @@ const STATUS_TONE = { done: "var(--good)", running: "var(--accent)", queued: "va
 // Each step gets a minimal black line-icon centred beneath it.
 const HOW_STEPS = [
   { k: "Setup", icon: setupIcon, d: "Pick the dataset and base model, then choose a LoRA recipe." },
-  { k: "Audit", icon: auditIcon, d: "Nauteus flags risky training samples and the malign concepts behind them." },
+  { k: "Audit", icon: auditIcon, d: "Hedda flags risky training samples and the malign concepts behind them." },
   { k: "Realign", icon: realignIcon, d: "Fine-tune with live drift monitoring; steer away malign concepts." },
   { k: "Checkout", icon: checkoutIcon, d: "A receipt documenting where safety drifted and which checkpoint is safe to ship." },
 ];

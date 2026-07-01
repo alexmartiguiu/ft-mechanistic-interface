@@ -21,7 +21,7 @@ export default function RunReadout({ run, reveal }) {
     <div className="card readout">
       <div className="chart-head">
         <span className="ct">Live readout</span>
-        <span className="mono muted" style={{ fontSize: 13.8 }}>step {step} / {lastStep}</span>
+        <span className="mono muted" style={{ fontSize: 14.9 }}>step {step} / {lastStep}</span>
       </div>
 
       <div className="ro-sec">
@@ -55,7 +55,7 @@ export default function RunReadout({ run, reveal }) {
                 <span className="row gap6"><span className="dot" style={{ background: c.color, width: 8, height: 8, borderRadius: 999 }} />{titleCase(c.name)}</span>
                 <span className="row gap10">
                   <span className="mono" style={{ color: drifting ? "var(--bad)" : "var(--ink-2)" }}>{cur.toFixed(2)}</span>
-                  {drifting && <span className="chip bad" style={{ padding: "1px 7px", fontSize: 12.6 }}>drifting</span>}
+                  {drifting && <span className="chip bad" style={{ padding: "1px 7px", fontSize: 13.61 }}>drifting</span>}
                 </span>
               </div>
               <div className="ro-bar"><div className="ro-fill" style={{ width: `${Math.min(100, cur * 100)}%`, background: c.color }} /></div>

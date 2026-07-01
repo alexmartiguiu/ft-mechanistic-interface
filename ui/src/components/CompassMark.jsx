@@ -1,4 +1,4 @@
-// Minimal line-art compass — the Nauteus motif for the checkout header.
+// Minimal line-art compass — the Hedda motif for the checkout header.
 // Hairline strokes inherit `currentColor`; the north needle carries the single
 // green accent, kept on-theme with the rest of the design system.
 export default function CompassMark({ size = 50 }) {

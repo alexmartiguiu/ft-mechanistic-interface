@@ -83,7 +83,7 @@ export const attachDataset = (pid, content, filename) =>
 // ── agent session ──
 // mode is derived server-side from the run's project; the arg is advisory only.
 export const createSession = (run_id, model_use) => jpost(`/agent/sessions`, { run_id, model_use });
-// pre-launch authoring session bound to a live project (nauteus writes the configs)
+// pre-launch authoring session bound to a live project (hedda writes the configs)
 export const createAuthoringSession = (project_id, model_use) =>
   jpost(`/agent/authoring-sessions`, { project_id, model_use });
 // add deployment context mid-session (replay): rides the agent's next turn

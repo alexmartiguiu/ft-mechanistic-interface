@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import DatasetTable from "../../components/DatasetTable.jsx";
 import ConceptGeometry from "../../components/ConceptGeometry.jsx";
-import ConceptDistPlot from "../../components/ConceptDistPlot.jsx";
 import { titleCase } from "../../lib/format.js";
 
-/* Drive the extraction build-up (0 → 1) while Nauteus proposes the concepts, then settle to
+/* Drive the extraction build-up (0 → 1) while Hedda proposes the concepts, then settle to
    the finished method (1) the moment the audit lands. Feeds the single method panel. */
 function useBuildProgress(animating) {
   const [p, setP] = useState(1);
@@ -26,83 +25,73 @@ function useBuildProgress(animating) {
   return p;
 }
 
-/* The method, shown ONCE (not a fake distribution per concept): the persona-vector
-   extraction animated (Chen et al. 2025) beside the three steps it runs. */
+// clickable citations → the papers (arXiv ids confirmed in data/papers/)
+const CITE = {
+  chen: "https://arxiv.org/abs/2507.21509",     // Persona vectors (Chen et al. 2025)
+  arditi: "https://arxiv.org/abs/2406.11717",   // Refusal direction (Arditi et al. 2024)
+  betley: "https://arxiv.org/abs/2502.17424",   // Emergent Misalignment (Betley et al. 2025)
+};
+const Cite = ({ href, children }) => (
+  <a className="cite" href={href} target="_blank" rel="noreferrer">{children}</a>
+);
+
+/* The method, shown ONCE: the persona-vector extraction animated (Chen et al. 2025) beside a
+   terse three-line recipe. Less is more — the equations carry the detail, the citations link out. */
 function MethodPanel({ progress, percentile, accent, done }) {
   return (
     <div className={`method-panel card ${done ? "done" : ""}`}>
       <div className="mp-viz"><ConceptGeometry color={accent} seed={2} flagged={false}
         percentile={percentile} progress={progress} /></div>
-      <ol className="mp-steps">
-        <li><b>Contrastive prompt pairs</b> per trait give two activation clouds, trait-absent
-          (μ₋) and trait-present (μ₊).</li>
-        <li><b>Difference of means</b> sets the direction v̂ = (μ₊ − μ₋) / ‖μ₊ − μ₋‖ (persona
-          vectors, Chen et al. 2025).</li>
-        <li><b>Project every sample</b>, s = ⟨h, v̂⟩; the tail past p{percentile} is what the
-          audit flags.</li>
-      </ol>
-    </div>
-  );
-}
-
-/* Fallback when a run has no recomputed point_projections.json: the schematic geometry,
-   settled, in the same card frame as the real distribution. */
-function SchematicDist({ name, color, seed, percentile, nFlagged }) {
-  return (
-    <div className="cdp card">
-      <div className="cdp-head">
-        <span className="dot" style={{ background: color }} />
-        <span className="cdp-name">{titleCase(name)}</span>
-        {nFlagged != null && <span className="cdp-flagged mono">{nFlagged} flagged</span>}
+      <div className="mp-body">
+        <p className="mp-lead">
+          Each malign behaviour is one linear direction in activation space, a <b>persona vector</b>{" "}
+          (<Cite href={CITE.chen}>Chen 2025</Cite>; cf. <Cite href={CITE.arditi}>Arditi 2024</Cite>).
+        </p>
+        <ol className="mp-steps">
+          <li><b>Contrast.</b> Matched prompt pairs elicit two activation clouds, one trait-absent
+            (mean μ₋) and one trait-present (mean μ₊).</li>
+          <li><b>Direction.</b> The concept is their normalised mean difference,{" "}
+            <span className="mp-eq">v̂ = (μ₊ − μ₋) / ‖μ₊ − μ₋‖</span>.</li>
+          <li><b>Flag.</b> Every sample is scored by its projection <span className="mp-eq">s = ⟨h, v̂⟩</span>,
+            and the audit flags the upper tail past <span className="mp-eq">s &gt; p{percentile}</span>.</li>
+        </ol>
+        <p className="mp-foot">
+          A moving projection is correlational evidence of drift, and it keeps growing after the loss
+          flattens (<Cite href={CITE.betley}>Betley 2025</Cite>).
+        </p>
       </div>
-      <div className="cdp-svg"><ConceptGeometry color={color} seed={seed} flagged
-        percentile={percentile} progress={1} /></div>
     </div>
   );
 }
 
 export default function AuditStep({ run, auditRun, tracked, thinking = false }) {
   const concepts = run.concepts.filter((c) => !tracked || tracked.includes(c.name));
-  // the method animates while Nauteus proposes; it settles the moment the audit lands
+  // the method animates while Hedda proposes; it settles the moment the audit lands
   const progress = useBuildProgress(thinking && !auditRun);
   const accent = concepts[0]?.color || "var(--c-0)";
 
   return (
     <div className="step audit-step">
-      {/* View 1 — Emergent misalignment vectors: the method once, then the real distributions */}
+      {/* View 1 — Emergent misalignment vectors: the method once, then the tracked concepts */}
       <div className="section">
         <div className="section-title">
-          <h3>Emergent misalignment vectors</h3>
-          <span className="hint">{auditRun
-            ? "Real projection distribution per malign concept"
-            : "How each malign-concept direction is extracted"}</span>
+          <h3>Malign concept-directions</h3>
+          <span className="hint">A research-informed extraction of malign-concept directions</span>
         </div>
 
         <MethodPanel progress={progress} percentile={run.audit.percentile} accent={accent} done={auditRun} />
 
-        <div className="mp-concepts">
+        {/* the tracked concepts as a plain bullet list — name in mono, full description, no frames.
+           Per-concept flag counts live in the agent's narration, not here. */}
+        <ul className="concept-list">
           {concepts.map((c) => (
-            <span className="mp-chip" key={c.name}>
+            <li className="concept-item" key={c.name}>
               <span className="dot" style={{ background: c.color }} />
-              <span className="mp-chip-name">{titleCase(c.name)}</span>
-              <span className="mp-chip-desc">{c.description}</span>
-            </span>
+              <span className="ci-name mono">{titleCase(c.name)}</span>
+              <span className="ci-desc">{c.description}</span>
+            </li>
           ))}
-        </div>
-
-        {/* real side-by-side distributions once every sample has been projected */}
-        {auditRun && (
-          <div className="dist-grid">
-            {concepts.map((c, i) => {
-              const cc = run.audit.counts[c.name] || {};
-              return cc.dist
-                ? <ConceptDistPlot key={c.name} name={c.name} color={c.color} dist={cc.dist}
-                    percentile={run.audit.percentile} nFlagged={cc.n_flagged} />
-                : <SchematicDist key={c.name} name={c.name} color={c.color} seed={i + 1}
-                    percentile={run.audit.percentile} nFlagged={cc.n_flagged} />;
-            })}
-          </div>
-        )}
+        </ul>
       </div>
 
       {/* View 2 — Dataset audit: unfolds AFTER the concept view */}

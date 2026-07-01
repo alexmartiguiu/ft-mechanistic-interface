@@ -10,7 +10,7 @@ export default function ActionItem({ item }) {
   const act = () => { setDone(true); item.onAct && item.onAct(); };
   return (
     <div className="si">
-      <Who>Nauteus acts</Who>
+      <Who>Hedda acts</Who>
       <div className="si-action">
         {item.title && <div className="at"><Markdown>{item.title}</Markdown></div>}
         {done

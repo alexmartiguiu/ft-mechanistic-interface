@@ -24,7 +24,8 @@ export default function Legend({ series, hidden, onToggle }) {
             onClick={() => onToggle && onToggle(s.key)}
             aria-pressed={!off} title={off ? `Show ${s.label}` : `Hide ${s.label}`}>
             <span className="eye-wrap">{off ? EyeOff : EyeOpen}</span>
-            <span className="ln" style={{ borderTopColor: s.color, borderTopStyle: s.dashed ? "dashed" : "solid" }} />
+            <span className={`dot ${s.dashed ? "ring" : ""}`}
+              style={s.dashed ? { borderColor: s.color } : { background: s.color }} />
             <span className="lb">{s.label}</span>
           </button>
         );

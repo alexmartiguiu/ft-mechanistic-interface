@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/Button.jsx";
-import Chip from "../../components/Chip.jsx";
 import HFLogo from "../../components/HFLogo.jsx";
 import CompassMark from "../../components/CompassMark.jsx";
+import DualPlot from "../../components/DualPlot.jsx";
 import { EVAL_SERIES } from "../../api/sampleData.js";
 import { titleCase, signed } from "../../lib/format.js";
-import { useReveal, useSize } from "../../lib/hooks.js";
 
 const METRICS = EVAL_SERIES.filter((m) => m.axis === "metric");
 const CAP_KEYS = ["mmlu_pro_acc", "truthfulqa_mc1_acc"];
@@ -27,6 +26,40 @@ function evalAt(run, key, step) {
   if (!s || !s.length) return null;
   const p = s.find((q) => q[0] === step);
   return p ? p[1] : s[s.length - 1][1];
+}
+
+// ── the shipped-checkpoint headline: the drift on the concept we steered on ──
+// Exactly the Realign section's delta badge (DualPlot): the steered concept's PROJECTION
+// on the final biased checkpoint (v1) vs. the final realigned checkpoint (v2), change =
+// v2 − v1, read off the same trajectory endpoints. Projection, not P(trait), because some
+// concepts' probes barely fire — projection is what carries the emergent-risk signal.
+function shippedConceptDelta(run, steerRun) {
+  const concept = run.steer?.concept;
+  if (!concept || !steerRun) return null;
+  const v1 = run.series.trajectory?.[concept];
+  const v2 = steerRun.series.trajectory?.[concept];
+  if (!v1?.length || !v2?.length) return null;
+  const from = v1[v1.length - 1].projection;   // biased final projection
+  const to = v2[v2.length - 1].projection;     // realigned final projection
+  if (from == null || to == null) return null;
+  const delta = to - from;
+  return { concept, from, to, delta, pct: from !== 0 ? (delta / Math.abs(from)) * 100 : null, kind: "suppressed" };
+}
+
+// Fallback headline when nothing was steered (ship-as-is / early-stop paths): the concept
+// whose projection moved the most over the run. Read live from the real trajectories.
+function driftHeadline(run) {
+  let worst = null;
+  run.concepts.forEach((c) => {
+    const seq = run.series.trajectory?.[c.name];
+    if (!seq?.length) return;
+    const from = seq[0].projection, to = seq[seq.length - 1].projection;
+    if (from == null || to == null) return;
+    const delta = to - from;
+    if (!worst || Math.abs(delta) > Math.abs(worst.delta))
+      worst = { concept: c.name, from, to, delta, pct: from !== 0 ? (delta / Math.abs(from)) * 100 : null, kind: "drift" };
+  });
+  return worst;
 }
 
 // the candidate checkpoints to ship, scored on capability vs safety
@@ -64,171 +97,19 @@ function buildCheckpoints(run, steer, showSteer) {
   return cks;
 }
 
-// grouped bar chart: capability / refusal / safety, each compared across model stages
-// (base → fine-tuned → realigned). Bars grow up on mount for a light reveal.
-function MetricBars({ groups, stages }) {
-  const reveal = useReveal(true, 1100);
-  const [ref, size] = useSize();
-  const w = size.w || 600, h = 240;
-  const mL = 38, mR = 14, mT = 16, mB = 54;
-  const iw = Math.max(10, w - mL - mR), ih = Math.max(10, h - mT - mB);
-  const yOf = (v) => mT + (1 - v) * ih;
-  const gW = iw / groups.length;
-  const inner = gW * 0.72;                              // the group's bars occupy 72% of its slot
-  const bW = inner / stages.length;
-  const x0 = (gi) => mL + gi * gW + (gW - inner) / 2;
-
-  return (
-    <div className="card ck-bars-card">
-      <div className="ck-bars-plot" ref={ref}>
-        {w > 0 && (
-          <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
-            {[0, 0.25, 0.5, 0.75, 1].map((v) => (
-              <g key={v}>
-                <line x1={mL} x2={mL + iw} y1={yOf(v)} y2={yOf(v)} stroke="var(--line)" strokeWidth="1" />
-                <text x={mL - 6} y={yOf(v) + 4} textAnchor="end" fontSize="12.6" fill="var(--mute-2)" fontFamily="var(--mono)">{v.toFixed(2)}</text>
-              </g>
-            ))}
-            <line x1={mL} x2={mL} y1={mT} y2={mT + ih} stroke="var(--line-2)" strokeWidth="1" />
-            <line x1={mL} x2={mL + iw} y1={mT + ih} y2={mT + ih} stroke="var(--line-2)" strokeWidth="1" />
-            {groups.map((g, gi) => (
-              <g key={g.key}>
-                {stages.map((s, si) => {
-                  const v = (g[s.key] ?? 0) * reveal;
-                  const bx = x0(gi) + si * bW;
-                  const by = yOf(v);
-                  return (
-                    <g key={s.key}>
-                      <rect x={bx + 1} y={by} width={Math.max(0, bW - 2)} height={Math.max(0, mT + ih - by)} rx="1.5" fill={s.color} />
-                      {reveal > 0.98 && (
-                        <text x={bx + bW / 2} y={by - 4} textAnchor="middle" fontSize="12" fill="var(--ink-soft)" fontFamily="var(--mono)">{(g[s.key] ?? 0).toFixed(2)}</text>
-                      )}
-                    </g>
-                  );
-                })}
-                <text x={x0(gi) + inner / 2} y={mT + ih + 18} textAnchor="middle" fontSize="15" fontWeight="600" fill="var(--ink-soft)">{g.label}</text>
-                <text x={x0(gi) + inner / 2} y={mT + ih + 32} textAnchor="middle" fontSize="12" fill="var(--mute)" fontFamily="var(--mono)">{g.sub}</text>
-              </g>
-            ))}
-          </svg>
-        )}
-      </div>
-      <div className="ck-bars-legend">
-        {stages.map((s) => (
-          <span className="ck-bl" key={s.key}><span className="sw" style={{ background: s.color }} />{s.label}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── the interactive safety arc: mean refusal drifting down, then recovering after the steer ──
 function avgSafety(series) {
   const hb = series?.harmbench_refusal_v2, sr = series?.strongreject_refusal_v2;
   if (!hb) return [];
   return hb.map((p, i) => [p[0], (p[1] + (sr?.[i]?.[1] ?? p[1])) / 2]);
 }
-// truncate a [t,v] sequence to the revealed fraction, interpolating the partial segment
-function clipTo(pts, rt) {
-  const out = [];
-  for (let i = 0; i < pts.length; i++) {
-    const [t, v] = pts[i];
-    if (t <= rt + 1e-6) { out.push([t, v]); continue; }
-    const prev = pts[i - 1];
-    if (prev && prev[0] <= rt) {
-      const f = (rt - prev[0]) / (t - prev[0]);
-      out.push([rt, prev[1] + f * (v - prev[1])]);
-    }
-    break;
-  }
-  return out;
-}
 
-// One continuous mean-refusal arc: high → drifts down during fine-tuning (red) → recovers
-// during the safety-aware re-train (green). Live-fills left to right, marking the steering
-// moment and the restored value once the draw reaches them.
-function SafetyStory({ run, steerRun }) {
-  const reveal = useReveal(true, 2600);
-  const [ref, size] = useSize();
-  const w = size.w || 600, h = 224;
-  const mL = 58, mR = 18, mT = 18, mB = 38;
-  const innerW = Math.max(10, w - mL - mR);
-  const innerH = Math.max(10, h - mT - mB);
-
-  const base = avgSafety(run.series.eval);
-  const steered = steerRun ? avgSafety(steerRun.series.eval) : [];
-  const split = steered.length ? 0.5 : 1;            // x-fraction where fine-tuning ends
-  const n1 = base.length, n2 = steered.length;
-  const declinePts = base.map((p, i) => [(n1 > 1 ? i / (n1 - 1) : 0) * split, p[1]]);
-  const recoverPts = steered.map((p, i) => [split + (n2 > 1 ? i / (n2 - 1) : 1) * (1 - split), p[1]]);
-
-  const xOf = (t) => mL + t * innerW;
-  const yOf = (v) => mT + (1 - v) * innerH;
-  const d = (pts) => pts.map(([t, v], i) => `${i ? "L" : "M"}${xOf(t).toFixed(1)} ${yOf(v).toFixed(1)}`).join(" ");
-
-  const baseStart = base.length ? base[0][1] : null;
-  const dipV = base.length ? base[base.length - 1][1] : null;
-  const endV = steered.length ? steered[steered.length - 1][1] : null;
-
+// the emergent-risk graph (a copy of the Realign section's chart): the fine-tuned run's
+// malign-concept trajectories drift, and the realigned run overlays as the suppressed
+// `prev_steered` curves — the delta the steering achieved, read straight off the plot.
+function EmergentRiskCompare({ run, steerRun }) {
   return (
-    <div className="card ck-story">
-      <div className="ck-arc" ref={ref}>
-        {w > 0 && (
-          <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
-            {[0, 0.5, 1].map((v) => (
-              <g key={v}>
-                <line x1={mL} x2={mL + innerW} y1={yOf(v)} y2={yOf(v)} stroke="var(--line)" strokeWidth="1" />
-                <text x={mL - 9} y={yOf(v) + 4} textAnchor="end" fontSize="13.2" fill="var(--mute-2)" fontFamily="var(--mono)">{v.toFixed(1)}</text>
-              </g>
-            ))}
-            <line x1={mL} x2={mL} y1={mT} y2={mT + innerH} stroke="var(--line-2)" strokeWidth="1" />
-            <line x1={mL} x2={mL + innerW} y1={mT + innerH} y2={mT + innerH} stroke="var(--line-2)" strokeWidth="1" />
-
-            {/* phase labels along the bottom */}
-            <text x={xOf(split / 2)} y={h - 8} textAnchor="middle" fontSize="14.4" fill="var(--mute)">Fine-tuning</text>
-            {steered.length > 0 && (
-              <text x={xOf(split + (1 - split) / 2)} y={h - 8} textAnchor="middle" fontSize="14.4" fill="var(--mute)">Safety re-train</text>
-            )}
-
-            {/* the "where it became better" moment: steering applied */}
-            {steered.length > 0 && (
-              <g opacity={reveal >= split ? 1 : 0.28}>
-                <line x1={xOf(split)} x2={xOf(split)} y1={mT} y2={mT + innerH} stroke="var(--good)" strokeWidth="1.3" strokeDasharray="4 3" />
-                <text x={xOf(split) + 5} y={mT + 11} fontSize="13.2" fontWeight="600" fill="var(--good)">steering applied</text>
-              </g>
-            )}
-
-            {/* drift (red) then recovery (green) */}
-            <path d={d(clipTo(declinePts, reveal))} fill="none" stroke="var(--bad)" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-            <path d={d(clipTo(recoverPts, reveal))} fill="none" stroke="var(--good)" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-
-            {baseStart != null && reveal > 0.02 && (
-              <text x={xOf(0) + 4} y={yOf(baseStart) - 9} fontSize="14.4" fill="var(--mute)" fontFamily="var(--mono)">{baseStart.toFixed(2)}</text>
-            )}
-            {dipV != null && reveal >= split - 0.01 && (
-              <circle cx={xOf(split)} cy={yOf(dipV)} r="3.6" fill="var(--bg)" stroke="var(--bad)" strokeWidth="2" />
-            )}
-            {endV != null && reveal >= 0.995 && (
-              <g>
-                <circle cx={xOf(1)} cy={yOf(endV)} r="4.2" fill="var(--bg)" stroke="var(--good)" strokeWidth="2" />
-                <text x={xOf(1) - 6} y={yOf(endV) - 9} textAnchor="end" fontSize="15" fontWeight="600" fill="var(--good)" fontFamily="var(--mono)">restored {endV.toFixed(2)}</text>
-              </g>
-            )}
-
-            {/* y-axis label — spelled out so the axis reads unambiguously */}
-            <text x={16} y={mT + innerH / 2} textAnchor="middle" fontSize="13.8" fontWeight="600" fill="var(--ink-soft)"
-              transform={`rotate(-90 16 ${mT + innerH / 2})`}>Safety: mean refusal (↑ safer)</text>
-          </svg>
-        )}
-      </div>
-      {baseStart != null && (
-        <p className="ck-story-cap">
-          Mean refusal slid from <b className="mono">{baseStart.toFixed(2)}</b> to{" "}
-          <b className="mono bad">{dipV.toFixed(2)}</b> as the model fine-tuned
-          {endV != null && <>, then the preventive steer pulled it back to <b className="mono good">{endV.toFixed(2)}</b>.</>}
-          {endV == null && "."}
-        </p>
-      )}
+    <div className="ck-emergent">
+      <DualPlot run={run} steerRun={steerRun} defaultView="projection" chartHeight={150} fill={false} showEarlyStop />
     </div>
   );
 }
@@ -299,23 +180,6 @@ function Bar({ label, v, color, baseline }) {
     </div>
   );
 }
-function CheckpointCard({ c, selected, onSelect, baseRefusal }) {
-  return (
-    <button type="button" className={`ck-card ${selected ? "on" : ""} ${c.recommended ? "rec" : ""}`}
-      onClick={onSelect} aria-pressed={selected}>
-      <div className="ck-card-top">
-        <span className="ck-name">{c.name}</span>
-        {c.recommended && <Chip color="var(--good)">recommended</Chip>}
-      </div>
-      <div className="ck-bars">
-        <Bar label="Capability" v={c.cap} color="var(--p-tqa)" />
-        <Bar label="Safety" v={c.safety} color="var(--good)" baseline={baseRefusal} />
-      </div>
-      <div className="ck-best">{c.best}</div>
-    </button>
-  );
-}
-
 function download(filename, text, type = "text/html") {
   const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
@@ -386,19 +250,24 @@ function arcSVG(base, steered) {
     `<text x="14" y="${(mT + ih / 2).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="#5d5d56" transform="rotate(-90 14 ${(mT + ih / 2).toFixed(1)})">Safety: mean refusal (↑ safer)</text></svg>`;
 }
 
-// a formal, full-sentence summary grounded in the real deltas — shared by the on-screen
-// "Insight" line and the report, so the two never drift apart.
-function summarize({ run, showSteer, steer, batteryRows, headlinePP }) {
-  const row = (k) => batteryRows.find((r) => r.key === k);
-  const hbR = row("harmbench_refusal_v2"), mmR = row("mmlu_pro_acc");
-  if (!hbR) return "";
-  const regress = `Fine-tuning ${run.model.label} on sft.jsonl reduced HarmBench refusal from ${hbR.base.toFixed(2)} to ${hbR.biased.toFixed(2)}, a safety regression that the loss curve did not reveal.`;
-  if (!showSteer) return regress;
-  const cap = mmR ? `, while general capability was preserved (MMLU-Pro ${mmR.base.toFixed(2)} to ${(mmR.steered ?? mmR.biased).toFixed(2)})` : "";
-  return `${regress} Preventive malign-concept steering on the ${steer.concept} direction during a re-train restored refusal to ${(hbR.steered ?? hbR.biased).toFixed(2)}, a recovery of ${headlinePP} points${cap}.`;
+// a formal, full-sentence summary grounded in the real deltas — the shipped concept's
+// projection drift is the headline, framed around the direction we actually steered.
+function summarize({ run, steer, hd, batteryRows }) {
+  if (!hd) return "";
+  const name = titleCase(hd.concept);
+  if (hd.kind === "suppressed") {
+    const mmR = batteryRows.find((r) => r.key === "mmlu_pro_acc");
+    // capability "held" is the re-train cost: fine-tuned → realigned, not base → realigned.
+    const cap = mmR
+      ? ` Capability held through the re-train (MMLU-Pro ${mmR.biased.toFixed(2)} → ${(mmR.steered ?? mmR.biased).toFixed(2)}).`
+      : "";
+    const pctTxt = hd.pct != null ? `${Math.abs(hd.pct).toFixed(1)}% reduction` : `shift of ${Math.abs(hd.delta).toFixed(1)}`;
+    return `On the fine-tuned model the ${name} projection sat at ${signed(hd.from, 1)}; preventive steering on ${steer.concept} moved it to ${signed(hd.to, 1)} on the shipped checkpoint, a ${pctTxt} the loss curve never showed.${cap}`;
+  }
+  return `Fine-tuning ${run.model.label} on sft.jsonl moved the ${name} projection from ${signed(hd.from, 1)} to ${signed(hd.to, 1)}, an emergent-risk shift the loss curve did not reveal.`;
 }
 
-function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headlinePP, barsData, arcData, chosen, summary }) {
+function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headline, barsData, arcData, chosen, summary }) {
   const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   const battery = batteryRows.map((r) => `<tr><td>${esc(r.label)}</td><td>${r.base.toFixed(2)}</td><td>${r.biased.toFixed(2)}</td>${showSteer ? `<td><b>${(r.steered ?? r.biased).toFixed(2)}</b></td>` : ""}</tr>`).join("");
   const drift = showSteer ? latentRows.map((r) => {
@@ -410,7 +279,12 @@ function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headl
     links.hf ? `<a href="${esc(links.hf)}">Model on Hugging Face</a>` : "",
     links.wandb ? `<a href="${esc(links.wandb)}">Training run on W&amp;B</a>` : "",
   ].filter(Boolean).join(" · ");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(run.project)} · Nauteus run report</title>
+  const hlNum = headline
+    ? (headline.pct != null
+        ? `${headline.pct < 0 ? "−" : "+"}${Math.abs(headline.pct).toFixed(1)}%`
+        : `${headline.delta < 0 ? "−" : "+"}${Math.abs(headline.delta).toFixed(1)}`)
+    : null;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(run.project)} · Hedda run report</title>
 <style>
   :root{--ink:#1b1b18;--ink-2:#33332e;--ink-soft:#5d5d56;--mute:#8d8d84;--mute-2:#adada4;--line:#e9e9e5;
     --good:#2f9e44;--bad:#d63a26;
@@ -445,11 +319,11 @@ function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headl
 </style></head><body><div class="sheet">
   <div class="head">
     <div>
-      <div class="eyebrow">Nauteus run report</div>
+      <div class="eyebrow">Hedda run report</div>
       <h1>${esc(run.project)}</h1>
       <div class="meta">${esc(run.model.label)} · sft.jsonl${showSteer ? ` · realigned (suppressed ${esc(steer.concept)})` : ""}</div>
     </div>
-    ${headlinePP != null ? `<div class="hl"><b>+${headlinePP}pp</b><small>HarmBench refusal<br>recovered by steering</small></div>` : ""}
+    ${hlNum != null ? `<div class="hl"><b>${hlNum}</b><small>${esc(headline.concept)} projection drift<br>on the shipped checkpoint</small></div>` : ""}
   </div>
   ${summary ? `<p class="lead"><b class="tldr">Insight:</b> ${esc(summary)}</p>` : ""}
   ${arcData && arcData.base.length ? `<h2>Safety across the run</h2><div class="plot">${arcSVG(arcData.base, arcData.steered)}</div>` : ""}
@@ -458,7 +332,7 @@ function buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headl
   <table><thead><tr><th>metric</th><th>base</th><th>fine-tuned</th>${showSteer ? "<th>realigned</th>" : ""}</tr></thead><tbody>${battery}</tbody></table>
   ${showSteer ? `<h2>Malign-concept drift · projection Δ (fine-tuned → realigned)</h2>
   <table><thead><tr><th>malign concept</th><th>fine-tuned</th><th>realigned</th><th>Δ</th><th class="wm">what moved</th></tr></thead><tbody>${drift}</tbody></table>` : ""}
-  <div class="foot"><b>Artefact — shipped checkpoint:</b> ${esc(chosen.name)}.${artefactLinks ? ` ${artefactLinks}.` : ""} Generated by Nauteus from the run logs; open and print to PDF, or attach to the model card on the Hub.</div>
+  <div class="foot"><b>Artefact — shipped checkpoint:</b> ${esc(chosen.name)}.${artefactLinks ? ` ${artefactLinks}.` : ""} Generated by Hedda from the run logs; open and print to PDF, or attach to the model card on the Hub.</div>
 </div></body></html>`;
 }
 
@@ -469,6 +343,7 @@ export default function CheckoutStep({ run, mitigated, steerRun = null }) {
   const effSteer = showSteer ? steerRun : null;
   const checkpoints = useMemo(() => buildCheckpoints(run, steer, showSteer), [run, steer, showSteer]);
   const [sel, setSel] = useState(checkpoints[0].id);
+  const [reportOpen, setReportOpen] = useState(false);   // the full report is collapsed by default
   const chosen = checkpoints.find((c) => c.id === sel) || checkpoints[0];
   const [notice, setNotice] = useState(null);
   const notify = (m) => setNotice(m);
@@ -477,9 +352,6 @@ export default function CheckoutStep({ run, mitigated, steerRun = null }) {
     const t = setTimeout(() => setNotice(null), 3600);
     return () => clearTimeout(t);
   }, [notice]);
-
-  const hb = steer?.eval?.harmbench_refusal_v2;
-  const headlinePP = showSteer && hb ? Math.round((hb.steered - hb.unsteered) * 100) : null;
 
   const batteryRows = METRICS.map((m) => {
     const s = run.series.eval[m.key];
@@ -490,9 +362,13 @@ export default function CheckoutStep({ run, mitigated, steerRun = null }) {
     return { key: m.key, label: m.label, base, biased, steered };
   }).filter(Boolean);
   const latentRows = showSteer ? steer.latent : [];
-  // base-model refusal (averaged) — the red reference line on each card's Safety bar
+  // the headline: the steered concept's projection change, biased-final → realigned-final —
+  // the same number the Realign delta badge shows. Falls back to the largest trajectory
+  // drift when nothing was steered.
+  const headline = shippedConceptDelta(run, effSteer) || driftHeadline(run);
+  // base-model refusal (averaged) — the red reference line on the Safety bar
   const baseRefusal = meanOf(SAFE_KEYS.map((k) => run.series.eval[k]?.[0]?.[1]));
-  // capability / refusal / safety, each across the model stages we can show
+  // capability / refusal / safety, each across the model stages we can show (for the report)
   const stages = [
     { key: "base", label: "Base", color: "var(--mute-2)", reportColor: "#adada4" },
     { key: "biased", label: "Fine-tuned", color: "var(--bad)", reportColor: "#d63a26" },
@@ -504,7 +380,13 @@ export default function CheckoutStep({ run, mitigated, steerRun = null }) {
   });
   const barsData = { groups: barGroups, stages };
   const arcData = { base: avgSafety(run.series.eval), steered: effSteer ? avgSafety(effSteer.series.eval) : [] };
-  const summary = summarize({ run, showSteer, steer, batteryRows, headlinePP });
+  const summary = summarize({ run, steer, hd: headline, batteryRows });
+
+  // staggered "unfold" reveal, like the setup page: each block starts a beat after the last.
+  let topN = 0;
+  const rv = () => ({ animationDelay: `${(topN++) * 0.1}s` });
+  let rpN = 0;
+  const rvR = () => ({ animationDelay: `${(rpN++) * 0.08}s` });
 
   const downloadAdapter = () => {
     const manifest = {
@@ -518,107 +400,124 @@ export default function CheckoutStep({ run, mitigated, steerRun = null }) {
     notify(`Downloaded the ${chosen.name} adapter manifest.`);
   };
   const downloadReport = () => {
-    download(`${run.id}-report.html`, buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headlinePP, barsData, arcData, chosen, summary }));
+    download(`${run.id}-report.html`, buildReportHTML({ run, showSteer, steer, batteryRows, latentRows, headline, barsData, arcData, chosen, summary }));
     notify("Downloaded the 1-page report (open and print to PDF).");
   };
+
+  const dir = headline && headline.delta < 0 ? "down" : "up";
+  const good = !!headline && headline.kind === "suppressed" && headline.delta < 0;   // suppression good; drift reads as risk
 
   return (
     <div className="receipt ckpt-page">
       <header className="rcpt-head">
         <div className="rcpt-id">
-          <span className="eyebrow">Checkout · ship a checkpoint</span>
-          <h3 className="rcpt-title">{run.project}</h3>
-          <div className="rcpt-meta mono">{run.model.label} · sft.jsonl</div>
+          <h3 className="rcpt-title">Results & Artifacts</h3>
+          <div className="rcpt-meta mono">Ship your checkpoint: {run.model.label}{showSteer ? " · realigned" : ""}</div>
         </div>
-        <div className="rcpt-aside">
-          {headlinePP != null && (
-            <div className="ck-headline">
-              <span className="ck-headline-n mono">+{headlinePP}<small>pp</small></span>
-              <span className="ck-headline-l">HarmBench refusal<br />recovered by steering</span>
-            </div>
-          )}
-          <span className="head-compass"><CompassMark /></span>
-        </div>
+        <span className="head-compass"><CompassMark /></span>
       </header>
 
-      {/* ── Pane 1: Reporting ── */}
-      <section className="rcpt-pane">
-        <div className="rcpt-pane-head"><span className="eyebrow">Reporting</span>
-          <span className="rcpt-pane-hint">What the loss curve hid, and how the run behaved across stages.</span></div>
+      {/* ── top: a small result box (left) + the checkout options (right) ── */}
+      <div className="ck-top">
+        <aside className="ck-summary card setup-reveal" style={rv()}>
+          <span className="eyebrow">Result · shipped checkpoint</span>
+          {headline ? (
+            <>
+              <div className={`ck-delta ${good ? "good" : "bad"}`}>
+                <span className="ck-delta-arrow">{dir === "down" ? "↓" : "↑"}</span>
+                <span className="ck-delta-n mono">
+                  {headline.pct != null ? `${Math.abs(headline.pct).toFixed(1)}%` : Math.abs(headline.delta).toFixed(1)}
+                </span>
+              </div>
+              <div className="ck-delta-l">
+                <b>{titleCase(headline.concept)}</b> risk projection
+                {headline.kind === "suppressed" ? ", suppressed by steering" : ", emergent drift"}
+              </div>
+              <div className="ck-delta-fromto mono">
+                {signed(headline.from, 1)} <span className="sep">→</span> {signed(headline.to, 1)}
+                <span className="ck-delta-cap">
+                  {headline.kind === "suppressed" ? "fine-tuned → realigned" : "start → end"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="ck-delta-l">No concept trajectory recorded for this run.</div>
+          )}
+          {summary && <p className="ck-summary-line">{summary}</p>}
+          <button type="button" className="ck-report-toggle" aria-expanded={reportOpen}
+            onClick={() => setReportOpen((v) => !v)}>
+            {reportOpen ? "Hide full report" : "View full report"}
+            <span className="chev">{reportOpen ? "▴" : "▾"}</span>
+          </button>
+        </aside>
 
-        <div className="rcpt-sec">
-          <div className="rcpt-sec-head"><h4>Safety across the run</h4>
-            <span className="rcpt-hint">Mean refusal (HarmBench + StrongREJECT), replayed in real time.</span></div>
-          <SafetyStory run={run} steerRun={effSteer} />
-        </div>
-
-        {summary && <p className="ck-insight"><b>Insight:</b> {summary}</p>}
-
-        <div className="ck-report-grid">
-          <div className="rcpt-sec">
-            <div className="rcpt-sec-head"><h4>Capability, refusal &amp; safety</h4>
-              <span className="rcpt-hint">Base vs fine-tuned{showSteer ? " vs realigned" : ""}.</span></div>
-            <MetricBars groups={barGroups} stages={stages} />
+        <section className="ck-options setup-reveal" style={rv()}>
+          <div className="rcpt-sec-head"><h4>Ship a checkpoint</h4>
+            <span className="rcpt-hint">The realigned adapter is recommended.</span></div>
+          <label className="ck-select-wrap">
+            <span className="ck-select-lab">Checkpoint</span>
+            <select className="ck-select" value={sel} onChange={(e) => setSel(e.target.value)}>
+              {checkpoints.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}{c.recommended ? " · recommended" : ""}</option>
+              ))}
+            </select>
+          </label>
+          <div className="ck-ship">
+            <div className="ck-ship-bars">
+              <Bar label="Capability" v={chosen.cap} color="var(--p-tqa)" />
+              <Bar label="Safety" v={chosen.safety} color="var(--good)" baseline={baseRefusal} />
+            </div>
+            <p className="ck-ship-blurb">{chosen.blurb}</p>
+            <div className="ck-actions">
+              <Button variant="primary"
+                onClick={() => notify(`Saving the ${chosen.name} checkpoint and pushing it to a Hugging Face repo.`)}>
+                <HFLogo size={15} /> Save &amp; publish to Hugging Face
+              </Button>
+              <Button onClick={downloadAdapter}>Download adapter</Button>
+              <Button variant="ghost" onClick={downloadReport}>Download 1-pager</Button>
+            </div>
+            {notice && <div className="export-notice" role="status">{notice}</div>}
           </div>
-          <div className="rcpt-sec">
-            <div className="rcpt-sec-head"><h4>Benchmark scores</h4>
-              <span className="rcpt-hint">Per-metric, across the model stages.</span></div>
-            <BenchmarkTable rows={batteryRows} showSteer={showSteer} />
-          </div>
-        </div>
+        </section>
+      </div>
 
-        {showSteer && latentRows.length > 0 && (
-          <div className="rcpt-sec">
-            <div className="rcpt-sec-head"><h4>Malign-concept drift</h4>
-              <span className="rcpt-hint">Projection Δ per malign concept between the fine-tuned and realigned checkpoints.</span></div>
-            <ConceptDriftTable rows={latentRows} />
+      {/* ── full report — collapsed by default ── */}
+      <section className="ck-fullreport setup-reveal" style={rv()}>
+        <button type="button" className="ck-fullreport-head" aria-expanded={reportOpen}
+          onClick={() => setReportOpen((v) => !v)}>
+          <span className="eyebrow"> View Full report</span>
+          <span className="chev">{reportOpen ? "▴" : "▾"}</span>
+        </button>
+
+        {reportOpen && (
+          <div className="ck-fullreport-body">
+            {summary && (
+              <p className="ck-insight setup-reveal" style={rvR()}><b>Insight:</b> {summary}</p>
+            )}
+
+            <div className="rcpt-sec setup-reveal" style={rvR()}>
+              <div className="rcpt-sec-head"><h4>Emergent risks across the run</h4>
+                <span className="rcpt-hint">Malign-concept trajectories · fine-tuned vs realigned.</span></div>
+              <EmergentRiskCompare run={run} steerRun={effSteer} />
+            </div>
+
+            <div className="ck-report-grid">
+              <div className="rcpt-sec setup-reveal" style={rvR()}>
+                <div className="rcpt-sec-head"><h4>Benchmark scores</h4>
+                  <span className="rcpt-hint">Per metric, across the model stages.</span></div>
+                <BenchmarkTable rows={batteryRows} showSteer={showSteer} />
+              </div>
+              {showSteer && latentRows.length > 0 && (
+                <div className="rcpt-sec setup-reveal" style={rvR()}>
+                  <div className="rcpt-sec-head"><h4>Malign-concept drift</h4>
+                    <span className="rcpt-hint">Projection Δ, fine-tuned → realigned.</span></div>
+                  <ConceptDriftTable rows={latentRows} />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </section>
-
-      {/* ── Pane 2: Artefacts ── */}
-      <section className="rcpt-pane">
-        <div className="rcpt-pane-head"><span className="eyebrow">Artefacts</span>
-          <span className="rcpt-pane-hint">Choose a checkpoint, then export the adapter, report, or push to the Hub.</span></div>
-
-        <div className="rcpt-sec">
-          <div className="rcpt-sec-head"><h4>Which checkpoint do you ship?</h4>
-            <span className="rcpt-hint">How each checkpoint trades capability against safety.</span></div>
-          <div className="ck-layout">
-            <div className="ck-list">
-              {checkpoints.map((c) => (
-                <CheckpointCard key={c.id} c={c} selected={c.id === sel} onSelect={() => setSel(c.id)} baseRefusal={baseRefusal} />
-              ))}
-            </div>
-            <aside className={`ck-detail card ${chosen.recommended ? "rec" : ""}`}>
-              <div className="ck-detail-head">
-                <span className="ck-detail-name">{chosen.name}</span>
-                {chosen.recommended && <Chip color="var(--good)">recommended</Chip>}
-              </div>
-              <p className="ck-detail-blurb">{chosen.blurb}</p>
-              <div className="ck-detail-metrics">
-                {METRICS.map((m) => (
-                  <div className="ck-m" key={m.key}>
-                    <span className="ck-m-k">{m.label}</span>
-                    <span className="ck-m-v mono">{(chosen.metrics[m.key] ?? 0).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="ck-detail-best">{chosen.best}</div>
-              <div className="ck-actions">
-                <Button variant="primary"
-                  onClick={() => notify(`Saving the ${chosen.name} checkpoint and pushing it to a Hugging Face repo.`)}>
-                  <HFLogo size={15} /> Save &amp; publish to Hugging Face
-                </Button>
-                <Button onClick={downloadAdapter}>Download adapter</Button>
-                <Button variant="ghost" onClick={downloadReport}>Download 1-pager</Button>
-              </div>
-              {notice && <div className="export-notice" role="status">{notice}</div>}
-            </aside>
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }

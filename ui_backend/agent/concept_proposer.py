@@ -1,6 +1,6 @@
 """The `concept-proposer` subagent — a fast Haiku researcher wrapped in a tool.
 
-The main agent (`nauteus`, Sonnet/Bedrock) calls `propose_concepts`; that tool runs
+The main agent (`hedda`, Sonnet/Bedrock) calls `propose_concepts`; that tool runs
 this subagent, which:
 
   1. Reads one or two local notes in `data/papers/` to anchor on the
@@ -73,7 +73,7 @@ PAPERS: list[dict] = [
      "blurb": "principled activation steering with abstention: optimise the steer direction and "
               "calibrate when/how much to intervene, or abstain (pick when the question is how "
               "to mitigate drift — choosing coefficient/layer or when not to steer)"},
-    {"file": "anthropomorphic-evidence.md", "title": "Stronger Evidence", "authors": "Gupta & Hedström et al. 2026",
+    {"file": "anthropomorphic-evidence.md", "title": "Anthropomorphic Misalignment: Stronger Evidence", "authors": "Gupta et al. 2026",
      "blurb": "position paper on evidence standards: a moving projection is correlational, not "
               "proof of intent, and steering is the causal handle — read to keep the read "
               "calibrated and avoid anthropomorphising (almost always relevant)"},

@@ -26,7 +26,7 @@ export default function QuestionItem({ item }) {
 
   return (
     <div className="si">
-      <Who>Nauteus asks</Who>
+      <Who>Hedda asks</Who>
       <div className="si-question">
         <div className="q"><Markdown>{item.question}</Markdown></div>
         <div className="opts">
